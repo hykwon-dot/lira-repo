@@ -1,20 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { getPrismaClient } from "@/lib/prisma";
-import { InvestigatorStatus, Prisma } from "@prisma/client";
-import { Metadata } from "next";
+import { InvestigatorStatus } from "@prisma/client";
 import { Star } from "lucide-react";
-
-export const metadata: Metadata = {
-  title: "탐정 명단 | LIRA",
-  description: "LIRA에 등록된 민간조사원 목록",
-};
-
-type InvestigatorWithUser = Prisma.InvestigatorProfileGetPayload<{
-  include: {
-    user: true;
-  };
-}>;
+import { useEffect, useState } from "react";
 
 type InvestigatorRecord = {
   id: number;
@@ -29,12 +19,22 @@ type InvestigatorRecord = {
   successRate: number | null;
   portfolioUrl: string | null;
   avatarUrl: string | null;
-  updatedAt: Date;
+  updatedAt: string;
   user: {
     id: number;
     name: string | null;
     email: string;
   } | null;
+};
+
+type ApiResponse = {
+  investigators: InvestigatorRecord[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
 };
 
 const statusLabel: Record<InvestigatorStatus, string> = {
@@ -89,61 +89,37 @@ function formatSpecialties(specialties: unknown): string[] {
   return [];
 }
 
-export default async function InvestigatorsPage() {
-  let rawInvestigators: InvestigatorWithUser[] = [];
-  let hasError = false;
-  let errorMessage = '';
-  
-  try {
-    const prisma = await getPrismaClient();
-    rawInvestigators = await prisma.investigatorProfile.findMany({
-      where: {
-        status: InvestigatorStatus.APPROVED,
-      },
-      include: {
-        user: true,
-      },
-      orderBy: [{ createdAt: "desc" }],
-    });
-  } catch (error) {
-    console.error('Failed to fetch investigators:', error);
-    hasError = true;
-    errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    rawInvestigators = [];
-  }
-  
-  // 에러가 발생했지만 페이지를 렌더링하도록 계속 진행
+export default function InvestigatorsPage() {
+  const [investigators, setInvestigators] = useState<InvestigatorRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const investigators: InvestigatorRecord[] = (rawInvestigators as Array<
-    InvestigatorWithUser & {
-      contactPhone: string | null;
-      serviceArea: string | null;
-      introduction: string | null;
-      portfolioUrl: string | null;
-      avatarUrl: string | null;
-    }
-  >).map((inv) => ({
-    id: inv.id,
-    status: inv.status,
-    licenseNumber: inv.licenseNumber,
-    contactPhone: inv.contactPhone,
-    serviceArea: inv.serviceArea,
-    introduction: inv.introduction,
-    specialties: inv.specialties,
-    experienceYears: inv.experienceYears,
-    ratingAverage: inv.ratingAverage ? Number(inv.ratingAverage) : null,
-    successRate: inv.successRate ? Number(inv.successRate) : null,
-    portfolioUrl: inv.portfolioUrl,
-    avatarUrl: inv.avatarUrl ?? null,
-    updatedAt: inv.updatedAt,
-    user: inv.user
-      ? {
-          id: inv.user.id,
-          name: inv.user.name,
-          email: inv.user.email,
+  useEffect(() => {
+    async function fetchInvestigators() {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/investigators?status=APPROVED');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-      : null,
-  }));
+        
+        const data: ApiResponse = await response.json();
+        setInvestigators(data.investigators);
+        setHasError(false);
+      } catch (error) {
+        console.error('Failed to fetch investigators:', error);
+        setHasError(true);
+        setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
+        setInvestigators([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchInvestigators();
+  }, []);
 
   const totalInvestigators = investigators.length;
   const totalExperience = investigators.reduce(
@@ -239,17 +215,26 @@ export default async function InvestigatorsPage() {
             </p>
           </div>
 
-          {hasError ? (
+          {loading ? (
+            <div className="rounded-[32px] border border-slate-200 bg-white/80 p-14 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+              <p className="text-sm text-slate-500">조사원 목록을 불러오는 중...</p>
+            </div>
+          ) : hasError ? (
             <div className="rounded-[32px] border border-red-200 bg-red-50/80 p-14 text-center">
               <h3 className="text-lg font-semibold text-red-800 mb-2">데이터를 불러올 수 없습니다</h3>
               <p className="text-sm text-red-600 mb-4">
                 데이터베이스 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.
               </p>
-              {process.env.NODE_ENV === 'development' && (
-                <p className="text-xs text-red-500 font-mono bg-red-100 p-2 rounded">
-                  {errorMessage}
-                </p>
-              )}
+              <p className="text-xs text-red-500 font-mono bg-red-100 p-2 rounded">
+                {errorMessage}
+              </p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                다시 시도
+              </button>
             </div>
           ) : investigators.length === 0 ? (
             <div className="rounded-[32px] border border-dashed border-slate-200 bg-white/80 p-14 text-center text-sm text-slate-500">
@@ -261,7 +246,7 @@ export default async function InvestigatorsPage() {
                 const specialties = formatSpecialties(inv.specialties);
                 const status = inv.status as InvestigatorStatus;
                 const initials = getInitials(inv.user?.name);
-                const updatedAt = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(inv.updatedAt);
+                const updatedAt = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date(inv.updatedAt));
 
                 return (
                   <article key={inv.id} className="flex h-full flex-col rounded-[32px] border border-slate-100 bg-white/90 shadow-[0_18px_40px_-28px_rgba(30,64,175,0.45)]">

@@ -3,6 +3,7 @@ import { getPrismaClient } from '@/lib/prisma';
 import { signToken } from '@/lib/jwt';
 import { hash as hashPassword } from '@node-rs/bcrypt';
 import type { Prisma } from '@prisma/client';
+import { validateRequiredEnv } from '@/lib/env';
 
 // 허용된 공개 가입 역할 (SUPER_ADMIN 은 seed 또는 내부 승격 전용)
 const ALLOWED_PUBLIC_ROLES = ['USER', 'INVESTIGATOR', 'ENTERPRISE'] as const;
@@ -54,8 +55,16 @@ interface CustomerPayload extends BasePayload {
 }
 
 export async function POST(req: NextRequest) {
+  console.log('[API] POST /api/register - Request received');
+  
   try {
+    console.log('[API] Validating environment variables...');
+    validateRequiredEnv();
+    console.log('[API] Environment variables validated successfully');
+    
+    console.log('[API] Parsing request body...');
     const body: unknown = await req.json();
+    console.log('[API] Request body parsed successfully');
     const { email, password, name } = body as BasePayload;
     let { role } = body as BasePayload;
 
@@ -69,7 +78,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '허용되지 않은 역할입니다.' }, { status: 400 });
     }
 
+  console.log('[API] Getting Prisma client...');
   const prisma = await getPrismaClient();
+  console.log('[API] Prisma client obtained successfully');
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
@@ -283,7 +294,12 @@ export async function POST(req: NextRequest) {
     const token = signToken({ userId: Number(result.user.id), role: result.user.role });
     return NextResponse.json({ ...userWithoutPassword, customerProfile: result.profile, token }, { status: 201 });
   } catch (error) {
-    console.error('Registration error:', error);
-    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
+    console.error('[API] Registration error:', error);
+    console.error('[API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    return NextResponse.json({ 
+      error: '서버 오류가 발생했습니다.',
+      details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : String(error) : undefined
+    }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+import { ensureEnvLoaded } from './env';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -13,8 +14,18 @@ declare global {
 const FALLBACK_DATABASE_ENV_KEYS = ['LIRA_DATABASE_URL', 'RDS_DATABASE_URL', 'DB_URL'];
 
 async function resolveDatabaseUrl(): Promise<string> {
-  if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim()) {
-    return process.env.DATABASE_URL;
+  console.log('[Prisma] Resolving database URL...');
+  
+  // 환경 변수 로딩 확인
+  ensureEnvLoaded();
+  
+  // 설정 파일에서 폴백 값 가져오기
+  const { config } = await import('./config');
+  
+  const databaseUrl = process.env.DATABASE_URL || config.DATABASE_URL;
+  if (databaseUrl && databaseUrl.trim()) {
+    console.log('[Prisma] Using DATABASE_URL from environment or config');
+    return databaseUrl;
   }
 
   for (const key of FALLBACK_DATABASE_ENV_KEYS) {
@@ -52,7 +63,10 @@ async function resolveDatabaseUrl(): Promise<string> {
 }
 
 async function createPrismaClient(): Promise<PrismaClient> {
+  console.log('[Prisma] Creating Prisma client...');
+  
   await resolveDatabaseUrl();
+  console.log('[Prisma] Database URL resolved successfully');
 
   const client =
     global.prisma ||
@@ -64,18 +78,26 @@ async function createPrismaClient(): Promise<PrismaClient> {
     global.prisma = client;
   }
 
+  console.log('[Prisma] Prisma client created successfully');
   return client;
 }
 
 export function getPrismaClient(): Promise<PrismaClient> {
+  console.log('[Prisma] getPrismaClient() called');
+  
   if (!global.prismaClientPromise) {
+    console.log('[Prisma] Creating new client promise...');
     global.prismaClientPromise = createPrismaClient().catch((error) => {
-      console.error('Failed to create Prisma client:', error);
+      console.error('[Prisma] Failed to create Prisma client:', error);
+      console.error('[Prisma] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       // 에러 발생 시 전역 캐시 초기화
       global.prismaClientPromise = undefined;
       global.prismaDatabaseUrlPromise = undefined;
       throw error;
     });
+  } else {
+    console.log('[Prisma] Using existing client promise');
   }
+  
   return global.prismaClientPromise;
 }

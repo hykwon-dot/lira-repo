@@ -224,8 +224,12 @@ export default function RegisterForm() {
         router.push('/login?pending=investigator');
       }, 2000);
     } catch (err) {
-      console.error(err);
-      setError('서버와 통신 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      console.error('Registration error:', err);
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
+      } else {
+        setError(`서버 오류가 발생했습니다: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
