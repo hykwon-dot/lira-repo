@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPrismaClient } from '@/lib/prisma';
 import { InvestigatorStatus } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } },
@@ -37,6 +39,8 @@ export async function POST(
     data: {
       status: InvestigatorStatus.APPROVED,
       reviewNote: note ?? null,
+      reviewedAt: new Date(),
+      reviewedById: 1, // TODO: 실제 관리자 ID로 변경 필요
     },
     include: {
       user: {

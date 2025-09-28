@@ -14,8 +14,14 @@ const inter = Inter({
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "엘AI와 민간조사 상담 - LIRA",
-  description: "AI 시뮬레이션 SaaS 플랫폼 - 챗GPT 연동 대화형 시뮬레이션",
+  title: "AI기반 민간조사 통합 플랫폼 LI-ONE",
+  description: "AI와 데이터 기반의 가상 조사/사례 시뮬레이션 및 탐정 매칭 서비스",
+  keywords: "민간조사, AI, 탐정, 조사원, 시뮬레이션, 매칭 플랫폼",
+  openGraph: {
+    title: "AI기반 민간조사 통합 플랫폼 LI-ONE",
+    description: "AI와 데이터 기반의 가상 조사/사례 시뮬레이션 및 탐정 매칭 서비스",
+    images: ["/images/lione-logo.svg"],
+  },
 };
 
 export default function RootLayout({
