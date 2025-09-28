@@ -1,0 +1,378 @@
+{
+  "adultery_investigation": {
+    "overview": {
+      "industry": "불륜 조사",
+      "objective": "배우자의 불륜 의혹에 대한 증거 수집 및 법적 대응 방안 제시",
+      "totalDurationDays": 14,
+      "budget": { "currency": "KRW", "recommended": 3000000, "hardCap": 5000000 },
+      "overallKPI": {
+        "evidenceQuality": 4.5,
+        "legalValidation": true,
+        "clientSatisfaction": 4.3,
+        "successRate": 0.85
+      },
+      "difficulty": "중간"
+    },
+    "phases": [
+      { 
+        "id": "A1", 
+        "name": "사건 접수 및 초기 상담", 
+        "durationDays": 2, 
+        "scheduleOffset": 0, 
+        "budget": { "min": 200000, "recommended": 300000, "max": 500000 }, 
+        "phaseKPI": { "initialAssessment": true, "contractSigned": true }, 
+        "deliverables": ["상담 기록서", "계약서", "조사 계획서"], 
+        "details": [
+          "의뢰인과의 상세한 상담을 통해 사건의 배경과 의혹 사항을 파악합니다.",
+          "증거 수집 가능성 및 합법성을 검토하여 조사 방향을 설정합니다.",
+          "조사 일정과 방법을 계획하고 계약서를 작성합니다."
+        ],
+        "risks": ["불법 조사 요구", "개인정보 보호 위반"],
+        "nextPhase": "A2" 
+      },
+      { 
+        "id": "A2", 
+        "name": "대상자 신원 확인 및 행동 패턴 분석", 
+        "durationDays": 3, 
+        "scheduleOffset": 2, 
+        "budget": { "min": 400000, "recommended": 600000, "max": 1000000 }, 
+        "phaseKPI": { "identityConfirmed": true, "patternAnalyzed": true }, 
+        "deliverables": ["신원 조사 보고서", "행동 패턴 분석서", "스케줄 추적표"], 
+        "details": [
+          "대상자의 기본 신원 정보를 수집하고 확인합니다.",
+          "일상 생활 패턴과 동선을 파악하여 조사 계획을 수립합니다.",
+          "직장 및 사회 활동을 조사하고 SNS 활동을 모니터링합니다."
+        ],
+        "risks": ["대상자 경계", "조사 발각"],
+        "nextPhase": "A3" 
+      },
+      { 
+        "id": "A3", 
+        "name": "현장 감시 및 증거 수집", 
+        "durationDays": 7, 
+        "scheduleOffset": 5, 
+        "budget": { "min": 1500000, "recommended": 2000000, "max": 3000000 }, 
+        "phaseKPI": { "evidenceCollected": true, "photoVideoQuality": 4.0 }, 
+        "deliverables": ["현장 감시 일지", "사진/영상 증거", "통화 기록", "만남 현장 보고서"], 
+        "details": [
+          "현장 감시 및 미행 조사를 통해 대상자의 행동을 추적합니다.",
+          "사진 및 영상 증거를 수집하여 불륜 관계를 입증합니다.",
+          "제3자와의 만남 현장을 포착하고 숙박업소 출입을 확인합니다."
+        ],
+        "risks": ["증거 수집 실패", "불법 촬영 논란"],
+        "nextPhase": "A4" 
+      },
+      { 
+        "id": "A4", 
+        "name": "증거 분석 및 법적 검토", 
+        "durationDays": 2, 
+        "scheduleOffset": 12, 
+        "budget": { "min": 300000, "recommended": 500000, "max": 800000 }, 
+        "phaseKPI": { "legalValidation": true, "evidenceOrganized": true }, 
+        "deliverables": ["증거 분석 보고서", "법적 유효성 검토서", "조사 결과 요약"], 
+        "details": [
+          "수집된 증거의 법적 유효성을 검토하고 정리합니다.",
+          "증거 자료를 분석하여 불륜 관계를 입증할 수 있는 자료를 준비합니다.",
+          "최종 보고서를 작성하고 법적 대응 방안을 제시합니다."
+        ],
+        "risks": ["증거 법적 무효", "개인정보 침해"],
+        "nextPhase": null 
+      }
+    ]
+  },
+  "credit_investigation_case": {
+    "overview": {
+      "industry": "신용 조사",
+      "objective": "거래 상대방의 신용도 및 재정 상태 조사를 통한 투자/거래 리스크 평가",
+      "totalDurationDays": 10,
+      "budget": { "currency": "KRW", "recommended": 2000000, "hardCap": 3500000 },
+      "overallKPI": {
+        "accuracyRate": 0.95,
+        "reportCompleteness": 4.8,
+        "clientSatisfaction": 4.5,
+        "riskAssessment": true
+      },
+      "difficulty": "보통"
+    },
+    "phases": [
+      { "id": "C1", "name": "기본 정보 수집", "durationDays": 2, "scheduleOffset": 0, "budget": { "min": 200000, "recommended": 400000, "max": 600000 }, "phaseKPI": { "basicInfoComplete": true }, "deliverables": ["기본 신상 정보", "사업자 등록증", "법인 등기부등본"], "tasks": [ { "taskId": "C1.1", "desc": "대상자 기본 신상 정보 확인", "competency": ["신원조사"] }, { "taskId": "C1.2", "desc": "사업자등록증 및 법인등기부등본 수집", "competency": ["서류조사"] }, { "taskId": "C1.3", "desc": "주소지 및 사업장 실태 확인", "competency": ["현장조사"] } ], "risks": [ { "riskId": "CR1", "name": "정보 접근 제한", "severity": "M", "trigger": "필수 서류 미확보", "mitigation": "대체 정보원 활용" } ], "nextPhase": "C2" },
+      { "id": "C2", "name": "재정 상태 조사", "durationDays": 4, "scheduleOffset": 2, "budget": { "min": 800000, "recommended": 1200000, "max": 1800000 }, "phaseKPI": { "financialDataComplete": true }, "deliverables": ["재무제표 분석", "부채 현황", "자산 목록"], "tasks": [ { "taskId": "C2.1", "desc": "재무제표 및 세무 신고 내역 확인", "competency": ["재무분석"] }, { "taskId": "C2.2", "desc": "금융기관 대출 및 부채 현황 조사", "competency": ["금융조사"] }, { "taskId": "C2.3", "desc": "부동산 및 주요 자산 현황 파악", "competency": ["자산조사"] }, { "taskId": "C2.4", "desc": "매출 및 수익성 분석", "competency": ["경영분석"] } ], "risks": [ { "riskId": "CR2", "name": "재무 정보 은닉", "severity": "H", "trigger": "재무 정보 불일치", "mitigation": "다각도 검증 및 교차 확인" } ], "nextPhase": "C3" },
+      { "id": "C3", "name": "거래 이력 및 평판 조사", "durationDays": 3, "scheduleOffset": 6, "budget": { "min": 400000, "recommended": 600000, "max": 900000 }, "phaseKPI": { "reputationAssessed": true }, "deliverables": ["거래 이력 보고서", "평판 조사 결과", "분쟁 이력"], "tasks": [ { "taskId": "C3.1", "desc": "주요 거래처 및 거래 이력 조사", "competency": ["거래조사"] }, { "taskId": "C3.2", "desc": "업계 내 평판 및 신뢰도 조사", "competency": ["평판조사"] }, { "taskId": "C3.3", "desc": "법적 분쟁 및 소송 이력 확인", "competency": ["법무조사"] } ], "risks": [ { "riskId": "CR3", "name": "평판 정보 부족", "severity": "M", "trigger": "신뢰할 만한 정보원 부족", "mitigation": "간접 정보 및 공개 자료 활용" } ], "nextPhase": "C4" },
+      { "id": "C4", "name": "종합 분석 및 보고서 작성", "durationDays": 1, "scheduleOffset": 9, "budget": { "min": 200000, "recommended": 400000, "max": 600000 }, "phaseKPI": { "reportCompleted": true }, "deliverables": ["종합 신용 보고서", "리스크 평가", "권고사항"], "tasks": [ { "taskId": "C4.1", "desc": "수집 정보 종합 분석", "competency": ["데이터분석"] }, { "taskId": "C4.2", "desc": "신용도 등급 산정", "competency": ["신용평가"] }, { "taskId": "C4.3", "desc": "최종 보고서 작성", "competency": ["보고서작성"] } ], "risks": [ { "riskId": "CR4", "name": "평가 오류", "severity": "H", "trigger": "정보 분석 실수", "mitigation": "다중 검토 및 검증" } ], "nextPhase": null }
+    ]
+  },
+  "missing_person_case": {
+    "overview": {
+      "industry": "실종자 수색",
+      "objective": "실종된 가족/지인의 행방 추적 및 안전 확인",
+      "totalDurationDays": 21,
+      "budget": { "currency": "KRW", "recommended": 4000000, "hardCap": 7000000 },
+      "overallKPI": {
+        "discoveryRate": 0.75,
+        "responseTime": 24,
+        "familySatisfaction": 4.0,
+        "safetyConfirmed": true
+      },
+      "difficulty": "높음"
+    },
+    "phases": [
+      { "id": "M1", "name": "실종 신고 접수 및 초기 대응", "durationDays": 1, "scheduleOffset": 0, "budget": { "min": 100000, "recommended": 200000, "max": 400000 }, "phaseKPI": { "reportReceived": true, "urgencyAssessed": true }, "deliverables": ["실종 신고서", "초기 상황 보고서", "수색 계획"], "tasks": [ { "taskId": "M1.1", "desc": "실종 상황 접수 및 긴급도 평가", "competency": ["위기관리"] }, { "taskId": "M1.2", "desc": "실종자 기본 정보 수집", "competency": ["정보수집"] }, { "taskId": "M1.3", "desc": "최종 목격 장소 및 시간 확인", "competency": ["현장조사"] }, { "taskId": "M1.4", "desc": "경찰 신고 여부 확인", "competency": ["협력조사"] } ], "risks": [ { "riskId": "MR1", "name": "골든타임 경과", "severity": "H", "trigger": "실종 후 48시간 경과", "mitigation": "집중 수색 및 인력 확대" } ], "nextPhase": "M2" },
+      { "id": "M2", "name": "주변 인물 및 관계망 조사", "durationDays": 5, "scheduleOffset": 1, "budget": { "min": 800000, "recommended": 1200000, "max": 2000000 }, "phaseKPI": { "networkMapped": true, "leadsIdentified": true }, "deliverables": ["인맥 지도", "증언 기록", "행동 패턴 분석"], "tasks": [ { "taskId": "M2.1", "desc": "가족 및 친구 인터뷰", "competency": ["인터뷰"] }, { "taskId": "M2.2", "desc": "직장 동료 및 학교 관계자 면담", "competency": ["사회관계조사"] }, { "taskId": "M2.3", "desc": "최근 연락한 사람들 추적", "competency": ["통신조사"] }, { "taskId": "M2.4", "desc": "평소 행동 패턴 분석", "competency": ["행동분석"] } ], "risks": [ { "riskId": "MR2", "name": "증언 불일치", "severity": "M", "trigger": "상충되는 증언", "mitigation": "교차 검증 및 추가 확인" } ], "nextPhase": "M3" },
+      { "id": "M3", "name": "디지털 발자취 추적", "durationDays": 4, "scheduleOffset": 6, "budget": { "min": 600000, "recommended": 1000000, "max": 1500000 }, "phaseKPI": { "digitalTraceFound": true }, "deliverables": ["통화 기록 분석", "SNS 활동 내역", "카드 사용 기록"], "tasks": [ { "taskId": "M3.1", "desc": "휴대폰 통화 및 문자 기록 분석", "competency": ["디지털포렌식"] }, { "taskId": "M3.2", "desc": "SNS 계정 활동 추적", "competency": ["SNS조사"] }, { "taskId": "M3.3", "desc": "신용카드 사용 내역 확인", "competency": ["금융조사"] }, { "taskId": "M3.4", "desc": "CCTV 영상 분석", "competency": ["영상분석"] } ], "risks": [ { "riskId": "MR3", "name": "디지털 증거 부족", "severity": "M", "trigger": "디지털 활동 중단", "mitigation": "물리적 수색 강화" } ], "nextPhase": "M4" },
+      { "id": "M4", "name": "현장 수색 및 목격자 수소문", "durationDays": 10, "scheduleOffset": 10, "budget": { "min": 2000000, "recommended": 3000000, "max": 5000000 }, "phaseKPI": { "areaSearched": 0.8, "witnessesFound": 5 }, "deliverables": ["수색 지역 맵", "목격자 증언", "현장 증거"], "tasks": [ { "taskId": "M4.1", "desc": "최종 목격 지역 집중 수색", "competency": ["현장수색"] }, { "taskId": "M4.2", "desc": "주변 상가 및 주민 수소문", "competency": ["지역조사"] }, { "taskId": "M4.3", "desc": "대중교통 이용 기록 확인", "competency": ["교통조사"] }, { "taskId": "M4.4", "desc": "숙박업소 및 찜질방 확인", "competency": ["시설조사"] } ], "risks": [ { "riskId": "MR4", "name": "수색 지역 확대", "severity": "M", "trigger": "단서 부족", "mitigation": "수색 범위 체계적 확대" } ], "nextPhase": "M5" },
+      { "id": "M5", "name": "최종 확인 및 보고", "durationDays": 1, "scheduleOffset": 20, "budget": { "min": 200000, "recommended": 400000, "max": 600000 }, "phaseKPI": { "finalReportCompleted": true }, "deliverables": ["최종 수색 보고서", "발견 경위", "사후 조치 방안"], "tasks": [ { "taskId": "M5.1", "desc": "발견 시 안전 확인", "competency": ["안전확인"] }, { "taskId": "M5.2", "desc": "가족 연락 및 인계", "competency": ["가족상담"] }, { "taskId": "M5.3", "desc": "최종 보고서 작성", "competency": ["보고서작성"] } ], "risks": [ { "riskId": "MR5", "name": "미발견 지속", "severity": "H", "trigger": "수색 기간 종료", "mitigation": "장기 수색 계획 수립" } ], "nextPhase": null }
+    ]
+  },
+  "domesticTechExpo_Enterprise": {
+    "overview": {
+      "industry": "Technology Expo / Domestic",
+      "objective": "국내 기술 엑스포 참가 준비부터 현장 운영, 사후 영업까지 전 주기 운영을 완수한다.",
+      "totalDurationDays": 35,
+      "budget": { "currency": "KRW", "recommended": 150000000, "hardCap": 250000000 },
+      "overallKPI": {
+        "expoConfirmed": true,
+        "preRegistration": 800,
+        "sponsorSigned": 2,
+        "visitorCount": 5000,
+        "roiTarget": 1.3
+      },
+      "difficulty": "중간"
+    },
+    "phases": [
+      { "id": "D1", "name": "전시회 선정·목표 수립", "durationDays": 7, "scheduleOffset": 0, "budget": { "min": 3000000, "recommended": 8000000, "max": 15000000 }, "phaseKPI": { "expoConfirmed": true, "kpiApproved": true }, "deliverables": ["전시회 비교표", "목표 KPI 시트", "내부 승인서"], "tasks": [ { "taskId": "D1.1", "desc": "국내 주요 전시회(5개) 벤치마크", "competency": ["리서치"] }, { "taskId": "D1.2", "desc": "내부 KPI 워크숍(방문·리드·ROI)", "competency": ["워크숍퍼실"] }, { "taskId": "D1.3", "desc": "출품 제품·데모 범위 정의", "competency": ["제품기획"] }, { "taskId": "D1.4", "desc": "경영진 승인 프로세스 완료", "competency": ["의사결정지원"] }, { "taskId": "D1.5", "desc": "전시회 참가 신청·계약", "competency": ["계약관리"] } ], "risks": [ { "riskId": "DR1", "name": "부스 마감 임박", "severity": "H", "trigger": "계약 D-3 내 잔여 부스 <5%", "mitigation": "VIP 스폰서 패키지 업그레이드" } ], "nextPhase": "D2" },
+      { "id": "D2", "name": "스폰서·협찬·파트너 확보", "durationDays": 6, "scheduleOffset": 7, "budget": { "min": 5000000, "recommended": 15000000, "max": 30000000 }, "phaseKPI": { "sponsorSigned": 2, "mediaPartners": 3 }, "deliverables": ["국문 스폰서십 제안서", "협찬 계약 2건", "미디어 파트너 MOU"], "tasks": [ { "taskId": "D2.1", "desc": "업계 협회·미디어사 타깃팅", "competency": ["네트워킹"] }, { "taskId": "D2.2", "desc": "협찬 패키지(3단계) 설계", "competency": ["패키지기획"] }, { "taskId": "D2.3", "desc": "국문 계약서·저작권 검토", "competency": ["법무"] }, { "taskId": "D2.4", "desc": "파트너 온보딩(담당자 Kick‑off)", "competency": ["프로젝트관리"] }, { "taskId": "D2.5", "desc": "협찬사 로고·브랜드 가이드 수령", "competency": ["브랜딩"] } ], "risks": [ { "riskId": "DR2", "name": "협찬사 컨펌 지연", "severity": "M", "trigger": "D+5 무응답", "mitigation": "조건 완화·미디어 노출 추가" } ], "nextPhase": "D3" },
+      { "id": "D3", "name": "부스 디자인·물류(국내)", "durationDays": 10, "scheduleOffset": 13, "budget": { "min": 20000000, "recommended": 50000000, "max": 100000000 }, "phaseKPI": { "boothReady": "D-0 100%", "logisticsOTD": 0.98 }, "deliverables": ["부스 3D 시안", "설치 일정표", "보험증권"], "tasks": [ { "taskId": "D3.1", "desc": "국내 부스 시공사 선정·계약", "competency": ["조달","협상"] }, { "taskId": "D3.2", "desc": "3D 렌더링·목업 승인 회의", "competency": ["디자인"] }, { "taskId": "D3.3", "desc": "장비·샘플 내륙 운송 예약", "competency": ["물류"] }, { "taskId": "D3.4", "desc": "화재·배상 보험 가입", "competency": ["리스크관리"] }, { "taskId": "D3.5", "desc": "KT Wi‑Fi·전력 증설 신청", "competency": ["IT인프라"] } ], "risks": [ { "riskId": "DR3", "name": "부스 시공 지연", "severity": "H", "trigger": "시공 완료율 <80%(D-1)", "mitigation": "야간 작업·투입 인력 증원" }, { "riskId": "DR4", "name": "물류 파손", "severity": "M", "trigger": "장비 파손 신고", "mitigation": "보험 클레임·임대 장비" } ], "nextPhase": "D4" },
+      { "id": "D4", "name": "국내 홍보 & 초청 캠페인", "durationDays": 6, "scheduleOffset": 23, "budget": { "min": 10000000, "recommended": 25000000, "max": 50000000 }, "phaseKPI": { "preRegistration": 800, "mediaHits": 15 }, "deliverables": ["홍보 캠페인 대시보드", "초청 VIP 리스트", "세션 발표자료"], "tasks": [ { "taskId": "D4.1", "desc": "보도자료·기자간담회 준비", "competency": ["PR"] }, { "taskId": "D4.2", "desc": "산업단지·협회 DB로 EDM 발송", "competency": ["디지털마케팅"] }, { "taskId": "D4.3", "desc": "세미나 세션·연사 최종 확정", "competency": ["콘텐츠기획"] }, { "taskId": "D4.4", "desc": "간판·배너·사은품 발주", "competency": ["구매"] }, { "taskId": "D4.5", "desc": "VIP 고객 1:1 미팅 스케줄", "competency": ["영업기획"] } ], "risks": [ { "riskId": "DR5", "name": "사전등록 저조", "severity": "H", "trigger": "<50% 목표", "mitigation": "SNS 광고 집행·사은품 Upgrade" } ], "nextPhase": "D5" },
+      { "id": "D5", "name": "현장 운영", "durationDays": 3, "scheduleOffset": 29, "budget": { "min": 15000000, "recommended": 30000000, "max": 60000000 }, "phaseKPI": { "visitorCount": 5000, "meetingRate": 0.9 }, "deliverables": ["일일 운영 리포트", "KPI 대시보드", "이슈 로그"], "tasks": [ { "taskId": "D5.1", "desc": "스태프 교대표 & Briefing", "competency": ["리더십"] }, { "taskId": "D5.2", "desc": "리드 캡처 시스템(QR 스캔) 운영", "competency": ["IT운영"] }, { "taskId": "D5.3", "desc": "Live Demo·세션 진행", "competency": ["프레젠테이션"] }, { "taskId": "D5.4", "desc": "방문객 설문·NPS 수집", "competency": ["고객경험"] }, { "taskId": "D5.5", "desc": "현장 이슈 핫라인 운영", "competency": ["위기관리"] } ], "risks": [ { "riskId": "DR6", "name": "전력·인터넷 장애", "severity": "H", "trigger": "다운타임 >5분", "mitigation": "UPS·백업 LTE" } ], "nextPhase": "D6" },
+      { "id": "D6", "name": "사후 분석·영업 후속", "durationDays": 10, "scheduleOffset": 32, "budget": { "min": 5000000, "recommended": 12000000, "max": 20000000 }, "phaseKPI": { "leadConversion": 0.25, "followUpContracts": 5 }, "deliverables": ["ROI 보고", "전환 분석", "Lessons Learned"], "tasks": [ { "taskId": "D6.1", "desc": "CRM 업로드·리드 Scoring", "competency": ["CRM"] }, { "taskId": "D6.2", "desc": "NPS·피드백 분석", "competency": ["데이터분석"] }, { "taskId": "D6.3", "desc": "ROI 계산·경영진 발표", "competency": ["재무"] }, { "taskId": "D6.4", "desc": "후속 상담·견적서 발송", "competency": ["B2B영업"] }, { "taskId": "D6.5", "desc": "프로젝트 회고·개선안 도출", "competency": ["애자일"] } ], "risks": [ { "riskId": "DR7", "name": "리드 전환률 저조", "severity": "M", "trigger": "<20%", "mitigation": "리마케팅·프로모션 쿠폰" } ], "nextPhase": null }
+    ],
+    "spendTracking": { "categories": [ { "code": "K1", "name": "Expo Fees & Booth", "planned": 30000000, "actual": 0 }, { "code": "K2", "name": "Design & Build", "planned": 50000000, "actual": 0 }, { "code": "K3", "name": "Marketing & PR", "planned": 25000000, "actual": 0 }, { "code": "K4", "name": "Staff & Operations", "planned": 30000000, "actual": 0 }, { "code": "K5", "name": "Post‑Expo Sales", "planned": 12000000, "actual": 0 } ], "overall": { "plannedTotal": 150000000, "actualTotal": 0 } },
+    "raciMatrix": [ { "phaseId": "D1", "PM": "A", "Strategy": "R", "Marketing": "I", "Design": "I", "Logistics": "I", "Onsite": "I", "Sales": "I", "Legal": "C", "Finance": "C", "IT": "I" }, { "phaseId": "D2", "PM": "A", "Strategy": "I", "Marketing": "C", "Partnership": "R", "Design": "I", "Logistics": "I", "Sales": "I", "Legal": "C", "Finance": "C", "IT": "I" }, { "phaseId": "D3", "PM": "A", "Design": "R", "Logistics": "R", "Marketing": "I", "Onsite": "I", "Sales": "I", "Legal": "C", "Finance": "C", "IT": "C", "Strategy": "I" }, { "phaseId": "D4", "PM": "A", "Marketing": "R", "Partnership": "C", "Sales": "I", "Design": "I", "IT": "C", "Legal": "C", "Finance": "C", "Strategy": "I", "Onsite": "I" }, { "phaseId": "D5", "PM": "A", "Onsite": "R", "Sales": "C", "Marketing": "C", "Design": "I", "Logistics": "I", "IT": "R", "Legal": "C", "Finance": "C", "Strategy": "I" }, { "phaseId": "D6", "PM": "A", "Sales": "R", "Marketing": "C", "Strategy": "C", "Finance": "C", "Legal": "C", "IT": "I", "Onsite": "I", "Design": "I", "Logistics": "I" } ],
+    "scheduleTemplate": [ { "phaseId": "D1", "offsetDay": 0, "duration": 7 }, { "phaseId": "D2", "offsetDay": 7, "duration": 6 }, { "phaseId": "D3", "offsetDay": 13, "duration": 10 }, { "phaseId": "D4", "offsetDay": 23, "duration": 6 }, { "phaseId": "D5", "offsetDay": 29, "duration": 3 }, { "phaseId": "D6", "offsetDay": 32, "duration": 10 } ]
+  },
+  "snsProductLaunch_Enterprise": {
+    "overview": {
+      "industry": "Digital Marketing / Social Media",
+      "objective": "신제품(AI SaaS) 론칭 90일 내 SNS 리드 5,000건 확보 및 브랜드 인지도 40% 상승",
+      "totalDurationDays": 60,
+      "budget": { "currency": "KRW", "recommended": 80000000, "hardCap": 150000000 },
+      "overallKPI": {
+        "totalReach": 1000000,
+        "leadCaptured": 5000,
+        "cpl": 15000,
+        "engagementRate": 0.05,
+        "brandLift": 0.40
+      }
+    },
+    "phases": [
+      { "id": "S1", "name": "목표 설정·페르소나 분석", "durationDays": 8, "scheduleOffset": 0, "budget": { "min": 3000000, "recommended": 7000000, "max": 10000000 }, "phaseKPI": { "personaComplete": true, "goalApproved": true }, "deliverables": ["SNS KPI 시트","Audience Persona 4종","채널 우선순위표"], "tasks": [ { "taskId": "S1.1", "desc": "시장·경쟁사 SNS 벤치마크", "competency": ["소셜리서치"] }, { "taskId": "S1.2", "desc": "Audience Persona 워크숍", "competency": ["퍼실리테이션"] }, { "taskId": "S1.3", "desc": "KPI(Reach·Lead·CPL) 승인", "competency": ["데이터모델링"] }, { "taskId": "S1.4", "desc": "채널 우선순위(FB·IG·YT·LinkedIn)", "competency": ["채널전략"] }, { "taskId": "S1.5", "desc": "브랜드 톤&매너 가이드 확정", "competency": ["브랜딩"] } ], "risks": [ { "riskId": "SR1", "name": "페르소나 불명확", "severity": "M", "trigger": "워크숍 불참 >50%", "mitigation": "온라인 서베이 보완" } ], "nextPhase": "S2" },
+      { "id": "S2", "name": "콘텐츠 전략·프로덕션", "durationDays": 15, "scheduleOffset": 8, "budget": { "min": 15000000, "recommended": 30000000, "max": 60000000 }, "phaseKPI": { "contentReady": 20 }, "deliverables": ["콘텐츠 캘린더 60일","영상 6편","디자인 30컷"], "tasks": [ { "taskId": "S2.1", "desc": "콘텐츠 아이디어 발굴 세션", "competency": ["크리에이티브"] }, { "taskId": "S2.2", "desc": "60일 콘텐츠 캘린더 작성", "competency": ["에디토리얼계획"] }, { "taskId": "S2.3", "desc": "숏폼·롱폼 영상 촬영·편집", "competency": ["영상제작"] }, { "taskId": "S2.4", "desc": "디자인·카피라이팅 QA", "competency": ["브랜드QA"] }, { "taskId": "S2.5", "desc": "법무·심의 콘텐츠 검수", "competency": ["광고심의"] } ], "risks": [ { "riskId": "SR2", "name": "콘텐츠 제작 지연", "severity": "H", "trigger": "완료율 <50%(D-5)", "mitigation": "프리랜서 스튜디오 투입" } ], "nextPhase": "S3" },
+      { "id": "S3", "name": "매체 세팅·유료 광고 집행", "durationDays": 10, "scheduleOffset": 23, "budget": { "min": 20000000, "recommended": 30000000, "max": 50000000 }, "phaseKPI": { "campaignLive": true }, "deliverables": ["캠페인 구조·타깃 시트","픽셀·트래킹 태그 설치","미디어 플랜"], "tasks": [ { "taskId": "S3.1", "desc": "Ad Manager 계정 셋업", "competency": ["유료광고"] }, { "taskId": "S3.2", "desc": "픽셀·GA4·UTM 태그 설치", "competency": ["트래킹"] }, { "taskId": "S3.3", "desc": "캠페인 페이싱·예산 배분", "competency": ["미디어플래닝"] }, { "taskId": "S3.4", "desc": "A/B Creative 온보딩", "competency": ["실험설계"] }, { "taskId": "S3.5", "desc": "사전 QA(링크·카피·사진)", "competency": ["QA"] } ], "risks": [ { "riskId": "SR3", "name": "광고 계정 제한", "severity": "H", "trigger": "정책 경고", "mitigation": "백업 계정·카피 수정" } ], "nextPhase": "S4" },
+      { "id": "S4", "name": "론칭·실시간 모니터링", "durationDays": 12, "scheduleOffset": 33, "budget": { "min": 5000000, "recommended": 10000000, "max": 20000000 }, "phaseKPI": { "dailyCPL": 15000, "engagement": 0.05 }, "deliverables": ["실시간 대시보드","주간 최적화 리포트"], "tasks": [ { "taskId": "S4.1", "desc": "캠페인 Live 모니터링  (대시보드)", "competency": ["데이터시각화"] }, { "taskId": "S4.2", "desc": "CBO·타깃 최적화", "competency": ["광고최적화"] }, { "taskId": "S4.3", "desc": "크리에이티브 로테이션", "competency": ["콘텐츠관리"] }, { "taskId": "S4.4", "desc": "소셜 리스닝·댓글 대응", "competency": ["커뮤니티"] }, { "taskId": "S4.5", "desc": "일일 KPI 리뷰 스탠드업", "competency": ["애자일"] } ], "risks": [ { "riskId": "SR4", "name": "CPL 초과", "severity": "H", "trigger": "CPL > 20000", "mitigation": "타깃 축소·랜딩 개선" } ], "nextPhase": "S5" },
+      { "id": "S5", "name": "커뮤니티·인게이지먼트", "durationDays": 10, "scheduleOffset": 45, "budget": { "min": 3000000, "recommended": 8000000, "max": 15000000 }, "phaseKPI": { "communitySize": 10000, "csat": 4.5 }, "deliverables": ["FAQ 시트","UGC 캠페인 가이드","이벤트 리포트"], "tasks": [ { "taskId": "S5.1", "desc": "UGC 챌린지 기획·운영", "competency": ["캠페인기획"] }, { "taskId": "S5.2", "desc": "라이브 스트리밍 Q&A", "competency": ["라이브운영"] }, { "taskId": "S5.3", "desc": "고객 문의 SLA ≤ 2h", "competency": ["CS운영"] }, { "taskId": "S5.4", "desc": "팬덤 리워드 프로그램", "competency": ["멤버십"] }, { "taskId": "S5.5", "desc": "인게이지먼트 KPI 주간 리뷰", "competency": ["데이터분석"] } ], "risks": [ { "riskId": "SR5", "name": "부정적 댓글 급증", "severity": "M", "trigger": "부정율 >10%", "mitigation": "FAQ 업데이트·상세 피드백" } ], "nextPhase": "S6" },
+      { "id": "S6", "name": "성과 분석·최적화", "durationDays": 8, "scheduleOffset": 55, "budget": { "min": 2000000, "recommended": 5000000, "max": 10000000 }, "phaseKPI": { "leadToTrialRate": 0.15, "brandLift": 0.4 }, "deliverables": ["최종 캠페인 리포트","크리에이티브 인사이트","다음 분기 계획"], "tasks": [ { "taskId": "S6.1", "desc": "채널별 퍼널 분석", "competency": ["GA4","SQL"] }, { "taskId": "S6.2", "desc": "크리에이티브 성과 베스트·워스트", "competency": ["A/B분석"] }, { "taskId": "S6.3", "desc": "브랜드 리프트 서베이 후처리", "competency": ["리서치"] }, { "taskId": "S6.4", "desc": "예산 효율·CPL 보고", "competency": ["재무"] }, { "taskId": "S6.5", "desc": "다음 캠페인 로드맵 제안", "competency": ["전략기획"] } ], "risks": [ { "riskId": "SR6", "name": "데이터 추적 누락", "severity": "H", "trigger": "Missing UTM >5%", "mitigation": "서버로그·모델링 보정" } ], "nextPhase": null }
+    ],
+    "spendTracking": { "categories": [ { "code": "P1", "name": "Research & Planning", "planned": 7000000, "actual": 0 }, { "code": "P2", "name": "Content Production", "planned": 30000000, "actual": 0 }, { "code": "P3", "name": "Paid Media", "planned": 30000000, "actual": 0 }, { "code": "P4", "name": "Monitoring & Tools", "planned": 10000000, "actual": 0 }, { "code": "P5", "name": "Community Ops", "planned": 8000000, "actual": 0 }, { "code": "P6", "name": "Analysis/Reporting", "planned": 5000000, "actual": 0 } ], "overall": { "plannedTotal": 80000000, "actualTotal": 0 } },
+    "raciMatrix": [ { "phaseId": "S1", "PM": "A", "Strategy": "R", "Content": "I", "Media": "I", "Design": "C", "Data": "C", "Legal": "C", "Sales": "I", "CS": "I", "Finance": "C" }, { "phaseId": "S2", "PM": "A", "Content": "R", "Design": "R", "Strategy": "C", "Media": "C", "Legal": "C", "Data": "I", "Sales": "I", "CS": "I", "Finance": "C" }, { "phaseId": "S3", "PM": "A", "Media": "R", "Data": "C", "Content": "C", "Design": "C", "Legal": "C", "Finance": "C", "Strategy": "I", "Sales": "I", "CS": "I" }, { "phaseId": "S4", "PM": "A", "Media": "R", "Data": "R", "Content": "C", "CS": "C", "Sales": "I", "Strategy": "I", "Design": "I", "Finance": "C", "Legal": "C" }, { "phaseId": "S5", "PM": "A", "CS": "R", "Community": "R", "Content": "C", "Media": "C", "Sales": "I", "Data": "C", "Legal": "C", "Finance": "C", "Design": "I" }, { "phaseId": "S6", "PM": "A", "Data": "R", "Strategy": "R", "Media": "C", "Content": "C", "Design": "I", "Sales": "C", "Finance": "C", "Legal": "C", "CS": "I" } ],
+    "scheduleTemplate": [ { "phaseId": "S1", "offsetDay": 0, "duration": 8 }, { "phaseId": "S2", "offsetDay": 8, "duration": 15 }, { "phaseId": "S3", "offsetDay": 23, "duration": 10 }, { "phaseId": "S4", "offsetDay": 33, "duration": 12 }, { "phaseId": "S5", "offsetDay": 45, "duration": 10 }, { "phaseId": "S6", "offsetDay": 55, "duration": 8 } ],
+    "toolStack": ["GA4","Meta Ads Manager","Google Data Studio","Slack","Trello","Figma","Sprout Social"]
+  },
+  "overseasTechExpo_Enterprise": {
+    "overview": {
+      "industry": "Technology Marketing / B2B Expo",
+      "objective": "5일간의 해외 기술 엑스포를 통해 신제품 글로벌 론칭, 파트너·투자자 발굴, 브랜드 인지도 30% 향상을 달성한다.",
+      "totalDurationDays": 56,
+      "budget": {
+        "currency": "KRW",
+        "recommended": 250000000,
+        "hardCap": 500000000
+      },
+      "overallKPI": {
+        "visitorCount": 1000,
+        "b2bMeetings": 30,
+        "leadConversionRate": 0.20,
+        "participantSatisfaction": 4.0,
+        "overallROI": 1.5
+      }
+    },
+    "difficulty": "어려움",
+    "phases": [
+      {
+        "id": "P1",
+        "name": "시장 타당성·목표 설정",
+        "durationDays": 14,
+        "scheduleOffset": 0,
+        "budget": { "min": 5000000, "recommended": 15000000, "max": 30000000 },
+        "phaseKPI": { "decisionReadyScore": 0.9 },
+        "deliverables": [
+          "시장 타당성 분석보고서",
+          "목표 KPI 시트(방문·미팅·ROI)",
+          "경쟁사 SWOT",
+          "관람객 페르소나",
+          "비자·통관 체크리스트"
+        ],
+        "tasks": [
+          { "taskId": "P1.1", "desc": "후보 국가·도시 3곳 선정 및 점수화", "competency": ["시장조사","데이터분석"] },
+          { "taskId": "P1.2", "desc": "현지 엑스포 벤치마킹(규모·비용·참가자 구성)", "competency": ["벤치마킹"] },
+          { "taskId": "P1.3", "desc": "타깃 관람객 페르소나 3종 정의", "competency": ["세분화","UX리서치"] },
+          { "taskId": "P1.4", "desc": "KPI·ROI 목표 설정 워크숍", "competency": ["재무모델링","워크숍 퍼실리테이션"] },
+          { "taskId": "P1.5", "desc": "비자·통관·현지 규제 조사", "competency": ["국제법무"] }
+        ],
+        "risks": [
+          { "riskId": "R1", "name": "비자 지연", "severity": "H", "trigger": "D-40 미발급", "mitigation": "전자비자·대행사 계약" },
+          { "riskId": "R2", "name": "데이터 부족", "severity": "M", "trigger": "데이터 커버리지 <80%", "mitigation": "현지 기관 인터뷰" }
+        ],
+        "nextPhase": "P2"
+      },
+      {
+        "id": "P2",
+        "name": "스폰서·파트너십 확보",
+        "durationDays": 10,
+        "scheduleOffset": 14,
+        "budget": { "min": 10000000, "recommended": 30000000, "max": 60000000 },
+        "phaseKPI": { "sponsorSigned": 3, "servicePartners": 2 },
+        "deliverables": [
+          "영문 스폰서십 제안서",
+          "계약서(스폰서 3건)",
+          "물류·통역 파트너 계약서"
+        ],
+        "tasks": [
+          { "taskId": "P2.1", "desc": "스폰서 후보 10곳 파이프라인 구축", "competency": ["B2B영업","CRM"] },
+          { "taskId": "P2.2", "desc": "스폰서 패키지 4티어 가격책정", "competency": ["패키지기획","가격전략"] },
+          { "taskId": "P2.3", "desc": "법무 검토 후 계약서 마무리", "competency": ["계약법","영문계약"] },
+          { "taskId": "P2.4", "desc": "물류/통역 RFQ·선정", "competency": ["조달","협상"] },
+          { "taskId": "P2.5", "desc": "환율 변동성 모니터링·헤지", "competency": ["재무리스크"] }
+        ],
+        "risks": [
+          { "riskId": "R3", "name": "스폰서 취소", "severity": "H", "trigger": "계약 전환율 <30%", "mitigation": "대기리스트·단가 할인" },
+          { "riskId": "R4", "name": "환율 폭등", "severity": "M", "trigger": ">±5%", "mitigation": "선물환·옵션" }
+        ],
+        "nextPhase": "P3"
+      },
+      {
+        "id": "P3",
+        "name": "부스 디자인·로지스틱스",
+        "durationDays": 14,
+        "scheduleOffset": 24,
+        "budget": { "min": 30000000, "recommended": 80000000, "max": 150000000 },
+        "phaseKPI": { "logisticsOTD": 0.95, "boothReady": "D-1 100%" },
+        "deliverables": ["3D CAD 도면","운송 스케줄","통관·보험 서류"],
+        "tasks": [
+          { "taskId": "P3.1", "desc": "3D 렌더링·브랜드 가이드 승인", "competency": ["CAD","브랜딩"] },
+          { "taskId": "P3.2", "desc": "장비·샘플 운송 예약(Incoterms DAP)", "competency": ["국제물류"] },
+          { "taskId": "P3.3", "desc": "통관·보험·세관 코드 확인", "competency": ["통관"] },
+          { "taskId": "P3.4", "desc": "현지 전력·네트워크 테스트 플랜", "competency": ["IT인프라"] },
+          { "taskId": "P3.5", "desc": "예비장비·임대 계약 옵션 확보", "competency": ["리스크헤지"] }
+        ],
+        "risks": [
+          { "riskId": "R5", "name": "항공화물 지연", "severity": "H", "trigger": "ETA 지연 >2일", "mitigation": "긴급 특송·현지 임대" },
+          { "riskId": "R6", "name": "전력 규격 불일치", "severity": "M", "trigger": "현지 사양 상이", "mitigation": "변압기·UPS 준비" }
+        ],
+        "nextPhase": "P4"
+      },
+      {
+        "id": "P4",
+        "name": "마케팅·프로모션",
+        "durationDays": 7,
+        "scheduleOffset": 38,
+        "budget": { "min": 20000000, "recommended": 50000000, "max": 100000000 },
+        "phaseKPI": { "socialReach": 50000, "mediaCoverage": 10 },
+        "deliverables": ["캠페인 대시보드","언론·인플루언서 리스트","이벤트 매뉴얼"],
+        "tasks": [
+          { "taskId": "P4.1", "desc": "SNS·SEM 캠페인 집행", "competency": ["디지털광고"] },
+          { "taskId": "P4.2", "desc": "언론 키트·보도자료 배포", "competency": ["PR"] },
+          { "taskId": "P4.3", "desc": "인플루언서 계약·콘텐츠 검수", "competency": ["인플루언서 마케팅","계약관리"] },
+          { "taskId": "P4.4", "desc": "현장 이벤트(시연·경품) 설계", "competency": ["이벤트기획"] },
+          { "taskId": "P4.5", "desc": "광고 규제·법무 컴플라이언스 검수", "competency": ["광고법","법무"] }
+        ],
+        "risks": [
+          { "riskId": "R7", "name": "광고 규제 위반", "severity": "H", "trigger": "경고 통보", "mitigation": "콘텐츠 즉시 수정·중단" },
+          { "riskId": "R8", "name": "인플루언서 노쇼", "severity": "M", "trigger": "콘텐츠 미제출", "mitigation": "대체 인플루언서, SNS 광고 전환" }
+        ],
+        "nextPhase": "P5"
+      },
+      {
+        "id": "P5",
+        "name": "현장 운영·모니터링",
+        "durationDays": 5,
+        "scheduleOffset": 45,
+        "budget": { "min": 15000000, "recommended": 40000000, "max": 80000000 },
+        "phaseKPI": { "visitorAchvRate": 0.90, "satisfaction": 4.0 },
+        "deliverables": ["일일 운영 리포트","실시간 KPI 대시보드","이슈 로그"],
+        "tasks": [
+          { "taskId": "P5.1", "desc": "스태프 교대표 실행·점검", "competency": ["리더십"] },
+          { "taskId": "P5.2", "desc": "방문객·미팅 실시간 집계", "competency": ["데이터시각화"] },
+          { "taskId": "P5.3", "desc": "현장 이슈(전력·인터넷) 대응", "competency": ["위기대응"] },
+          { "taskId": "P5.4", "desc": "고객 피드백 즉시 반영", "competency": ["고객서비스"] },
+          { "taskId": "P5.5", "desc": "일일 스탠드업·리스크 리뷰", "competency": ["애자일"] }
+        ],
+        "risks": [
+          { "riskId": "R9", "name": "스태프 과로", "severity": "H", "trigger": "연속근무 >8h", "mitigation": "현장 교대 인력 투입" },
+          { "riskId": "R10", "name": "네트워크 장애", "severity": "M", "trigger": "다운타임 >5min", "mitigation": "5G 핫스팟·백업 ISP" }
+        ],
+        "nextPhase": "P6"
+      },
+      {
+        "id": "P6",
+        "name": "사후 평가·후속 영업",
+        "durationDays": 7,
+        "scheduleOffset": 50,
+        "budget": { "min": 5000000, "recommended": 20000000, "max": 40000000 },
+        "phaseKPI": { "leadConversion": 0.20, "followUpContracts": 3 },
+        "deliverables": ["ROI 보고","리드 전환 분석","후속 계약 일정"],
+        "tasks": [
+          { "taskId": "P6.1", "desc": "리드 DB 정제·CRM 업로드", "competency": ["CRM"] },
+          { "taskId": "P6.2", "desc": "피드백 설문 분석·NPS 산출", "competency": ["리서치"] },
+          { "taskId": "P6.3", "desc": "ROI 계산·경영진 보고서 작성", "competency": ["재무분석"] },
+          { "taskId": "P6.4", "desc": "후속 미팅·계약 파이프라인 설정", "competency": ["B2B영업"] },
+          { "taskId": "P6.5", "desc": "Lessons Learned 워크숍", "competency": ["지식관리"] }
+        ],
+        "risks": [
+          { "riskId": "R11", "name": "응답률 <20%", "severity": "M", "trigger": "D+3 응답률 <20%", "mitigation": "인센티브 + 리마인더" },
+          { "riskId": "R12", "name": "GDPR 위반", "severity": "H", "trigger": "법무 이슈 발생", "mitigation": "데이터 마스킹·법무 보고" }
+        ],
+        "nextPhase": null
+      }
+    ],
+    "spendTracking": {
+      "categories": [
+        { "code": "01", "name": "Market Research", "planned": 15000000, "actual": 0 },
+        { "code": "02", "name": "Sponsorship & Legal", "planned": 30000000, "actual": 0 },
+        { "code": "03", "name": "Design & Logistics", "planned": 80000000, "actual": 0 },
+        { "code": "04", "name": "Marketing & PR", "planned": 50000000, "actual": 0 },
+        { "code": "05", "name": "Operations (On‑site)", "planned": 40000000, "actual": 0 },
+        { "code": "06", "name": "Post‑Expo Sales", "planned": 20000000, "actual": 0 }
+      ],
+      "overall": { "plannedTotal": 250000000, "actualTotal": 0 }
+    },
+    "raciMatrix": [
+      { "phaseId": "P1", "PM": "A", "Strategy": "R", "Partnership": "I", "Marketing": "I", "Design": "I", "Logistics": "I", "Onsite": "I", "Sales": "I", "Legal": "C", "Finance": "C" },
+      { "phaseId": "P2", "PM": "A", "Strategy": "C", "Partnership": "R", "Marketing": "I", "Design": "I", "Logistics": "I", "Onsite": "I", "Sales": "I", "Legal": "C", "Finance": "C" },
+      { "phaseId": "P3", "PM": "A", "Strategy": "I", "Partnership": "C", "Marketing": "I", "Design": "R", "Logistics": "R", "Onsite": "I", "Sales": "I", "Legal": "C", "Finance": "C" },
+      { "phaseId": "P4", "PM": "A", "Strategy": "I", "Partnership": "C", "Marketing": "R", "Design": "I", "Logistics": "I", "Onsite": "I", "Sales": "I", "Legal": "C", "Finance": "C" },
+      { "phaseId": "P5", "PM": "A", "Strategy": "I", "Partnership": "I", "Marketing": "I", "Design": "I", "Logistics": "I", "Onsite": "R", "Sales": "I", "Legal": "C", "Finance": "C" },
+      { "phaseId": "P6", "PM": "A", "Strategy": "I", "Partnership": "I", "Marketing": "I", "Design": "I", "Logistics": "I", "Onsite": "I", "Sales": "R", "Legal": "C", "Finance": "C" }
+    ],
+    "scheduleTemplate": [
+      { "phaseId": "P1", "offsetDay": 0,  "duration": 14 },
+      { "phaseId": "P2", "offsetDay": 14, "duration": 10 },
+      { "phaseId": "P3", "offsetDay": 24, "duration": 14 },
+      { "phaseId": "P4", "offsetDay": 38, "duration": 7  },
+      { "phaseId": "P5", "offsetDay": 45, "duration": 5  },
+      { "phaseId": "P6", "offsetDay": 50, "duration": 7  }
+    ],
+    "qualityManagementPlan": {
+      "gates": [
+        { "name": "Gate 1 – 시장조사 승인", "owner": "QA Lead", "input": ["시장 타당성 보고"], "criteria": "결정준비점수 ≥0.9" },
+        { "name": "Gate 2 – 계약 검토", "owner": "Legal Lead", "input": ["계약서 초안"], "criteria": "리스크 Clause 0건" },
+        { "name": "Gate 3 – 부스 Mock‑Up", "owner": "Design Lead", "input": ["3D CAD"], "criteria": "브랜드 가이드 100% 준수" }
+      ]
+    },
+    "communicationPlan": [
+      { "stakeholder": "CEO", "interest": "ROI 달성", "influence": "High", "frequency": "격주", "channel": "Email/Review" },
+      { "stakeholder": "Sponsors", "interest": "브랜드 노출", "influence": "Med", "frequency": "월간", "channel": "Newsletter" },
+      { "stakeholder": "On‑site Staff", "interest": "운영 지침", "influence": "Low", "frequency": "Daily", "channel": "WhatsApp" }
+    ],
+    "toolStack": ["FastAPI","Streamlit","Chart.js","Mermaid","Jira","Slack","Google Workspace"]
+  }
+}
