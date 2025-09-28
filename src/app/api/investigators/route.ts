@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrismaClient } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 
 export async function GET(req: NextRequest) {
   console.log('[API] GET /api/investigators - Request received');
   
   try {
 
-    const { searchParams } = new URL(req.url);
+    const searchParams = req.nextUrl.searchParams;
     const status = searchParams.get('status');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
@@ -18,7 +20,7 @@ export async function GET(req: NextRequest) {
     const prisma = await getPrismaClient();
     console.log('[API] Prisma client obtained successfully');
     
-    const where = status ? { status: status as any } : {};
+    const where = status ? { status: status as 'PENDING' | 'APPROVED' | 'REJECTED' } : {};
     console.log('[API] Where clause:', where);
     
     console.log('[API] Executing database queries...');
