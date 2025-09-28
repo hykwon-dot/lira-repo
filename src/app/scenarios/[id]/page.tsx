@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import ScenarioPlaybook from './ScenarioPlaybook';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import type { ScenarioWithDetails } from './types';
 
 interface ScenarioDetailPageProps {
@@ -13,6 +13,7 @@ async function getScenarioDetails(id: string): Promise<ScenarioWithDetails | nul
     return null;
   }
 
+  const prisma = await getPrismaClient();
   const scenario = await prisma.scenario.findUnique({
     where: { id: numericId },
     include: {

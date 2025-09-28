@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
+import { validateEnvironment, getEnvironmentInfo } from "@/lib/env-check";
 
 function extractDatabaseTarget(url: string | undefined) {
   if (!url) {
@@ -19,8 +20,28 @@ function extractDatabaseTarget(url: string | undefined) {
 export async function GET() {
   const startedAt = Date.now();
   const target = extractDatabaseTarget(process.env.DATABASE_URL);
+  const envValid = validateEnvironment();
+  const envInfo = getEnvironmentInfo();
+
+  if (!envValid) {
+    return NextResponse.json(
+      {
+        status: "error",
+        elapsedMs: Date.now() - startedAt,
+        environment: envInfo,
+        checks: {
+          environment: {
+            valid: false,
+            error: "Missing required environment variables"
+          }
+        },
+      },
+      { status: 500 }
+    );
+  }
 
   try {
+    const prisma = await getPrismaClient();
     const [versionRows, requestCount, investigatorCount] = await Promise.all([
       prisma.$queryRaw<Array<Record<string, unknown>>>`
         SELECT VERSION() AS version
@@ -54,6 +75,14 @@ export async function GET() {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    
+    console.error("[DEPLOYMENT_HEALTH] Database connection failed:", {
+      message,
+      stack,
+      databaseUrl: target.hasUrl ? `${target.host}/${target.database}` : "not configured"
+    });
+    
     return NextResponse.json(
       {
         status: "error",
@@ -68,12 +97,11 @@ export async function GET() {
           database: {
             reachable: false,
             error: message,
+            stack: process.env.NODE_ENV === "development" ? stack : undefined,
           },
         },
       },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

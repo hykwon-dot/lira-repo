@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +25,8 @@ export async function GET(req: NextRequest) {
     }
 
     // 각 키워드에 대해 제목, 설명에서 검색을 수행합니다.
-    const scenarios = await prisma.scenario.findMany({
+  const prisma = await getPrismaClient();
+  const scenarios = await prisma.scenario.findMany({
       where: {
         OR: keywords.map(keyword => ({
           OR: [

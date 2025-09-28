@@ -1,6 +1,6 @@
 import type { InvestigationRequestSummary, CaseTimelineEntry } from "@/types/investigation";
 import type { Role } from "@/lib/rbac";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 
 export const REQUEST_STATUSES = [
   "MATCHING",
@@ -271,6 +271,7 @@ export async function ensureScenarioExists(id: number) {
   if (!Number.isInteger(id)) {
     throw new Error("INVALID_SCENARIO_ID");
   }
+  const prisma = await getPrismaClient();
   const exists = await prisma.scenario.count({ where: { id } });
   if (!exists) {
     throw new Error("SCENARIO_NOT_FOUND");

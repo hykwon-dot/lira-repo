@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { InvestigatorStatus } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { requireCapability } from "@/lib/authz";
 import type { Role } from "@/lib/rbac";
 import {
@@ -84,6 +84,7 @@ export async function GET(req: NextRequest) {
     where.userId = user.id;
   }
 
+  const prisma = await getPrismaClient();
   const requests = (await prisma.investigationRequest.findMany({
     where: where as never,
     orderBy: { createdAt: "desc" },
@@ -140,6 +141,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "INVALID_INVESTIGATOR_ID" }, { status: 400 });
   }
 
+  const prisma = await getPrismaClient();
   const investigatorProfile = await prisma.investigatorProfile.findUnique({
     where: { id: investigatorId },
     include: {

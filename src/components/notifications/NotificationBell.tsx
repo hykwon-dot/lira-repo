@@ -52,7 +52,7 @@ export function NotificationBell() {
   const unreadIds = useMemo(() => notifications.filter((item) => !item.readAt).map((item) => item.id), [notifications]);
 
   const fetchNotifications = useCallback(async (showLoader = false) => {
-    if (!token) return;
+    if (!token || typeof window === "undefined") return;
     if (showLoader) setLoading(true);
     try {
       const res = await fetch(`/api/notifications?limit=12`, {
@@ -62,21 +62,24 @@ export function NotificationBell() {
         cache: "no-store",
       });
       if (!res.ok) {
-        console.error("Failed to fetch notifications", await res.text());
+        console.error("Failed to fetch notifications", res.status, res.statusText);
         return;
       }
       const data = (await res.json()) as NotificationListResponse;
-      setNotifications(data.notifications);
-      setUnreadCount(data.unreadCount);
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unreadCount || 0);
     } catch (error) {
-      console.error(error);
+      console.error("Notification fetch error:", error);
+      // 에러 발생 시 빈 상태로 설정
+      setNotifications([]);
+      setUnreadCount(0);
     } finally {
       if (showLoader) setLoading(false);
     }
   }, [token]);
 
   const markAsRead = useCallback(async (ids?: number[]) => {
-    if (!token) return;
+    if (!token || typeof window === "undefined") return;
     const body: Record<string, unknown> = {};
     if (ids && ids.length > 0) {
       body.ids = ids;
@@ -94,7 +97,7 @@ export function NotificationBell() {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        console.error("Failed to mark notifications", await res.text());
+        console.error("Failed to mark notifications", res.status, res.statusText);
         return;
       }
       const nowIso = new Date().toISOString();
@@ -105,7 +108,7 @@ export function NotificationBell() {
       );
       setUnreadCount(0);
     } catch (error) {
-      console.error(error);
+      console.error("Mark as read error:", error);
     } finally {
       setMarking(false);
     }

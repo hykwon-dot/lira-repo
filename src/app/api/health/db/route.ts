@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 
 export async function GET() {
   const start = Date.now();
   try {
+    const prisma = await getPrismaClient();
     await prisma.$queryRaw`SELECT 1`;
     return NextResponse.json({ status: 'ok', latencyMs: Date.now() - start });
   } catch (error) {

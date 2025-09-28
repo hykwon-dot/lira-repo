@@ -5,6 +5,7 @@ import { useUserStore, User } from "@/lib/userStore";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function Header() {
   const { user, logout } = useUserStore();
@@ -43,7 +44,11 @@ export default function Header() {
           </Link>
         </div>
         <div className="flex items-center gap-4">
-          {loggedInUser && <NotificationBell />}
+          {loggedInUser && (
+            <ErrorBoundary>
+              <NotificationBell />
+            </ErrorBoundary>
+          )}
           {loggedInUser ? (
             <div className="flex items-center gap-3">
               <span className="hidden text-sm text-slate-600 md:block">안녕하세요, {loggedInUser.name}님</span>

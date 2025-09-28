@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/authz';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { InvestigatorStatus } from '@prisma/client';
 import type { Prisma, User, InvestigatorProfile } from '@prisma/client';
 import path from 'path';
@@ -95,6 +95,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { user } = auth;
+  const prisma = await getPrismaClient();
 
   if (user.role === 'INVESTIGATOR') {
     const profile = await prisma.investigatorProfile.findUnique({
@@ -270,6 +271,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const { user } = auth;
+  const prisma = await getPrismaClient();
   const contentType = req.headers.get('content-type') ?? '';
   const isMultipart = contentType.includes('multipart/form-data');
   let jsonPayload: unknown = null;

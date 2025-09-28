@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { requireCapability } from "@/lib/authz";
 import type { Role } from "@/lib/rbac";
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     },
   } as const;
 
+  const prisma = await getPrismaClient();
   const requestRecord = await prisma.investigationRequest.findUnique({
     where: { id: requestId },
     include: REQUEST_INCLUDE,

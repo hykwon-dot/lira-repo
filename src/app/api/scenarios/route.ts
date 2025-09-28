@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 
 // GET /api/scenarios : 활성 시나리오 목록
 export async function GET() {
   try {
-    const items = await prisma.scenario.findMany({
+  const prisma = await getPrismaClient();
+  const items = await prisma.scenario.findMany({
       orderBy: { createdAt: 'desc' },
       take: 100
     });

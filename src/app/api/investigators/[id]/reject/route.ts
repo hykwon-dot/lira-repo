@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { requireCapability } from '@/lib/authz';
 import { recordAuditEvent } from '@/lib/audit';
 import { InvestigatorStatus } from '@prisma/client';
@@ -35,6 +35,7 @@ export async function POST(
     return NextResponse.json({ error: 'NOTE_REQUIRED' }, { status: 400 });
   }
 
+  const prisma = await getPrismaClient();
   const profile = await prisma.investigatorProfile.findUnique({
     where: { id: investigatorId },
     include: { user: true },

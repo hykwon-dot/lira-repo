@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { InvestigatorStatus, Prisma } from "@prisma/client";
 import { Metadata } from "next";
 import { Star } from "lucide-react";
@@ -90,15 +90,29 @@ function formatSpecialties(specialties: unknown): string[] {
 }
 
 export default async function InvestigatorsPage() {
-  const rawInvestigators: InvestigatorWithUser[] = await prisma.investigatorProfile.findMany({
-    where: {
-      status: InvestigatorStatus.APPROVED,
-    },
-    include: {
-      user: true,
-    },
-    orderBy: [{ createdAt: "desc" }],
-  });
+  let rawInvestigators: InvestigatorWithUser[] = [];
+  let hasError = false;
+  let errorMessage = '';
+  
+  try {
+    const prisma = await getPrismaClient();
+    rawInvestigators = await prisma.investigatorProfile.findMany({
+      where: {
+        status: InvestigatorStatus.APPROVED,
+      },
+      include: {
+        user: true,
+      },
+      orderBy: [{ createdAt: "desc" }],
+    });
+  } catch (error) {
+    console.error('Failed to fetch investigators:', error);
+    hasError = true;
+    errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    rawInvestigators = [];
+  }
+  
+  // 에러가 발생했지만 페이지를 렌더링하도록 계속 진행
 
   const investigators: InvestigatorRecord[] = (rawInvestigators as Array<
     InvestigatorWithUser & {
@@ -225,7 +239,19 @@ export default async function InvestigatorsPage() {
             </p>
           </div>
 
-          {investigators.length === 0 ? (
+          {hasError ? (
+            <div className="rounded-[32px] border border-red-200 bg-red-50/80 p-14 text-center">
+              <h3 className="text-lg font-semibold text-red-800 mb-2">데이터를 불러올 수 없습니다</h3>
+              <p className="text-sm text-red-600 mb-4">
+                데이터베이스 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.
+              </p>
+              {process.env.NODE_ENV === 'development' && (
+                <p className="text-xs text-red-500 font-mono bg-red-100 p-2 rounded">
+                  {errorMessage}
+                </p>
+              )}
+            </div>
+          ) : investigators.length === 0 ? (
             <div className="rounded-[32px] border border-dashed border-slate-200 bg-white/80 p-14 text-center text-sm text-slate-500">
               아직 승인 완료된 민간조사원이 없습니다. 등록 심사를 통과하면 이곳에 노출됩니다.
             </div>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 
 export async function GET(
   req: NextRequest,
@@ -12,6 +12,7 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid scenario ID' }, { status: 400 });
     }
 
+    const prisma = await getPrismaClient();
     const scenario = await prisma.scenario.findUnique({
       where: { id: scenarioId },
       include: {

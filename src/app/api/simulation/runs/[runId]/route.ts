@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { getSimulationRunDelegate, requireAuthUser } from '../utils';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -28,7 +28,8 @@ export async function GET(req: NextRequest, context: RouteContext) {
   }
 
   try {
-    const run = await getSimulationRunDelegate().findFirst({
+    const delegate = await getSimulationRunDelegate();
+    const run = await delegate.findFirst({
       where: {
         id: runId,
         userId: auth.user.id,
@@ -76,7 +77,8 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
   }
 
   try {
-    const delegate = getSimulationRunDelegate();
+    const prisma = await getPrismaClient();
+    const delegate = await getSimulationRunDelegate();
 
     const existing = await delegate.findFirst({
       where: {
@@ -107,7 +109,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       if (body.currentPhaseId === null) {
         data.currentPhaseId = null;
       } else if (typeof body.currentPhaseId === 'number') {
-        const phase = await prisma.phase.findFirst({
+  const phase = await prisma.phase.findFirst({
           where: {
             id: body.currentPhaseId,
             scenarioId: existing.scenarioId,

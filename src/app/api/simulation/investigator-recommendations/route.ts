@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { InvestigatorStatus } from "@prisma/client";
 
 function toStringArray(value: unknown): string[] {
@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
       .map((keyword) => (typeof keyword === "string" ? keyword.trim().toLowerCase() : ""))
       .filter((keyword): keyword is string => keyword.length > 0);
 
-    const investigators = await prisma.investigatorProfile.findMany({
+  const prisma = await getPrismaClient();
+  const investigators = await prisma.investigatorProfile.findMany({
       where: {
         status: InvestigatorStatus.APPROVED,
       },

@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import ScenarioLibrary from './ScenarioLibrary';
 import type { Scenario, Phase } from '@prisma/client';
 
@@ -15,6 +15,7 @@ interface ProcessedScenario {
 
 async function getScenarios(): Promise<ProcessedScenario[]> {
   console.log('[PAGE] getScenarios 함수 호출됨');
+  const prisma = await getPrismaClient();
   const scenarios = await prisma.scenario.findMany({
     include: {
       phases: true,

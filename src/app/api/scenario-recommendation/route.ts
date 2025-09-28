@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import stringSimilarity from 'string-similarity';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: '검색어가 필요합니다.' }, { status: 400 });
     }
 
-    const scenarios: ScenarioRec[] = await prisma.scenario.findMany({
+  const prisma = await getPrismaClient();
+  const scenarios: ScenarioRec[] = await prisma.scenario.findMany({
       select: { id: true, title: true, description: true, image: true }
     });
 

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
-import type { Conversation, Message } from '@prisma/client';
-import { MessageRole } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
+import { MessageRole, type Conversation, type Message, type PrismaClient } from '@prisma/client';
+import { getPrismaClient } from '@/lib/prisma';
 
 function parseUserId(raw: unknown) {
   const value = Number(raw);
@@ -17,11 +16,11 @@ function sanitizeContent(value: unknown) {
   return value.trim();
 }
 
-async function resolveConversationByExternalId(externalId: string | null | undefined) {
+async function resolveConversationByExternalId(prismaClient: PrismaClient, externalId: string | null | undefined) {
   if (!externalId) return null;
   const cleaned = externalId.trim();
   if (!cleaned) return null;
-  return prisma.conversation.findUnique({ where: { externalId: cleaned } });
+  return prismaClient.conversation.findUnique({ where: { externalId: cleaned } });
 }
 
 type ConversationWithMessages = Conversation & { messages?: Message[] };
@@ -54,7 +53,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '내용이 필요합니다' }, { status: 400 });
     }
 
-    let conversation = await resolveConversationByExternalId(requestedExternalId);
+    const prisma = await getPrismaClient();
+
+    let conversation = await resolveConversationByExternalId(prisma, requestedExternalId);
     if (conversation && conversation.userId !== userId) {
       return NextResponse.json({ error: '해당 대화에 접근할 수 없습니다' }, { status: 403 });
     }
@@ -114,6 +115,7 @@ export async function GET(req: NextRequest) {
     }
 
     const userId = parseUserId(rawUserId);
+    const prisma = await getPrismaClient();
 
     if (externalId) {
       const conversation = await prisma.conversation.findFirst({

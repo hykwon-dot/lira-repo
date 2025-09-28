@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import type { Scenario, Phase, Task, Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 
@@ -17,6 +17,7 @@ export type PhaseWithTasks = Phase & {
 
 export async function getScenario(id: string): Promise<ScenarioWithPhases | null> {
   try {
+    const prisma = await getPrismaClient();
     const scenario = await prisma.scenario.findUnique({
       where: { id: parseInt(id, 10) },
       include: {
@@ -36,6 +37,7 @@ export async function getScenario(id: string): Promise<ScenarioWithPhases | null
 
 export async function getPhaseDetails(id: string): Promise<PhaseWithTasks | null> {
   try {
+    const prisma = await getPrismaClient();
     const phase = await prisma.phase.findUnique({
       where: { id: parseInt(id, 10) },
       include: {
@@ -55,6 +57,7 @@ export async function getPhaseDetails(id: string): Promise<PhaseWithTasks | null
 
 export async function getSimilarScenarios(scenarioId: number) {
   try {
+    const prisma = await getPrismaClient();
     const baseScenario = await prisma.scenario.findUnique({
       where: { id: scenarioId },
       select: {
@@ -124,6 +127,7 @@ export async function getSimilarScenarios(scenarioId: number) {
 
 export async function getRisksForPhase(phaseId: number) {
   try {
+    const prisma = await getPrismaClient();
     const risks = await prisma.risk.findMany({
       where: {
         phaseId: phaseId,
@@ -138,6 +142,7 @@ export async function getRisksForPhase(phaseId: number) {
 
 export async function updateTaskStatus(taskId: number, status: string): Promise<Task> {
   try {
+    const prisma = await getPrismaClient();
     const updatedTask = await prisma.task.update({
       where: { id: taskId },
       data: { status },
@@ -151,6 +156,7 @@ export async function updateTaskStatus(taskId: number, status: string): Promise<
 
 export async function getPhaseData(phaseId: number): Promise<PhaseWithTasks | null> {
   try {
+    const prisma = await getPrismaClient();
     const phase = await prisma.phase.findUnique({
       where: { id: phaseId },
       include: {
@@ -170,6 +176,7 @@ export async function getPhaseData(phaseId: number): Promise<PhaseWithTasks | nu
 
 export async function toggleTaskStatus(taskId: number, newStatus: Task['status']) {
   try {
+    const prisma = await getPrismaClient();
     const updatedTask = await prisma.task.update({
       where: { id: taskId },
       data: { status: newStatus },

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
+import { getPrismaClient } from "@/lib/prisma";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { requireCapability } from "@/lib/authz";
 import type { Role } from "@/lib/rbac";
 import { ensureAuthResult } from "../../shared";
@@ -43,7 +43,7 @@ function toIsoString(value: Date | string | null | undefined) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
-async function resolveRequest(requestId: number) {
+async function resolveRequest(prisma: PrismaClient, requestId: number) {
   return prisma.investigationRequest.findUnique({
     where: { id: requestId },
     include: {
@@ -91,7 +91,7 @@ type ChatRoomRecord = Prisma.InvestigationChatRoomGetPayload<{ include: typeof C
 type ChatMessageRecord = ChatRoomRecord["messages"][number];
 type TimelineEntryRecord = RequestRecord["timeline"][number];
 
-async function ensureChatRoom(request: RequestRecord): Promise<ChatRoomRecord | null> {
+async function ensureChatRoom(prisma: PrismaClient, request: RequestRecord): Promise<ChatRoomRecord | null> {
   if (request.chatRoom) {
     return request.chatRoom;
   }
@@ -210,7 +210,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: "INVALID_REQUEST_ID" }, { status: 400 });
   }
 
-  const requestRecord = await resolveRequest(requestId);
+  const prisma = await getPrismaClient();
+  const requestRecord = await resolveRequest(prisma, requestId);
   if (!requestRecord) {
     return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   }
@@ -227,7 +228,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: "CHAT_NOT_AVAILABLE" }, { status: 409 });
   }
 
-  const room = await ensureChatRoom(requestRecord);
+  const room = await ensureChatRoom(prisma, requestRecord);
   if (!room) {
     return NextResponse.json({ error: "CHAT_NOT_AVAILABLE" }, { status: 409 });
   }
@@ -246,7 +247,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "INVALID_REQUEST_ID" }, { status: 400 });
   }
 
-  const requestRecord = await resolveRequest(requestId);
+  const prisma = await getPrismaClient();
+  const requestRecord = await resolveRequest(prisma, requestId);
   if (!requestRecord) {
     return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
   }
@@ -275,7 +277,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "MESSAGE_REQUIRED" }, { status: 400 });
   }
 
-  const room = await ensureChatRoom(requestRecord);
+  const room = await ensureChatRoom(prisma, requestRecord);
   if (!room) {
     return NextResponse.json({ error: "CHAT_NOT_AVAILABLE" }, { status: 409 });
   }

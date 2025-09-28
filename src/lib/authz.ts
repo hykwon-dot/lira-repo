@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hasCapability, Capability, Role } from './rbac';
-import { prisma } from './prisma';
+import { getPrismaClient } from './prisma';
 import { verifyToken } from './jwt';
 
 function extractBearer(req: NextRequest) {
@@ -22,7 +22,8 @@ export async function requireCapability(req: NextRequest, capability: Capability
     if (!payload) {
       return NextResponse.json({ error: 'INVALID_TOKEN' }, { status: 401 });
     }
-  const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+    const prisma = await getPrismaClient();
+    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
     if (!user) return NextResponse.json({ error: 'USER_NOT_FOUND' }, { status: 404 });
     const role = user.role as Role;
     if (!hasCapability(role, capability)) {
@@ -40,6 +41,7 @@ export async function requireAuth(req: NextRequest) {
   if (!token) return NextResponse.json({ error: 'AUTH_REQUIRED' }, { status: 401 });
   const payload = verifyToken(token);
   if (!payload) return NextResponse.json({ error: 'INVALID_TOKEN' }, { status: 401 });
+  const prisma = await getPrismaClient();
   const user = await prisma.user.findUnique({ where: { id: payload.userId } });
   if (!user) return NextResponse.json({ error: 'USER_NOT_FOUND' }, { status: 404 });
   return { user, payload } as const;

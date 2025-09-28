@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { getSimulationRunDelegate, requireAuthUser } from './utils';
 import { Prisma } from '@prisma/client';
 
@@ -60,7 +60,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const items = await getSimulationRunDelegate().findMany({
+    const runDelegate = await getSimulationRunDelegate();
+    const items = await runDelegate.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take,
@@ -117,13 +118,14 @@ export async function POST(req: NextRequest) {
         : undefined;
 
   try {
-  const scenario = await prisma.scenario.findUnique({ where: { id: scenarioId } });
+    const prisma = await getPrismaClient();
+    const scenario = await prisma.scenario.findUnique({ where: { id: scenarioId } });
     if (!scenario) {
       return NextResponse.json({ error: 'SCENARIO_NOT_FOUND' }, { status: 404 });
     }
 
     if (currentPhaseId) {
-      const phaseExists = await prisma.phase.findFirst({
+  const phaseExists = await prisma.phase.findFirst({
         where: {
           id: currentPhaseId,
           scenarioId,
@@ -134,7 +136,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const run = await getSimulationRunDelegate().create({
+  const runDelegate = await getSimulationRunDelegate();
+  const run = await runDelegate.create({
       data: {
         userId: user.id,
         scenarioId,

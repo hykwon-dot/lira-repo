@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 
 function daysAgo(days: number) {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 }
 
 export async function GET() {
+  const prisma = await getPrismaClient();
   const [
     totalUsers,
     newUsersWeek,

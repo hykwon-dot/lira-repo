@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
+import type { PrismaClient } from '@prisma/client';
 
 export async function requireAuthUser(req: NextRequest) {
   const auth = req.headers.get('authorization');
@@ -27,6 +28,7 @@ export async function requireAuthUser(req: NextRequest) {
     } as const;
   }
 
+  const prisma = await getPrismaClient();
   const user = await prisma.user.findUnique({ where: { id: payload.userId } });
   if (!user) {
     return {
@@ -38,14 +40,16 @@ export async function requireAuthUser(req: NextRequest) {
   return { user } as const;
 }
 
-type SimulationRunDelegate = typeof prisma.simulationRun;
+type SimulationRunDelegate = PrismaClient['simulationRun'];
 
-type SimulationEventDelegate = typeof prisma.simulationEvent;
+type SimulationEventDelegate = PrismaClient['simulationEvent'];
 
-export function getSimulationRunDelegate(): SimulationRunDelegate {
+export async function getSimulationRunDelegate(): Promise<SimulationRunDelegate> {
+  const prisma = await getPrismaClient();
   return prisma.simulationRun;
 }
 
-export function getSimulationEventDelegate(): SimulationEventDelegate {
+export async function getSimulationEventDelegate(): Promise<SimulationEventDelegate> {
+  const prisma = await getPrismaClient();
   return prisma.simulationEvent;
 }

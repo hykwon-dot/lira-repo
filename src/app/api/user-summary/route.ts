@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import type { Prisma } from '@prisma/client';
+import { getPrismaClient } from '@/lib/prisma';
+import type { Prisma, PrismaClient } from '@prisma/client';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -28,12 +28,12 @@ interface SummaryRequestBody {
   parentStepId?: unknown;
 }
 
-async function resolveConversationNumericId(externalId: unknown, userId?: number) {
+async function resolveConversationNumericId(prismaClient: PrismaClient, externalId: unknown, userId?: number) {
   if (typeof externalId !== 'string' || !externalId.trim()) {
     return null;
   }
 
-  const conversation = await prisma.conversation.findFirst({
+  const conversation = await prismaClient.conversation.findFirst({
     where: {
       externalId: externalId.trim(),
       ...(userId ? { userId } : {}),
@@ -62,18 +62,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: '사용자 ID가 필요합니다' }, { status: 400 });
     }
 
+    const prisma = await getPrismaClient();
     const userId = parseUserId(rawUserId);
 
   const whereClause: Prisma.UserSummaryWhereInput = { userId };
     if (conversationExternalId) {
-      const numericConversationId = await resolveConversationNumericId(conversationExternalId, userId);
+      const numericConversationId = await resolveConversationNumericId(prisma, conversationExternalId, userId);
       if (!numericConversationId) {
         return NextResponse.json([]);
       }
       whereClause.conversationId = numericConversationId;
     }
 
-    const summaries = await prisma.userSummary.findMany({
+  const summaries = await prisma.userSummary.findMany({
       where: whereClause,
       orderBy: { createdAt: 'asc' }
     });
@@ -96,14 +97,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '잘못된 요청 형식입니다' }, { status: 400 });
     }
 
-    const payload = body as SummaryRequestBody;
-    const userId = parseUserId(payload.userId);
-    const conversationNumericId = await resolveConversationNumericId(payload.conversationId, userId);
+  const prisma = await getPrismaClient();
+  const payload = body as SummaryRequestBody;
+  const userId = parseUserId(payload.userId);
+  const conversationNumericId = await resolveConversationNumericId(prisma, payload.conversationId, userId);
     const relatedQuestion = typeof payload.relatedQuestion === 'string' ? payload.relatedQuestion : '';
 
     // steps 배열로 여러 요약 생성
     if (Array.isArray(payload.steps)) {
-      const summaries = [] as Awaited<ReturnType<typeof prisma.userSummary.create>>[];
+  const summaries = [] as Awaited<ReturnType<typeof prisma.userSummary.create>>[];
       const stepInputs = (payload.steps as unknown[]).filter(isRecord) as StepPayload[];
       for (const step of stepInputs) {
         const description = typeof step.description === 'string' ? step.description : undefined;
@@ -135,7 +137,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(summaries);
     }
     // 단일 생성 요청
-    const summary = await prisma.userSummary.create({
+  const summary = await prisma.userSummary.create({
       data: {
         userId,
         conversationId: conversationNumericId,
@@ -178,7 +180,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: '사용자 ID가 필요합니다' }, { status: 400 });
     }
 
-    const userId = parseUserId(rawUserId);
+  const prisma = await getPrismaClient();
+  const userId = parseUserId(rawUserId);
 
     await prisma.userSummary.deleteMany({
       where: { userId }

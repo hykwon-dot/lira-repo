@@ -1,4 +1,5 @@
-import { prisma } from './prisma';
+import { getPrismaClient } from './prisma';
+import { Prisma } from '@prisma/client';
 
 export type NotificationType =
   | 'INVESTIGATION_ASSIGNED'
@@ -15,30 +16,29 @@ export type NotificationCreateInput = {
   metadata?: Record<string, unknown> | null;
 };
 
-const prismaClient = prisma as unknown as {
-  notification: {
-    create: (args: { data: Record<string, unknown> }) => Promise<unknown>;
-    updateMany: (args: { where: Record<string, unknown>; data: Record<string, unknown> }) => Promise<unknown>;
-    count: (args: { where: Record<string, unknown> }) => Promise<number>;
-  };
-};
-
 export async function createNotification(input: NotificationCreateInput) {
-  return prismaClient.notification.create({
+  const prisma = await getPrismaClient();
+  return prisma.notification.create({
     data: {
       userId: input.userId,
       type: input.type,
       title: input.title,
       message: input.message ?? null,
       actionUrl: input.actionUrl ?? null,
-      metadata: input.metadata ?? undefined,
+      metadata:
+        input.metadata === null
+          ? Prisma.JsonNull
+          : input.metadata !== undefined
+            ? (input.metadata as Prisma.InputJsonValue)
+            : undefined,
     },
   });
 }
 
 export async function markNotificationsAsRead(userId: number, ids?: number[]) {
   const where = ids && ids.length > 0 ? { id: { in: ids } } : {};
-  return prismaClient.notification.updateMany({
+  const prisma = await getPrismaClient();
+  return prisma.notification.updateMany({
     where: {
       userId,
       readAt: null,
@@ -51,7 +51,8 @@ export async function markNotificationsAsRead(userId: number, ids?: number[]) {
 }
 
 export async function countUnreadNotifications(userId: number) {
-  return prismaClient.notification.count({
+  const prisma = await getPrismaClient();
+  return prisma.notification.count({
     where: {
       userId,
       readAt: null,

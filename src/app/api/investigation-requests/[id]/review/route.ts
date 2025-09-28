@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { requireCapability } from "@/lib/authz";
 import type { Role } from "@/lib/rbac";
 import { ensureAuthResult, validateStatus } from "../../shared";
@@ -65,6 +65,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: "INVALID_REQUEST_ID" }, { status: 400 });
   }
 
+  const prisma = await getPrismaClient();
   const record = await prisma.investigationRequest.findUnique({
     where: { id: requestId },
     select: {
@@ -115,6 +116,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "INVALID_REQUEST_ID" }, { status: 400 });
   }
 
+  const prisma = await getPrismaClient();
   const record = await prisma.investigationRequest.findUnique({
     where: { id: requestId },
     select: {
@@ -207,6 +209,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "INVALID_REQUEST_ID" }, { status: 400 });
   }
 
+  const prisma = await getPrismaClient();
   const record = await prisma.investigationRequest.findUnique({
     where: { id: requestId },
     select: {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/authz";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 
 type NotificationRecord = {
   id: number;
@@ -26,7 +26,10 @@ type NotificationDelegate = {
   }) => Promise<{ count: number }>;
 };
 
-const notificationClient = (prisma as unknown as { notification: NotificationDelegate }).notification;
+async function getNotificationClient(): Promise<NotificationDelegate> {
+  const prisma = await getPrismaClient();
+  return (prisma as unknown as { notification: NotificationDelegate }).notification;
+}
 
 function serialize(record: NotificationRecord) {
   return {
@@ -68,6 +71,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  const notificationClient = await getNotificationClient();
   const [notifications, unreadCount] = await Promise.all([
     notificationClient.findMany({
       where,
@@ -122,6 +126,7 @@ export async function PATCH(req: NextRequest) {
     where.id = { in: ids };
   }
 
+  const notificationClient = await getNotificationClient();
   const result = await notificationClient.updateMany({
     where,
     data: {

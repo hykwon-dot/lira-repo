@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { signToken } from '@/lib/jwt';
 import { hash as hashPassword } from '@node-rs/bcrypt';
 import type { Prisma } from '@prisma/client';
@@ -69,7 +69,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '허용되지 않은 역할입니다.' }, { status: 400 });
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+  const prisma = await getPrismaClient();
+
+  const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return NextResponse.json({ error: '이미 사용중인 이메일입니다.' }, { status: 409 });
     }

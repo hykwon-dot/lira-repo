@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { verifyPassword } from '@/lib/hash';
 import { signToken } from '@/lib/jwt';
 
@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
     if (!email || !password) {
       return NextResponse.json({ error: '이메일/비밀번호 필요' }, { status: 400 });
     }
-    const user = await prisma.user.findUnique({
+  const prisma = await getPrismaClient();
+  const user = await prisma.user.findUnique({
       where: { email },
       include: {
         investigator: {

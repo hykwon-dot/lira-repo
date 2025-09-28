@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { InvestigatorStatus } from "@prisma/client";
 import RequestComposer from "./RequestComposer";
 
@@ -27,6 +27,7 @@ export default async function NewInvestigationRequestPage({ searchParams }: Page
     notFound();
   }
 
+  const prisma = await getPrismaClient();
   const investigator = await prisma.investigatorProfile.findUnique({
     where: { id: investigatorId },
     include: {

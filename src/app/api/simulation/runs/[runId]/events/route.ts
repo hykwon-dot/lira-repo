@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import {
   getSimulationEventDelegate,
   getSimulationRunDelegate,
@@ -53,7 +53,8 @@ export async function POST(req: NextRequest, context: RouteContext) {
   const taskId = typeof body.taskId === 'number' ? body.taskId : null;
 
   try {
-    const runDelegate = getSimulationRunDelegate();
+    const prisma = await getPrismaClient();
+    const runDelegate = await getSimulationRunDelegate();
     const run = await runDelegate.findFirst({
       where: {
         id: runId,
@@ -91,7 +92,8 @@ export async function POST(req: NextRequest, context: RouteContext) {
       }
     }
 
-    const createdEvent = await getSimulationEventDelegate().create({
+  const eventDelegate = await getSimulationEventDelegate();
+  const createdEvent = await eventDelegate.create({
       data: {
         runId,
         userId: auth.user.id,

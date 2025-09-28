@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
@@ -102,6 +102,7 @@ const ScenarioDetailPage = async ({ params }: { params: { scenarioId: string } }
     notFound();
   }
 
+  const prisma = await getPrismaClient();
   const scenario = await prisma.scenario.findUnique({
     where: { id: scenarioId },
     include: {

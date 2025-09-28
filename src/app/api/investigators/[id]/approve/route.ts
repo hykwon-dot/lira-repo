@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import { requireCapability } from '@/lib/authz';
 import { recordAuditEvent } from '@/lib/audit';
 import { InvestigatorStatus } from '@prisma/client';
@@ -32,6 +32,7 @@ export async function POST(
   }
   const note = isRecord(payload) && typeof payload.note === 'string' ? payload.note : undefined;
 
+  const prisma = await getPrismaClient();
   const profile = await prisma.investigatorProfile.findUnique({
     where: { id: investigatorId },
     include: { user: true },

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrismaClient } from '@/lib/prisma';
 import {
   REQUEST_STATUSES,
   STATUS_TRANSITIONS,
@@ -34,6 +34,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'INVALID_STATUS' }, { status: 400 });
   }
 
+  const prisma = await getPrismaClient();
   const existing = await prisma.investigationRequest.findUnique({
     where: { id: requestId },
   });
