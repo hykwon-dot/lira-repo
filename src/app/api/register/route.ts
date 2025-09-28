@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { signToken } from '@/lib/jwt';
-import bcrypt from 'bcrypt';
+import { hash as hashPassword } from '@node-rs/bcrypt';
 import type { Prisma } from '@prisma/client';
 
 // 허용된 공개 가입 역할 (SUPER_ADMIN 은 seed 또는 내부 승격 전용)
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '이미 사용중인 이메일입니다.' }, { status: 409 });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await hashPassword(password, 10);
 
     // 역할별 검증 & 데이터 구성
     if (role === 'INVESTIGATOR') {
@@ -240,7 +240,7 @@ export async function POST(req: NextRequest) {
 
     let securityAnswerHash: string | null = null;
     if (customerPayload.securityAnswer) {
-      securityAnswerHash = await bcrypt.hash(customerPayload.securityAnswer, 10);
+      securityAnswerHash = await hashPassword(customerPayload.securityAnswer, 10);
     }
 
     const now = new Date();

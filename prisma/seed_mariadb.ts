@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import { hash } from '@node-rs/bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -7,7 +7,7 @@ async function main() {
   console.log('[MariaDB Seed] 시작');
 
   const rawPass = process.env.SEED_PASSWORD || 'ChangeMe123!';
-  const hash = await bcrypt.hash(rawPass, 10);
+  const passwordHash = await hash(rawPass, 10);
 
   // Admin 계정
   const admin = await prisma.user.upsert({
@@ -16,7 +16,7 @@ async function main() {
     create: {
       email: 'admin@lira.local',
       name: '운영관리자',
-      password: hash,
+  password: passwordHash,
       role: 'ADMIN'
     }
   });
@@ -28,7 +28,7 @@ async function main() {
       data: {
         email: 'root@lira.local',
         name: '총괄관리자',
-        password: hash,
+    password: passwordHash,
         role: 'SUPER_ADMIN'
       }
     });
@@ -41,7 +41,7 @@ async function main() {
     create: {
       email: 'investigator1@lira.local',
       name: '홍길동 조사원',
-      password: hash,
+        password: passwordHash,
       role: 'INVESTIGATOR'
     }
   });
@@ -65,7 +65,7 @@ async function main() {
     create: {
       email: 'corp1@lira.local',
       name: '엔터프라이즈 담당자',
-      password: hash,
+  password: passwordHash,
       role: 'ENTERPRISE'
     }
   });
@@ -109,7 +109,7 @@ async function main() {
     create: {
       email: 'corp-ops@lira.local',
       name: '엔터프라이즈 운영 매니저',
-      password: hash,
+  password: passwordHash,
       role: 'ENTERPRISE',
     },
   });
@@ -141,7 +141,7 @@ async function main() {
     create: {
       email: 'customer1@lira.local',
       name: '김의뢰',
-      password: hash,
+  password: passwordHash,
       role: 'USER'
     }
   });

@@ -1,9 +1,9 @@
-import bcrypt from 'bcrypt';
+import { hash, verify } from '@node-rs/bcrypt';
 
 export async function hashPassword(plain: string) {
-  return bcrypt.hash(plain, 10);
+  return hash(plain, 10);
 }
 
-export async function verifyPassword(plain: string, hash: string) {
-  return bcrypt.compare(plain, hash);
+export async function verifyPassword(plain: string, hashed: string) {
+  return verify(hashed, plain);
 }
