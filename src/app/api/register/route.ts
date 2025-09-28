@@ -3,7 +3,7 @@ import { getPrismaClient } from '@/lib/prisma';
 import { signToken } from '@/lib/jwt';
 import { hash as hashPassword } from '@node-rs/bcrypt';
 import type { Prisma } from '@prisma/client';
-import { validateRequiredEnv } from '@/lib/env';
+
 
 // 허용된 공개 가입 역할 (SUPER_ADMIN 은 seed 또는 내부 승격 전용)
 const ALLOWED_PUBLIC_ROLES = ['USER', 'INVESTIGATOR', 'ENTERPRISE'] as const;
@@ -58,10 +58,7 @@ export async function POST(req: NextRequest) {
   console.log('[API] POST /api/register - Request received');
   
   try {
-    console.log('[API] Validating environment variables...');
-    validateRequiredEnv();
-    console.log('[API] Environment variables validated successfully');
-    
+
     console.log('[API] Parsing request body...');
     const body: unknown = await req.json();
     console.log('[API] Request body parsed successfully');

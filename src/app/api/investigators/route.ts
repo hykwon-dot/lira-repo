@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrismaClient } from '@/lib/prisma';
-import { validateRequiredEnv } from '@/lib/env';
+
 
 export async function GET(req: NextRequest) {
   console.log('[API] GET /api/investigators - Request received');
   
   try {
-    console.log('[API] Validating environment variables...');
-    validateRequiredEnv();
-    console.log('[API] Environment variables validated successfully');
+
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
     const limit = parseInt(searchParams.get('limit') || '50');
