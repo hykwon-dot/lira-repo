@@ -63,6 +63,14 @@ npm run db:check
 
 성공 시 MariaDB 버전과 주요 테이블 카운트를 출력합니다. 오류가 발생하면 `DATABASE_URL`, `SHADOW_DATABASE_URL` 환경변수와 MariaDB 컨테이너 상태를 확인하세요.
 
+### 배포 헬스체크 & 원격 모니터링
+- **API 엔드포인트**: `/api/health/deployment`
+	- **GET** 요청 시 현재 서버에서 Prisma로 MariaDB에 접속을 시도하고, 버전/레코드 카운트/환경 정보(`NODE_ENV`, DB 호스트 등)를 JSON으로 반환합니다.
+	- 인증이 필요하지 않도록 구성했으므로 Amplify 배포 후 브라우저나 `curl`로 즉시 호출하여 원격 환경의 자격 증명 문제가 있는지 확인할 수 있습니다.
+- **CI/CD 파이프라인**: Amplify `preBuild` 단계에 `npm run db:check`를 추가하면, 코드 빌드 전에 DB 연결 체크가 실패할 경우 즉시 빌드가 중단되어 원인 파악이 빨라집니다.
+- **경보 설정**: Amplify 로그는 CloudWatch로 전송됩니다. `/api/health/deployment` 호출 결과나 `npm run db:check` 실패를 CloudWatch Metric Filter/Alarm으로 연동하면 비밀번호 변경 미반영 등 자격 증명 오류 발생 시 즉시 알림을 받을 수 있습니다.
+- **비밀번호 갱신 루틴**: RDS → SSM(Parameter Store) → Amplify 환경 변수 → 배포 → 로컬 `.env` 순으로 새 자격 증명(예: `asdasd11`)을 적용하고 `/api/health/deployment` 또는 `npm run db:check`로 즉시 검증하세요.
+
 ### 4. 신규 주요 모델
 | 모델 | 설명 |
 |------|------|
