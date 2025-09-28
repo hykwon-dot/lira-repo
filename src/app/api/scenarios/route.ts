@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getPrismaClient } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/scenarios : 활성 시나리오 목록
 export async function GET() {
   try {

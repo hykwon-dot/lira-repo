@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getPrismaClient } from "@/lib/prisma";
 import { validateEnvironment, getEnvironmentInfo } from "@/lib/env-check";
 
+export const dynamic = 'force-dynamic';
+
 function extractDatabaseTarget(url: string | undefined) {
   if (!url) {
     return { hasUrl: false, host: null, database: null };

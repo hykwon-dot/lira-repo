@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getPrismaClient } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   console.log('[TEST-DB] Starting database test...');
   
