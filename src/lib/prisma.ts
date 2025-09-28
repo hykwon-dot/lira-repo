@@ -19,10 +19,15 @@ async function resolveDatabaseUrl(): Promise<string> {
   // 환경 변수 로딩 확인
   ensureEnvLoaded();
   
-  // 설정 파일에서 폴백 값 가져오기
-  const { config } = await import('./config');
+  // 설정 파일에서 폴백 값 가져오기 (빌드 시 안전하게)
+  let databaseUrl = process.env.DATABASE_URL;
   
-  const databaseUrl = process.env.DATABASE_URL || config.DATABASE_URL;
+  // config 파일 로드로 폴백 설정 적용
+  await import('./config');
+  
+  if (!databaseUrl) {
+    databaseUrl = process.env.DATABASE_URL;
+  }
   if (databaseUrl && databaseUrl.trim()) {
     console.log('[Prisma] Using DATABASE_URL from environment or config');
     return databaseUrl;
