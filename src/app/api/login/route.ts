@@ -3,6 +3,8 @@ import { getPrismaClient } from '@/lib/prisma';
 import { verifyPassword } from '@/lib/hash';
 import { signToken } from '@/lib/jwt';
 
+export const dynamic = 'force-dynamic';
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 

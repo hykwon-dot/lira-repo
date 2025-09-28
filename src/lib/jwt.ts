@@ -1,6 +1,6 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'DEV_SECRET_CHANGE_ME';
+const JWT_SECRET = process.env.JWT_SECRET || 'lira_production_jwt_secret_2024_secure_key_replace_in_production';
 const DEFAULT_EXP: SignOptions['expiresIn'] = '7d';
 
 export interface JwtPayload {

@@ -4,6 +4,8 @@ import { signToken } from '@/lib/jwt';
 import { hash as hashPassword } from '@node-rs/bcrypt';
 import type { Prisma } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 
 // 허용된 공개 가입 역할 (SUPER_ADMIN 은 seed 또는 내부 승격 전용)
 const ALLOWED_PUBLIC_ROLES = ['USER', 'INVESTIGATOR', 'ENTERPRISE'] as const;

@@ -5,5 +5,5 @@ export async function hashPassword(plain: string) {
 }
 
 export async function verifyPassword(plain: string, hashed: string) {
-  return verify(hashed, plain);
+  return verify(plain, hashed);
 }
