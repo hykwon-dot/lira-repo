@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useUserStore, User } from "@/lib/userStore";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -41,6 +41,16 @@ export default function Header() {
     { href: "/report", label: "데이터 리포트" },
   ];
 
+  const isLinkActive = useMemo(() => {
+    if (!pathname) return () => false;
+    return (href: string) => {
+      if (href === "/") {
+        return pathname === "/";
+      }
+      return pathname.startsWith(href);
+    };
+  }, [pathname]);
+
   // 로그인/회원가입 페이지에서는 헤더를 숨김
   if (pathname === '/login' || pathname === '/register' || pathname?.startsWith('/account/')) {
     return null;
@@ -48,8 +58,8 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 shadow-md backdrop-blur">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:h-20">
-        <div className="flex items-center gap-3">
+      <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4 md:h-20">
+        <div className="flex flex-1 items-center gap-6">
           <Link href="/" className="flex items-center gap-3">
             <Image
               src="/images/lione-logo.svg"
@@ -60,8 +70,26 @@ export default function Header() {
               className="h-8 w-auto md:h-10"
             />
           </Link>
+          <nav className="hidden items-center gap-5 text-sm font-semibold text-slate-500 lg:flex">
+            {navLinks.map((link) => {
+              const active = isLinkActive(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`relative whitespace-nowrap pb-0.5 transition-colors ${
+                    active
+                      ? "text-blue-600 after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full after:rounded-full after:bg-blue-500"
+                      : "text-slate-500 hover:text-blue-500"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-        <div className="hidden items-center gap-4 md:flex">
+        <div className="hidden flex-shrink-0 items-center gap-4 md:flex">
           {loggedInUser && (
             <ErrorBoundary>
               <NotificationBell />
@@ -93,15 +121,17 @@ export default function Header() {
             </div>
           )}
         </div>
-        <button
-          type="button"
-          aria-label="모바일 메뉴 열기"
-          aria-expanded={mobileMenuOpen}
-          onClick={() => setMobileMenuOpen((prev) => !prev)}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-blue-200 hover:text-blue-500 md:hidden"
-        >
-          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <button
+            type="button"
+            aria-label="모바일 메뉴 열기"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-blue-200 hover:text-blue-500"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
       {mobileMenuOpen && (
         <>

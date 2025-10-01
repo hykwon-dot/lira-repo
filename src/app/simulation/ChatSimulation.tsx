@@ -145,7 +145,6 @@ export const ChatSimulation = () => {
   );
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
-
   const [recommendations, setRecommendations] = useState<
     InvestigatorRecommendation[]
   >([]);
@@ -153,6 +152,14 @@ export const ChatSimulation = () => {
     useState(false);
   const [recommendationsError, setRecommendationsError] =
     useState<string | null>(null);
+
+  const matchButtonLabel = useMemo(() => {
+    if (!user) return "로그인 후 탐정고르기";
+    if (user.role === "investigator") return "고객 계정에서 이용";
+    return "탐정고르기";
+  }, [user]);
+
+  const isMatchDisabled = user?.role === "investigator";
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const conversationIdRef = useRef<string | null>(null);
@@ -460,11 +467,6 @@ export const ChatSimulation = () => {
     return DEFAULT_QUICK_PROMPTS;
   }, [intakeSummary?.nextQuestions]);
 
-  const sidebarRecommendedQuestions = useMemo(
-    () => intakeSummary?.nextQuestions ?? [],
-    [intakeSummary?.nextQuestions]
-  );
-
   const handoffData = useMemo(
     () => ({
       transcript: transcriptForHandoff,
@@ -504,7 +506,7 @@ export const ChatSimulation = () => {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 md:py-8 lg:px-8">
+  <div className="mx-auto flex min-h-screen min-h-[100svh] max-w-[1640px] flex-col gap-6 px-4 py-6 sm:px-6 md:py-8 lg:px-10 xl:px-12">
         <header className="rounded-3xl border border-white/10 bg-white/5 p-5 text-white shadow-xl backdrop-blur sm:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-4">
@@ -512,13 +514,13 @@ export const ChatSimulation = () => {
                 <FiStar className="h-3.5 w-3.5" /> 사건 인테이크 어시스턴트
               </div>
               <div>
-                <h1 className="text-2xl font-bold sm:text-3xl md:text-4xl">
+                <h1 className="max-w-3xl text-2xl font-bold leading-tight text-balance sm:text-3xl md:text-4xl">
                   실시간 조사 인테이크 & 전략 보드
                 </h1>
-                <p className="mt-2 hidden text-sm text-indigo-100 md:mt-3 md:block md:text-base">
+                <p className="mt-2 hidden max-w-2xl text-sm text-indigo-100 md:mt-3 md:block md:text-base md:leading-relaxed">
                   대화를 그대로 기록하고 요약하여 탐정에게 전달할 준비를 마칩니다. 필요한 질문을 제안받으며 사건을 빠르게 정리하세요.
                 </p>
-                <p className="mt-2 text-xs text-indigo-200/80 md:hidden">
+                <p className="mt-2 text-xs leading-relaxed text-indigo-200/80 md:hidden">
                   대화를 기록하고 꼭 필요한 정보만 정리해 탐정에게 전달합니다.
                 </p>
               </div>
@@ -559,8 +561,8 @@ export const ChatSimulation = () => {
           </div>
         </header>
 
-        <div className="grid flex-1 grid-cols-1 gap-5 md:gap-6 xl:grid-cols-[1.8fr_1.2fr]">
-          <section className="flex min-h-[520px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 shadow-xl sm:min-h-[560px] lg:min-h-[620px] xl:min-h-[720px]">
+  <div className="grid flex-1 min-h-0 grid-cols-1 gap-5 md:gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1.1fr)_minmax(0,1.1fr)] lg:items-stretch xl:h-[calc(100vh-200px)] xl:min-h-[calc(100vh-200px)] xl:max-h-[calc(100vh-200px)] xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1.2fr)_minmax(0,1.2fr)] xl:gap-8">
+          <section className="flex h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 shadow-2xl sm:min-h-[560px] lg:col-span-1 lg:min-h-[620px] xl:h-full xl:min-h-0 xl:max-h-full">
             <div className="border-b border-slate-200/80 bg-slate-50/80 p-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -590,9 +592,9 @@ export const ChatSimulation = () => {
                     type="button"
                     onClick={() => handleQuickPromptClick(prompt)}
                     disabled={isAssistantThinking}
-                    className="rounded-full border border-indigo-100 bg-white px-3 py-1 text-[11px] font-medium text-indigo-600 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="max-w-[260px] rounded-full border border-indigo-100 bg-white px-3 py-1 text-[11px] font-medium text-indigo-600 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {prompt}
+                    <span className="inline-block text-left leading-snug text-balance">{prompt}</span>
                   </button>
                 ))}
               </div>
@@ -634,13 +636,13 @@ export const ChatSimulation = () => {
                       )}
                       <div
                         className={cn(
-                          "rounded-2xl px-3 py-2 text-[13px] leading-relaxed shadow-sm sm:px-4 sm:py-3 sm:text-sm",
+                          "max-w-full rounded-2xl px-3 py-2 text-[13px] leading-relaxed shadow-sm sm:px-4 sm:py-3 sm:text-sm",
                           message.role === "user"
                             ? "bg-gradient-to-r from-indigo-500 to-blue-600 text-white shadow-lg"
                             : "bg-white/95 ring-1 ring-slate-200 text-slate-800"
                         )}
                       >
-                        <p className="whitespace-pre-wrap">{message.content}</p>
+                        <p className="whitespace-pre-wrap break-words text-balance">{message.content}</p>
                       </div>
                     </div>
                   </motion.div>
@@ -686,7 +688,7 @@ export const ChatSimulation = () => {
               </div>
             </form>
 
-            <div className="border-t border-slate-200 bg-white/90 px-4 py-4 md:hidden">
+            <div className="border-t border-slate-200 bg-white/90 px-4 py-4 lg:hidden">
               <div className="space-y-3">
                 <details className="group rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
                   <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-slate-800">
@@ -697,8 +699,6 @@ export const ChatSimulation = () => {
                     <CaseSummarySidebar
                       summary={intakeSummary}
                       conversationSummary={conversationSummary}
-                      recommendedQuestions={sidebarRecommendedQuestions}
-                      onQuestionClick={handleQuickPromptClick}
                       isLoading={isSummaryLoading}
                       isAssistantThinking={isAssistantThinking}
                     />
@@ -714,14 +714,8 @@ export const ChatSimulation = () => {
                       recommendations={recommendations}
                       isLoading={isRecommendationsLoading}
                       scenarioTitle={intakeSummary?.caseTitle}
-                      matchButtonLabel={
-                        !user
-                          ? "로그인 후 매칭"
-                          : user.role === "investigator"
-                          ? "고객 계정에서 이용"
-                          : "탐정에게 요청 보내기"
-                      }
-                      isMatchDisabled={user?.role === "investigator"}
+                      matchButtonLabel={matchButtonLabel}
+                      isMatchDisabled={isMatchDisabled}
                       onMatchNow={handleMatchNow}
                     />
                     {recommendationsError ? (
@@ -736,15 +730,14 @@ export const ChatSimulation = () => {
             </div>
           </section>
 
-          <div className="hidden flex-col gap-6 md:flex">
-            <section className="flex min-h-[320px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 shadow-xl sm:min-h-[340px] lg:min-h-[360px] xl:min-h-[380px]">
+          <section className="hidden h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 shadow-2xl lg:col-span-1 lg:flex lg:min-h-[620px] xl:h-full xl:min-h-0 xl:max-h-full">
               <div className="border-b border-slate-200/80 bg-slate-50/80 p-5">
                 <h2 className="text-lg font-semibold text-slate-900">사건 요약</h2>
                 <p className="mt-1 text-xs text-slate-500">
                   대화에서 수집된 사건 정보를 정리한 내용입니다.
                 </p>
               </div>
-              <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto p-5">
+              <div className="custom-scrollbar flex-1 min-h-0 space-y-4 overflow-y-auto p-5">
                 {summaryError ? (
                   <div className="flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-xs text-rose-600">
                     <FiAlertCircle className="mt-0.5 h-4 w-4" />
@@ -754,34 +747,26 @@ export const ChatSimulation = () => {
                 <CaseSummarySidebar
                   summary={intakeSummary}
                   conversationSummary={conversationSummary}
-                  recommendedQuestions={sidebarRecommendedQuestions}
-                  onQuestionClick={handleQuickPromptClick}
                   isLoading={isSummaryLoading}
                   isAssistantThinking={isAssistantThinking}
                 />
               </div>
-            </section>
+          </section>
 
-            <section className="flex min-h-[320px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 shadow-xl sm:min-h-[340px] lg:min-h-[360px] xl:min-h-[380px]">
+          <section className="hidden h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 shadow-2xl lg:col-span-1 lg:flex lg:min-h-[620px] xl:h-full xl:min-h-0 xl:max-h-full">
               <div className="border-b border-slate-200/80 bg-slate-50/80 p-5">
                 <h2 className="text-lg font-semibold text-slate-900">탐정 추천</h2>
                 <p className="mt-1 text-xs text-slate-500">
                   사건 유형과 핵심 정보를 기반으로 적합한 탐정을 매칭합니다.
                 </p>
               </div>
-              <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto p-5">
+              <div className="custom-scrollbar flex-1 min-h-0 space-y-4 overflow-y-auto p-5">
                 <InvestigatorRecommendationsCard
                   recommendations={recommendations}
                   isLoading={isRecommendationsLoading}
                   scenarioTitle={intakeSummary?.caseTitle}
-                  matchButtonLabel={
-                    !user
-                      ? "로그인 후 매칭"
-                      : user.role === "investigator"
-                      ? "고객 계정에서 이용"
-                      : "탐정에게 요청 보내기"
-                  }
-                  isMatchDisabled={user?.role === "investigator"}
+                  matchButtonLabel={matchButtonLabel}
+                  isMatchDisabled={isMatchDisabled}
                   onMatchNow={handleMatchNow}
                 />
                 {recommendationsError ? (
@@ -791,8 +776,7 @@ export const ChatSimulation = () => {
                   </div>
                 ) : null}
               </div>
-            </section>
-          </div>
+          </section>
         </div>
       </div>
     </div>

@@ -8,6 +8,17 @@ function normalizePhone(phone?: string | null) {
   return phone ? phone.replace(/[^0-9]/g, '') : null;
 }
 
+function isPasswordStrong(value: string) {
+  const checks = [
+    value.length >= 8,
+    /[A-Z]/.test(value),
+    /[a-z]/.test(value),
+    /[0-9]/.test(value),
+    /[^A-Za-z0-9]/.test(value),
+  ].filter(Boolean).length;
+  return checks >= 4;
+}
+
 export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get('email');
   if (!email) {
@@ -70,8 +81,11 @@ export async function POST(req: NextRequest) {
   if (!email || !newPassword) {
     return NextResponse.json({ error: '이메일과 새 비밀번호를 모두 입력해 주세요.' }, { status: 400 });
   }
-  if (newPassword.length < 8) {
-    return NextResponse.json({ error: '비밀번호는 최소 8자 이상이어야 합니다.' }, { status: 400 });
+  if (!isPasswordStrong(newPassword)) {
+    return NextResponse.json(
+      { error: '대문자, 소문자, 숫자, 특수문자 중 최소 4가지를 포함한 8자 이상의 비밀번호를 입력해 주세요.' },
+      { status: 400 },
+    );
   }
 
   const prisma = await getPrismaClient();
@@ -81,6 +95,16 @@ export async function POST(req: NextRequest) {
 
   if (!user || user.deletedAt) {
     return NextResponse.json({ error: '계정을 찾을 수 없습니다.' }, { status: 404 });
+  }
+
+  if (user.password) {
+    const sameAsOld = await verifyPassword(newPassword, user.password);
+    if (sameAsOld) {
+      return NextResponse.json(
+        { error: '기존 비밀번호와 동일합니다. 새로운 비밀번호를 입력해 주세요.' },
+        { status: 400 },
+      );
+    }
   }
 
   const [customerProfile, investigatorProfile] = await Promise.all([

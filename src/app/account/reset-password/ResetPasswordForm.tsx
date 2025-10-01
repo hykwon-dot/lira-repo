@@ -30,6 +30,38 @@ export default function ResetPasswordForm() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  const passwordChecks = useMemo(() => {
+    const value = newPassword;
+    return {
+      length: value.length >= 8,
+      uppercase: /[A-Z]/.test(value),
+      lowercase: /[a-z]/.test(value),
+      number: /[0-9]/.test(value),
+      special: /[^A-Za-z0-9]/.test(value),
+    } as const;
+  }, [newPassword]);
+
+  const passedChecks = useMemo(
+    () => Object.values(passwordChecks).filter(Boolean).length,
+    [passwordChecks],
+  );
+
+  const passwordStrength = useMemo(() => {
+    if (!newPassword) return { label: '비밀번호를 입력해 주세요.', tone: 'text-slate-400', percentage: 0 };
+    if (passedChecks >= 4 && newPassword.length >= 12) {
+      return { label: '매우 안전함', tone: 'text-emerald-600', percentage: 100 };
+    }
+    if (passedChecks >= 3) {
+      return { label: '보통', tone: 'text-indigo-600', percentage: 70 };
+    }
+    if (passedChecks >= 2) {
+      return { label: '주의 필요', tone: 'text-amber-600', percentage: 40 };
+    }
+    return { label: '위험', tone: 'text-rose-600', percentage: 20 };
+  }, [newPassword, passedChecks]);
+
+  const isPasswordStrongEnough = passedChecks >= 4 && newPassword.length >= 8;
+
   const formattedPhone = useMemo(() => {
     const digits = phone.replace(/[^0-9]/g, '').slice(0, 11);
     if (digits.length < 4) return digits;
@@ -74,8 +106,8 @@ export default function ResetPasswordForm() {
       return;
     }
 
-    if (newPassword.length < 8) {
-      setSubmitError('새 비밀번호는 최소 8자 이상이어야 합니다.');
+    if (!isPasswordStrongEnough) {
+      setSubmitError('대문자, 소문자, 숫자, 특수문자 중 최소 4가지를 포함한 8자 이상의 비밀번호를 입력해 주세요.');
       return;
     }
 
@@ -215,6 +247,25 @@ export default function ResetPasswordForm() {
                 placeholder="새 비밀번호 (8자 이상)"
                 className="lira-input"
               />
+              <div className="mt-2 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
+                <div className="flex items-center justify-between">
+                  <span className={`font-semibold ${passwordStrength.tone}`}>{passwordStrength.label}</span>
+                  <span className="font-mono text-[11px] text-slate-400">{passedChecks}/5</span>
+                </div>
+                <div className="h-2 rounded-full bg-slate-200">
+                  <div
+                    className={`h-full rounded-full bg-gradient-to-r from-indigo-500 via-blue-500 to-sky-500 transition-all`}
+                    style={{ width: `${passwordStrength.percentage}%` }}
+                  />
+                </div>
+                <ul className="space-y-1 text-[11px]">
+                  <PasswordHintItem label="길이 8자 이상" active={passwordChecks.length} />
+                  <PasswordHintItem label="대문자 포함" active={passwordChecks.uppercase} />
+                  <PasswordHintItem label="소문자 포함" active={passwordChecks.lowercase} />
+                  <PasswordHintItem label="숫자 포함" active={passwordChecks.number} />
+                  <PasswordHintItem label="특수문자 포함" active={passwordChecks.special} />
+                </ul>
+              </div>
             </div>
 
             <div className="lira-field">
@@ -233,7 +284,7 @@ export default function ResetPasswordForm() {
             <button
               type="submit"
               className="lira-button lira-button--blue w-full justify-center"
-              disabled={submitStatus === 'loading'}
+              disabled={submitStatus === 'loading' || !isPasswordStrongEnough}
             >
               {submitStatus === 'loading' ? '변경 중…' : '비밀번호 변경'}
             </button>
@@ -259,5 +310,20 @@ export default function ResetPasswordForm() {
         </Link>
       </div>
     </div>
+  );
+}
+
+function PasswordHintItem({ label, active }: { label: string; active: boolean }) {
+  return (
+    <li className={`flex items-center gap-2 ${active ? 'text-emerald-600' : 'text-slate-400'}`}>
+      <span
+        className={`inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-semibold ${
+          active ? 'border-emerald-400 bg-emerald-50 text-emerald-600' : 'border-slate-300 bg-white text-slate-400'
+        }`}
+      >
+        {active ? '✔' : '•'}
+      </span>
+      {label}
+    </li>
   );
 }
