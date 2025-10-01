@@ -40,7 +40,7 @@ export async function POST(
       status: InvestigatorStatus.APPROVED,
       reviewNote: note ?? null,
       reviewedAt: new Date(),
-      reviewedById: 1, // TODO: 실제 관리자 ID로 변경 필요
+      reviewedById: null,
     },
     include: {
       user: {

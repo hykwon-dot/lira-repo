@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from 'react';
+import { useUserStore } from '@/lib/userStore';
 import ScenarioAdmin from './ScenarioAdmin';
 import AdminFeedback from './AdminFeedback';
 import Image from 'next/image';
@@ -21,6 +22,7 @@ type Investigator = {
   status: string;
   reviewNote: string | null;
   createdAt: string;
+  contactPhone: string | null;
   user: {
     id: number;
     name: string | null;
@@ -58,6 +60,18 @@ type ScenarioSummary = {
   createdAt: string;
 };
 
+type CustomerSummary = {
+  id: number;
+  displayName: string | null;
+  phone: string | null;
+  createdAt: string;
+  user: {
+    id: number;
+    name: string | null;
+    email: string;
+  };
+};
+
 type DashboardStats = {
   totalUsers: number;
   newUsersWeek: number;
@@ -71,6 +85,8 @@ type DashboardResponse = {
   pendingInvestigators: Investigator[];
   recentRequests: InvestigationRequest[];
   trendingScenarios: ScenarioSummary[];
+  activeInvestigators: Investigator[];
+  recentCustomers: CustomerSummary[];
 };
 
 type StatCard = {
@@ -142,6 +158,68 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [removingInvestigatorId, setRemovingInvestigatorId] = useState<number | null>(null);
+  const [removingCustomerId, setRemovingCustomerId] = useState<number | null>(null);
+  const { user, setUser, logout } = useUserStore();
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(false);
+
+  const isAuthorized = user && (user.role === 'admin' || user.role === 'super_admin');
+
+  const handleAdminLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setAuthError(null);
+    setAuthLoading(true);
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: adminEmail, password: adminPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAuthError(data?.error ?? '관리자 인증에 실패했습니다.');
+        return;
+      }
+
+      if (!data?.user || !data?.token) {
+        setAuthError('로그인 응답이 올바르지 않습니다.');
+        return;
+      }
+
+      const normalizedRole = String(data.user.role ?? '').toLowerCase();
+      if (normalizedRole !== 'admin' && normalizedRole !== 'super_admin') {
+        setAuthError('관리자 권한이 없는 계정입니다.');
+        return;
+      }
+
+      try {
+        sessionStorage.setItem('lira.authToken', data.token);
+      } catch (storageError) {
+        console.warn('Failed to persist auth token', storageError);
+      }
+
+      setUser(
+        {
+          id: String(data.user.id ?? ''),
+          email: data.user.email,
+          name: data.user.name ?? '',
+          role: normalizedRole,
+          monthlyUsage: data.user.monthlyUsage ?? 0,
+          remainingTokens: data.user.remainingTokens ?? 0,
+          investigatorStatus: data.user.investigatorStatus ?? undefined,
+        },
+        data.token,
+      );
+    } catch (loginError) {
+      console.error('Admin gate login failed', loginError);
+      setAuthError('관리자 인증 중 오류가 발생했습니다.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -161,8 +239,10 @@ export default function AdminPage() {
         setLoading(false);
       }
     };
-    load();
-  }, []);
+    if (isAuthorized) {
+      load();
+    }
+  }, [isAuthorized]);
 
   const handleApproveInvestigator = async (id: number) => {
     if (!dashboard) return;
@@ -172,10 +252,12 @@ export default function AdminPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
+      const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
         throw new Error(payload.error ?? '승인에 실패했습니다.');
       }
+      const approvedInvestigator = payload?.investigator as Investigator | undefined;
+
       setDashboard((prev) => {
         if (!prev) return prev;
         const updatedPending = prev.pendingInvestigators.filter((inv) => inv.id !== id);
@@ -190,6 +272,9 @@ export default function AdminPage() {
             },
           },
           pendingInvestigators: updatedPending,
+          activeInvestigators: approvedInvestigator
+            ? [approvedInvestigator, ...prev.activeInvestigators]
+            : prev.activeInvestigators,
         };
       });
     } catch (err) {
@@ -244,6 +329,78 @@ export default function AdminPage() {
     }
   };
 
+  const handleRemoveInvestigator = async (profileId: number) => {
+    if (!dashboard) return;
+    setRemovingInvestigatorId(profileId);
+    try {
+      const res = await fetch(`/api/admin/investigators/${profileId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error ?? '조사원 삭제에 실패했습니다.');
+      }
+
+      setDashboard((prev) => {
+        if (!prev) return prev;
+        const pendingRemoved = prev.pendingInvestigators.some((item) => item.id === profileId);
+        const activeRemoved = prev.activeInvestigators.some((item) => item.id === profileId);
+        const investigatorStats = { ...prev.stats.investigator };
+        if (pendingRemoved) {
+          investigatorStats.PENDING = Math.max((investigatorStats.PENDING ?? 1) - 1, 0);
+        }
+        if (activeRemoved) {
+          investigatorStats.APPROVED = Math.max((investigatorStats.APPROVED ?? 1) - 1, 0);
+        }
+        return {
+          ...prev,
+          stats: {
+            ...prev.stats,
+            investigator: investigatorStats,
+          },
+          pendingInvestigators: prev.pendingInvestigators.filter((item) => item.id !== profileId),
+          activeInvestigators: prev.activeInvestigators.filter((item) => item.id !== profileId),
+        };
+      });
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : '조사원 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setRemovingInvestigatorId(null);
+    }
+  };
+
+  const handleRemoveCustomer = async (customerProfileId: number) => {
+    if (!dashboard) return;
+    setRemovingCustomerId(customerProfileId);
+    try {
+      const res = await fetch(`/api/admin/customers/${customerProfileId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error ?? '고객 삭제에 실패했습니다.');
+      }
+
+      setDashboard((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          stats: {
+            ...prev.stats,
+            totalUsers: Math.max(prev.stats.totalUsers - 1, 0),
+          },
+          recentCustomers: prev.recentCustomers.filter((item) => item.id !== customerProfileId),
+        };
+      });
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : '고객 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setRemovingCustomerId(null);
+    }
+  };
+
   const statCards = useMemo<StatCard[]>(() => {
     if (!dashboard) return [];
     const { stats } = dashboard;
@@ -275,9 +432,77 @@ export default function AdminPage() {
     ];
   }, [dashboard]);
 
+  if (!isAuthorized) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-12">
+        <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white/95 p-8 shadow-lg backdrop-blur">
+          <h1 className="text-center text-2xl font-bold text-slate-800">관리자 인증</h1>
+          <p className="mt-3 text-center text-sm text-slate-500">
+            관리자 아이디와 비밀번호를 입력해야 운영 대시보드에 접근할 수 있습니다.
+          </p>
+          {authError && (
+            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-center text-sm text-rose-600">
+              {authError}
+            </div>
+          )}
+          <form onSubmit={handleAdminLogin} className="mt-6 space-y-4">
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-slate-600" htmlFor="adminEmail">
+                관리자 이메일
+              </label>
+              <input
+                id="adminEmail"
+                type="email"
+                value={adminEmail}
+                onChange={(event) => setAdminEmail(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                placeholder="admin@example.com"
+                required
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-slate-600" htmlFor="adminPassword">
+                비밀번호
+              </label>
+              <input
+                id="adminPassword"
+                type="password"
+                value={adminPassword}
+                onChange={(event) => setAdminPassword(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                placeholder="비밀번호를 입력하세요"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={authLoading}
+              className="w-full rounded-2xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            >
+              {authLoading ? '확인 중…' : '관리자 대시보드 입장'}
+            </button>
+          </form>
+          {user && user.role !== 'admin' && user.role !== 'super_admin' && (
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                setAdminEmail('');
+                setAdminPassword('');
+              }}
+              className="mt-4 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              다른 계정으로 로그인하기
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f9ff] via-[#eef2fb] to-white py-12">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-12 px-5 lg:px-8">
         <header className="rounded-3xl bg-white/80 p-8 shadow-sm backdrop-blur">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -366,13 +591,22 @@ export default function AdminPage() {
                             </p>
                             <p className="text-xs text-slate-500">{inv.user.email}</p>
                           </div>
-                          <button
-                            onClick={() => handleApproveInvestigator(inv.id)}
-                            disabled={approvingId === inv.id}
-                            className="inline-flex items-center rounded-full bg-sky-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-300"
-                          >
-                            {approvingId === inv.id ? '승인 중…' : '승인 완료'}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleApproveInvestigator(inv.id)}
+                              disabled={approvingId === inv.id}
+                              className="inline-flex items-center rounded-full bg-sky-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                            >
+                              {approvingId === inv.id ? '승인 중…' : '승인 완료'}
+                            </button>
+                            <button
+                              onClick={() => handleRemoveInvestigator(inv.id)}
+                              disabled={removingInvestigatorId === inv.id}
+                              className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-4 py-1.5 text-xs font-semibold text-rose-600 shadow-sm transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                            >
+                              {removingInvestigatorId === inv.id ? '삭제 중…' : '삭제'}
+                            </button>
+                          </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3 text-xs text-slate-600">
                           <div className="rounded-xl bg-white/80 p-3">
@@ -545,6 +779,128 @@ export default function AdminPage() {
             </div>
           </section>
         </div>
+
+        <section className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+          <div className="rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm backdrop-blur">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-[#1a2340]">승인된 조사원 명단</h2>
+                <p className="text-sm text-slate-500">서비스에 참여 중인 조사원을 관리하고 필요 시 즉시 비활성화하세요.</p>
+              </div>
+              <span className="text-xs text-slate-400">최근 업데이트 기준</span>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-slate-100">
+              <table className="min-w-full table-fixed border-collapse">
+                <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">조사원</th>
+                    <th className="px-4 py-3">전문 분야</th>
+                    <th className="px-4 py-3">연락처</th>
+                    <th className="px-4 py-3 text-right">관리</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white text-sm">
+                  {dashboard?.activeInvestigators.map((inv) => {
+                    const specialties = chipList(inv.specialties).slice(0, 3);
+                    return (
+                      <tr key={inv.id} className="border-t border-slate-100">
+                        <td className="px-4 py-4">
+                          <div className="font-semibold text-[#1a2340]">{inv.user.name ?? '이름 미기재'}</div>
+                          <div className="text-xs text-slate-400">{inv.user.email}</div>
+                        </td>
+                        <td className="px-4 py-4">
+                          {specialties.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {specialties.map((spec) => (
+                                <span key={spec} className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] text-slate-500">
+                                  #{spec}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400">전문 분야 미등록</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-slate-600">{inv.contactPhone ?? '-'}</td>
+                        <td className="px-4 py-4 text-right">
+                          <button
+                            onClick={() => handleRemoveInvestigator(inv.id)}
+                            disabled={removingInvestigatorId === inv.id}
+                            className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 shadow-sm transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                          >
+                            {removingInvestigatorId === inv.id ? '삭제 중…' : '삭제'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {dashboard && dashboard.activeInvestigators.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-400">
+                        아직 승인된 조사원이 없습니다. 승인을 완료하면 명단이 표시됩니다.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm backdrop-blur">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-[#1a2340]">최근 가입 고객</h2>
+                <p className="text-sm text-slate-500">신규 고객 정보를 빠르게 확인하고, 필요 시 계정을 정리하세요.</p>
+              </div>
+              <span className="text-xs text-slate-400">최근 8명</span>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-slate-100">
+              <table className="min-w-full table-fixed border-collapse">
+                <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">고객</th>
+                    <th className="px-4 py-3">연락처</th>
+                    <th className="px-4 py-3">가입일</th>
+                    <th className="px-4 py-3 text-right">관리</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white text-sm">
+                  {dashboard?.recentCustomers.map((customer) => (
+                    <tr key={customer.id} className="border-t border-slate-100">
+                      <td className="px-4 py-4">
+                        <div className="font-semibold text-[#1a2340]">{customer.displayName || customer.user.name || '이름 미기재'}</div>
+                        <div className="text-xs text-slate-400">{customer.user.email}</div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-slate-600">{customer.phone ?? '-'}</td>
+                      <td className="px-4 py-4 text-xs text-slate-400">
+                        {new Date(customer.createdAt).toLocaleDateString('ko-KR', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <button
+                          onClick={() => handleRemoveCustomer(customer.id)}
+                          disabled={removingCustomerId === customer.id}
+                          className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 shadow-sm transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                        >
+                          {removingCustomerId === customer.id ? '삭제 중…' : '삭제'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {dashboard && dashboard.recentCustomers.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-400">
+                        최근 가입한 고객이 없습니다. 신규 가입이 발생하면 여기에서 확인할 수 있습니다.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
         <section className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           <div className="rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm backdrop-blur">

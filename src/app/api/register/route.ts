@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   const prisma = await getPrismaClient();
   console.log('[API] Prisma client obtained successfully');
 
-  const existingUser = await prisma.user.findUnique({ where: { email } });
+  const existingUser = await prisma.user.findFirst({ where: { email, deletedAt: null } });
     if (existingUser) {
       return NextResponse.json({ error: '이미 사용중인 이메일입니다.' }, { status: 409 });
     }

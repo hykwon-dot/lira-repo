@@ -20,8 +20,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '이메일/비밀번호 필요' }, { status: 400 });
     }
   const prisma = await getPrismaClient();
-  const user = await prisma.user.findUnique({
-      where: { email },
+  const user = await prisma.user.findFirst({
+    where: { email, deletedAt: null },
       include: {
         investigator: {
           select: {
@@ -50,11 +50,17 @@ export async function POST(req: NextRequest) {
       },
     });
     if (!user) {
-      return NextResponse.json({ error: '자격 증명 오류' }, { status: 401 });
+      return NextResponse.json(
+        { error: '등록되지 않은 이메일입니다.', code: 'USER_NOT_FOUND' },
+        { status: 404 }
+      );
     }
     const ok = await verifyPassword(password, user.password);
     if (!ok) {
-      return NextResponse.json({ error: '자격 증명 오류' }, { status: 401 });
+      return NextResponse.json(
+        { error: '비밀번호가 올바르지 않습니다.', code: 'INVALID_PASSWORD' },
+        { status: 401 }
+      );
     }
     if (user.role === 'INVESTIGATOR') {
       const status = user.investigator?.status ?? null;

@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useUserStore } from "@/lib/userStore";
 import { CASE_STATUS_META } from "@/lib/investigationWorkflow";
+import type { IntakeSummary } from "@/app/simulation/types";
 
 type InvestigatorSummary = {
   id: number;
@@ -40,7 +41,10 @@ type PrefillPayload = {
   createdAt: number;
   title?: string;
   details?: string;
-  desiredOutcome?: string;
+  conversationSummary?: string;
+  structuredSummary?: IntakeSummary | null;
+  transcript?: Array<{ role: string; content: string }>;
+  transcriptText?: string;
 };
 
 const toSpecialtyArray = (value: unknown): string[] => {
@@ -74,13 +78,15 @@ export default function RequestComposer({ investigator, scenarios }: RequestComp
 
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
-  const [desiredOutcome, setDesiredOutcome] = useState("");
   const [scenarioId, setScenarioId] = useState<string>("");
   const [budgetMin, setBudgetMin] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [prefillContext, setPrefillContext] = useState<
+    Pick<PrefillPayload, "conversationSummary" | "structuredSummary" | "transcript" | "transcriptText"> | undefined
+  >(undefined);
 
   const investigatorSpecialties = useMemo(() => toSpecialtyArray(investigator.specialties), [investigator.specialties]);
 
@@ -101,8 +107,18 @@ export default function RequestComposer({ investigator, scenarios }: RequestComp
       }
 
       setTitle((prev) => (prev ? prev : parsed.title ?? prev));
-      setDetails((prev) => (prev ? prev : parsed.details ?? prev));
-      setDesiredOutcome((prev) => (prev ? prev : parsed.desiredOutcome ?? prev));
+      setDetails((prev) => {
+        if (prev) return prev;
+        if (parsed.details) return parsed.details;
+        if (typeof parsed.transcriptText === "string") return parsed.transcriptText;
+        return prev;
+      });
+      setPrefillContext({
+        conversationSummary: parsed.conversationSummary ?? undefined,
+        structuredSummary: parsed.structuredSummary ?? undefined,
+        transcript: Array.isArray(parsed.transcript) ? parsed.transcript : undefined,
+        transcriptText: typeof parsed.transcriptText === "string" ? parsed.transcriptText : undefined,
+      });
     } catch (prefillError) {
       console.warn("[REQUEST_COMPOSER_PREFILL_ERROR]", prefillError);
     } finally {
@@ -123,6 +139,18 @@ export default function RequestComposer({ investigator, scenarios }: RequestComp
   const removeToast = (id: number) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
+
+  const handleCopyTranscript = useCallback(() => {
+    if (!prefillContext?.transcriptText) return;
+    if (typeof navigator === "undefined" || !navigator.clipboard) {
+      pushToast("error", "클립보드에 복사할 수 없습니다. 브라우저를 확인해주세요.");
+      return;
+    }
+    navigator.clipboard
+      .writeText(prefillContext.transcriptText)
+      .then(() => pushToast("info", "대화 기록을 클립보드에 복사했습니다."))
+      .catch(() => pushToast("error", "대화 기록 복사에 실패했습니다."));
+  }, [prefillContext?.transcriptText]);
 
   const handleRedirectToLogin = () => {
     const params = new URLSearchParams(searchParams?.toString() ?? "");
@@ -174,7 +202,6 @@ export default function RequestComposer({ investigator, scenarios }: RequestComp
       const payload: Record<string, unknown> = {
         title: trimmedTitle,
         details: trimmedDetails,
-        desiredOutcome: desiredOutcome.trim() || undefined,
         investigatorId: investigator.id,
       };
 
@@ -338,110 +365,153 @@ export default function RequestComposer({ investigator, scenarios }: RequestComp
         )}
 
         {token && isCustomer && (
-          <section className="space-y-6">
-            {error && (
-              <div className="rounded-2xl border border-rose-200 bg-rose-50/90 p-4 text-sm text-rose-600">
-                {error}
-              </div>
-            )}
+          <>
+            <section className="space-y-6">
+              {error && (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50/90 p-4 text-sm text-rose-600">
+                  {error}
+                </div>
+              )}
 
-            <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
-              <h2 className="text-lg font-semibold text-[#1a2340]">사건 개요</h2>
-              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-slate-500">사건 제목 *</label>
-                  <input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                    placeholder="예: 제품 유출 의혹 조사"
-                  />
+              <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
+                <h2 className="text-lg font-semibold text-[#1a2340]">사건 개요</h2>
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-semibold text-slate-500">사건 제목 *</label>
+                    <input
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                      placeholder="예: 제품 유출 의혹 조사"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-semibold text-slate-500">연관 시나리오</label>
+                    <select
+                      value={scenarioId}
+                      onChange={(e) => setScenarioId(e.target.value)}
+                      className="rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    >
+                      <option value="">선택 없음</option>
+                      {scenarios.map((scenario) => (
+                        <option key={scenario.id} value={scenario.id}>
+                          {scenario.title}
+                          {scenario.category ? ` · ${scenario.category}` : ""}
+                          {scenario.difficulty ? ` (${scenario.difficulty})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-slate-500">연관 시나리오</label>
-                  <select
-                    value={scenarioId}
-                    onChange={(e) => setScenarioId(e.target.value)}
-                    className="rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                  >
-                    <option value="">선택 없음</option>
-                    {scenarios.map((scenario) => (
-                      <option key={scenario.id} value={scenario.id}>
-                        {scenario.title}
-                        {scenario.category ? ` · ${scenario.category}` : ""}
-                        {scenario.difficulty ? ` (${scenario.difficulty})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="mt-4 flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-500">사건 상세 *</label>
-                <textarea
-                  value={details}
-                  onChange={(e) => setDetails(e.target.value)}
-                  className="min-h-[180px] rounded-2xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                  placeholder="사건의 배경, 수사 목표, 기대하는 결과 등을 상세히 작성해주세요."
-                />
-              </div>
-              <div className="mt-4 flex flex-col gap-1">
-                <label className="text-xs font-semibold text-slate-500">기대하는 결과</label>
-                <textarea
-                  value={desiredOutcome}
-                  onChange={(e) => setDesiredOutcome(e.target.value)}
-                  className="min-h-[120px] rounded-2xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                  placeholder="원하는 산출물, 보고서 형태, 대응 일정 등을 작성해주세요."
-                />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
-              <h2 className="text-lg font-semibold text-[#1a2340]">예산 & 일정</h2>
-              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-slate-500">예산 최소 (₩)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={budgetMin}
-                    onChange={(e) => setBudgetMin(e.target.value)}
-                    className="rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                    placeholder="예: 2000000"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-slate-500">예산 최대 (₩)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={budgetMax}
-                    onChange={(e) => setBudgetMax(e.target.value)}
-                    className="rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                    placeholder="예: 5000000"
+                <div className="mt-4 flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-slate-500">사건 상세 *</label>
+                  <textarea
+                    value={details}
+                    onChange={(e) => setDetails(e.target.value)}
+                    className="min-h-[180px] rounded-2xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    placeholder="사건의 배경, 주요 사실, 필요한 지원 사항 등을 상세히 작성해주세요."
                   />
                 </div>
               </div>
-              <p className="mt-3 text-xs text-slate-400">
-                * 예산은 대략적인 범위로 작성해주셔도 좋습니다. 세부 조건은 민간조사원과 협의하세요.
-              </p>
-            </div>
 
-            <div className="flex items-center justify-between">
-              <Link
-                href="/investigators"
-                className="inline-flex items-center rounded-full border border-slate-200 px-5 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-800"
-              >
-                ← 다른 민간조사원 보기
-              </Link>
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="inline-flex items-center rounded-full bg-[#1f3aec] px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-[#172ac7] disabled:cursor-not-allowed disabled:bg-slate-400"
-              >
-                {submitting ? "등록 중..." : "사건 의뢰 보내기"}
-              </button>
-            </div>
-          </section>
+              <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
+                <h2 className="text-lg font-semibold text-[#1a2340]">예산 & 일정</h2>
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-semibold text-slate-500">예산 최소 (₩)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={budgetMin}
+                      onChange={(e) => setBudgetMin(e.target.value)}
+                      className="rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                      placeholder="예: 2000000"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-semibold text-slate-500">예산 최대 (₩)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={budgetMax}
+                      onChange={(e) => setBudgetMax(e.target.value)}
+                      className="rounded-xl border border-slate-200 px-4 py-3 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                      placeholder="예: 5000000"
+                    />
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-400">
+                  * 예산은 대략적인 범위로 작성해주셔도 좋습니다. 세부 조건은 민간조사원과 협의하세요.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Link
+                  href="/investigators"
+                  className="inline-flex items-center rounded-full border border-slate-200 px-5 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-800"
+                >
+                  ← 다른 민간조사원 보기
+                </Link>
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="inline-flex items-center rounded-full bg-[#1f3aec] px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-[#172ac7] disabled:cursor-not-allowed disabled:bg-slate-400"
+                >
+                  {submitting ? "등록 중..." : "사건 의뢰 보내기"}
+                </button>
+              </div>
+            </section>
+
+            {prefillContext && (prefillContext.conversationSummary || prefillContext.transcript?.length) ? (
+              <section className="rounded-3xl border border-indigo-100 bg-white/90 p-6 shadow-sm backdrop-blur">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-[#1a2340]">AI Intake 대화 기록</h2>
+                    <p className="mt-1 text-xs text-slate-500">
+                      시뮬레이션에서 수집된 요약과 대화 내역입니다. 필요에 따라 세부 내용을 수정하거나 추가하세요.
+                    </p>
+                  </div>
+                  {prefillContext.transcriptText ? (
+                    <button
+                      type="button"
+                      onClick={handleCopyTranscript}
+                      className="inline-flex items-center rounded-full border border-indigo-200 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition hover:border-indigo-300 hover:bg-indigo-50"
+                    >
+                      대화 기록 복사
+                    </button>
+                  ) : null}
+                </div>
+
+                {prefillContext.conversationSummary ? (
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">요약 브리핑</p>
+                    <p className="mt-2 whitespace-pre-wrap">{prefillContext.conversationSummary}</p>
+                  </div>
+                ) : null}
+
+                {prefillContext.transcript?.length ? (
+                  <div className="mt-4 max-h-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white/95">
+                    <ul className="divide-y divide-slate-100">
+                      {prefillContext.transcript.map((entry, index) => (
+                        <li key={`transcript-${index}`} className="flex gap-3 px-4 py-3 text-sm">
+                          <span
+                            className={`mt-1 inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                              entry.role === "assistant"
+                                ? "bg-indigo-500/10 text-indigo-600"
+                                : "bg-slate-500/10 text-slate-600"
+                            }`}
+                          >
+                            {entry.role === "assistant" ? "AI" : "의뢰인"}
+                          </span>
+                          <p className="flex-1 whitespace-pre-wrap text-slate-700">{entry.content}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
+          </>
         )}
       </div>
     </div>

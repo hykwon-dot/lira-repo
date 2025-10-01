@@ -7,6 +7,7 @@ function daysAgo(days: number) {
 
 export async function GET() {
   const prisma = await getPrismaClient();
+
   const [
     totalUsers,
     newUsersWeek,
@@ -16,28 +17,35 @@ export async function GET() {
     pendingInvestigators,
     recentRequests,
     trendingScenarios,
+    activeInvestigators,
+    recentCustomers,
   ] = await Promise.all([
-    prisma.user.count(),
+    prisma.user.count({ where: { deletedAt: null } }),
     prisma.user.count({
       where: {
-        createdAt: {
-          gte: daysAgo(7),
-        },
+        createdAt: { gte: daysAgo(7) },
+        deletedAt: null,
       },
     }),
     prisma.investigatorProfile.groupBy({
       by: ['status'],
       _count: true,
+      where: {
+        deletedAt: null,
+        user: { deletedAt: null },
+      },
     }),
     prisma.investigationRequest.groupBy({
       by: ['status'],
       _count: true,
     }),
-    prisma.scenario.count({
-      where: { isActive: true },
-    }),
+    prisma.scenario.count({ where: { isActive: true } }),
     prisma.investigatorProfile.findMany({
-      where: { status: 'PENDING' },
+      where: {
+        status: 'PENDING',
+        deletedAt: null,
+        user: { deletedAt: null },
+      },
       orderBy: { createdAt: 'desc' },
       take: 6,
       include: {
@@ -51,6 +59,9 @@ export async function GET() {
       },
     }),
     prisma.investigationRequest.findMany({
+      where: {
+        user: { deletedAt: null },
+      },
       orderBy: { createdAt: 'desc' },
       take: 6,
       include: {
@@ -65,6 +76,8 @@ export async function GET() {
           select: {
             id: true,
             title: true,
+            category: true,
+            difficulty: true,
           },
         },
       },
@@ -81,23 +94,52 @@ export async function GET() {
         createdAt: true,
       },
     }),
+    prisma.investigatorProfile.findMany({
+      where: {
+        status: 'APPROVED',
+        deletedAt: null,
+        user: { deletedAt: null },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 8,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    }),
+    prisma.customerProfile.findMany({
+      where: {
+        deletedAt: null,
+        user: { deletedAt: null },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    }),
   ]);
 
-  const investigatorStats = investigatorCounts.reduce(
-    (acc, item) => {
-      acc[item.status] = item._count;
-      return acc;
-    },
-    { PENDING: 0, APPROVED: 0, REJECTED: 0 } as Record<string, number>,
-  );
+  const investigatorStats = investigatorCounts.reduce<Record<string, number>>((acc, item) => {
+    acc[item.status] = item._count;
+    return acc;
+  }, { PENDING: 0, APPROVED: 0, REJECTED: 0 });
 
-  const requestStats = requestCounts.reduce(
-    (acc, item) => {
-      acc[item.status] = item._count;
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
+  const requestStats = requestCounts.reduce<Record<string, number>>((acc, item) => {
+    acc[item.status] = item._count;
+    return acc;
+  }, {});
 
   return NextResponse.json({
     stats: {
@@ -110,5 +152,7 @@ export async function GET() {
     pendingInvestigators,
     recentRequests,
     trendingScenarios,
+    activeInvestigators,
+    recentCustomers,
   });
 }

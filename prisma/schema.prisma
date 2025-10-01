@@ -16,6 +16,7 @@ model User {
   role                               UserRole                     @default(USER)
   createdAt                          DateTime                     @default(now())
   updatedAt                          DateTime                     @updatedAt
+  deletedAt                          DateTime?
   conversations                      Conversation[]
   customerProfile                    CustomerProfile?
   investigationChatMessages          InvestigationChatMessage[]
@@ -56,6 +57,7 @@ model InvestigatorProfile {
   termsAcceptedAt   DateTime?
   privacyAcceptedAt DateTime?
   avatarUrl         String?                @db.VarChar(255)
+  deletedAt         DateTime?
   assignedRequests  InvestigationRequest[]
   matches           InvestigatorMatch[]
   reviewedBy        User?                  @relation("InvestigatorReviewedBy", fields: [reviewedById], references: [id])
@@ -86,6 +88,7 @@ model CustomerProfile {
   marketingOptIn     Boolean   @default(false)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
   user               User      @relation(fields: [userId], references: [id])
 }
 

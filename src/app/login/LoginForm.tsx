@@ -26,8 +26,12 @@ export default function LoginForm({ onLogin }: { onLogin?: () => void }) {
     if (!res.ok) {
       if (data?.code === 'INVESTIGATOR_PENDING') {
         setError('승인 대기 중인 민간조사원 계정입니다. 관리자 승인 후 다시 로그인해 주세요.');
+      } else if (data?.code === 'USER_NOT_FOUND') {
+        setError('등록되지 않은 이메일입니다. 회원가입 후 이용해 주세요.');
+      } else if (data?.code === 'INVALID_PASSWORD') {
+        setError('비밀번호가 올바르지 않습니다. 다시 확인해 주세요.');
       } else {
-        setError(data.error || '로그인 실패');
+        setError(data?.error || '로그인 실패');
       }
       return;
     }
@@ -87,11 +91,24 @@ export default function LoginForm({ onLogin }: { onLogin?: () => void }) {
         {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-center text-sm text-rose-600">{error}</div>}
       </form>
 
-      <div className="lira-section space-y-3 text-center text-sm text-slate-600">
-        <p>아직 계정이 없으신가요?</p>
-        <Link href="/register" className="lira-button lira-button--secondary w-full justify-center">
-          회원가입
-        </Link>
+      <div className="lira-section space-y-4 text-center text-sm text-slate-600">
+        <div className="flex items-center justify-center gap-3 text-xs text-slate-500">
+          <Link href="/account/find-id" className="hover:text-slate-700">
+            아이디 찾기
+          </Link>
+          <span aria-hidden="true" className="text-slate-300">
+            |
+          </span>
+          <Link href="/account/reset-password" className="hover:text-slate-700">
+            비밀번호 재설정
+          </Link>
+        </div>
+        <div className="space-y-3">
+          <p>아직 계정이 없으신가요?</p>
+          <Link href="/register" className="lira-button lira-button--secondary w-full justify-center">
+            회원가입
+          </Link>
+        </div>
       </div>
     </div>
   );

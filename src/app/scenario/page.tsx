@@ -14,14 +14,12 @@ interface ProcessedScenario {
 }
 
 async function getScenarios(): Promise<ProcessedScenario[]> {
-  console.log('[PAGE] getScenarios 함수 호출됨');
   const prisma = await getPrismaClient();
   const scenarios = await prisma.scenario.findMany({
     include: {
       phases: true,
     },
   });
-  console.log('[PAGE] DB에서 조회된 시나리오:', scenarios);
 
   // 각 시나리오에 대해 총 소요 기간과 예산을 계산합니다.
   const processedScenarios = scenarios.map((scenario: Scenario & { phases: Phase[] }) => {
@@ -40,7 +38,6 @@ async function getScenarios(): Promise<ProcessedScenario[]> {
       difficulty: scenario.difficulty ?? '미정',
     };
   });
-  console.log('[PAGE] 가공된 시나리오:', processedScenarios);
   return processedScenarios;
 }
 

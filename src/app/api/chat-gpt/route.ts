@@ -45,6 +45,22 @@ const analysisSchema = z.object({
   recommendedQuestions: z.array(z.string()).describe("생성된 시나리오를 더 구체화하거나 다음 단계로 나아가기 위해 사용자가 물어보면 좋을 만한 추천 질문 3개.")
 });
 
+const intakeSchema = z.object({
+  assistantMessage: z.string().describe("사용자에게 바로 보여줄 한국어 답변"),
+  conversationSummary: z.string().describe("탐정에게 전달할 핵심 사건 요약"),
+  summary: z.object({
+    caseTitle: z.string().describe("사건을 대표하는 간결한 제목"),
+    caseType: z.string().describe("사건 유형 분류"),
+    primaryIntent: z.string().describe("의뢰인의 주된 목적"),
+    urgency: z.string().describe("긴급도 혹은 시간 제약"),
+    objective: z.string().describe("AI가 파악한 해결 목표"),
+    keyFacts: z.array(z.string()).describe("확정적으로 파악된 핵심 사실 목록"),
+    missingDetails: z.array(z.string()).describe("추가로 확인이 필요한 정보"),
+    recommendedDocuments: z.array(z.string()).describe("준비하면 좋은 자료나 증빙"),
+    nextQuestions: z.array(z.string()).describe("이후 대화를 이어가기 위해 던질 질문 후보"),
+  }).describe("현재까지 수집된 사건 정보 요약"),
+});
+
 export async function POST(req: NextRequest) {
   try {
     if (!OPENAI_API_KEY) {
@@ -52,10 +68,11 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { messages, mode = 'chat', currentScenario } = body as {
+    const { messages, mode = 'chat', currentScenario, currentSummary } = body as {
       messages?: unknown;
       mode?: string;
       currentScenario?: Record<string, unknown> | null;
+      currentSummary?: Record<string, unknown> | null;
     };
 
     const isCoreMessage = (value: unknown): value is CoreMessage => {
@@ -76,7 +93,7 @@ export async function POST(req: NextRequest) {
       ? (messages as unknown[]).filter(isCoreMessage)
       : [];
 
-    if (mode === 'analysis') {
+  if (mode === 'analysis') {
       let systemPrompt = `You are a master AI strategist, an expert in analyzing conversations to build and refine dynamic business scenarios. Your sole output must be a single JSON object conforming to the provided schema.
 
 **Core Mission: Evolve the Scenario**
@@ -137,8 +154,61 @@ ${JSON.stringify(currentScenario, null, 2)}`;
       }
     }
 
+    if (mode === 'intake') {
+      const intakePrompt = `당신은 한국의 민간조사(SAAS) 플랫폼 LIONE의 AI Intake 파트너입니다. 
+
+당신의 역할:
+- 사용자의 설명을 바탕으로 사건 유형을 파악하고, 필요 정보가 모두 수집될 때까지 부드럽게 추가 질문을 이어갑니다.
+- 질문은 한 번에 1~2개로 압축하고, 사용자가 이미 제공한 내용을 반복해서 묻지 않습니다.
+- 사건 유형 예시: 배우자 외도, 미행/감시, 기업 내부 감사, 지적재산 침해, 실종, 스토킹, 디지털 증거 분석, 채권추심 등. 자유롭게 새로운 유형을 만들어도 되지만, 항상 한국어로 작성하세요.
+- 각 사건 유형별로 꼭 필요한 핵심 정보 (누가, 무엇을, 언제, 어디서, 어떻게, 현재 확보한 증거, 원하는 결과, 예산·긴급도 등)를 빠짐없이 수집합니다.
+- 사용자의 말투와 맥락을 존중하는 따뜻하고 전문적인 어조를 유지합니다.
+- 답변(assistantMessage)에는 "요약"을 제공하지 말고, 현재까지 이해한 내용을 자연스럽게 되짚은 뒤 부족한 정보를 질문하세요.
+- summary에는 사건을 진행할 민간조사원이 바로 이해할 수 있도록 구조화된 정보를 정리합니다.
+- conversationSummary는 5~7문장으로, 사건의 배경·요청 의도·핵심 사실·주요 인물·긴급성 등을 포함한 총괄 요약으로 작성합니다.
+- nextQuestions에는 후속 대화를 위한 구체적 질문(한국어 문장)을 최소 3개 이상 포함합니다.
+
+중요 기준:
+1. 이미 수집한 사실을 keyFacts에 정리합니다.
+2. 아직 모호한 부분이나 추가 확인이 필요한 항목은 missingDetails에 남깁니다.
+3. 사건 진행 전 준비하면 좋은 자료나 증빙을 recommendedDocuments에 나열합니다.
+4. 사건의 긴급성, 시간 제약이 보이면 urgency에 명확히 기록합니다.
+5. primaryIntent와 objective는 사용자의 진짜 목적과 원하는 해결 방향을 명확히 적어주세요.
+`; 
+
+      const summaryContext = currentSummary && Object.keys(currentSummary).length > 0
+        ? `
+현재까지 정리된 요약:
+${JSON.stringify(currentSummary, null, 2)}
+`
+        : '';
+
+      try {
+        const { object } = await generateObject({
+          model: openai('gpt-4o-mini'),
+          schema: intakeSchema,
+          messages: [
+            { role: 'system', content: intakePrompt + summaryContext },
+            ...coreMessages,
+          ],
+        });
+
+        return NextResponse.json(object);
+      } catch (error) {
+        console.error('[INTAKE_GENERATION_ERROR]', error);
+        return NextResponse.json(
+          {
+            error: 'AI_INTAKE_FAILED',
+            message: '대화 요약을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.',
+            details: error instanceof Error ? { message: error.message } : 'Unknown error',
+          },
+          { status: 500 }
+        );
+      }
+    }
+
     // Default Chat Mode
-    const systemMessageContent = 'You are a friendly and helpful AI partner named Weaving.';
+  const systemMessageContent = 'You are a friendly and helpful AI partner named Weaving.';
     const result = await streamText({
       model: openai('gpt-3.5-turbo-16k'),
       messages: [{ role: 'system', content: systemMessageContent }, ...coreMessages],

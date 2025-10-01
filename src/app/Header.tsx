@@ -1,21 +1,28 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useUserStore, User } from "@/lib/userStore";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { Menu, X } from "lucide-react";
 
 export default function Header() {
   const { user, logout } = useUserStore();
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     setLoggedInUser(user);
   }, [user]);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   const showMyPageButton = Boolean(
     loggedInUser && ["user", "enterprise", "investigator", "admin", "super_admin"].includes(loggedInUser.role),
@@ -27,33 +34,34 @@ export default function Header() {
     router.push('/');
   };
 
+  const navLinks = [
+    { href: "/", label: "홈" },
+    { href: "/simulation", label: "AI 시뮬레이션" },
+    { href: "/scenarios", label: "시나리오 라이브러리" },
+    { href: "/report", label: "데이터 리포트" },
+  ];
+
   // 로그인/회원가입 페이지에서는 헤더를 숨김
-  if (pathname === '/login' || pathname === '/register') {
+  if (pathname === '/login' || pathname === '/register' || pathname?.startsWith('/account/')) {
     return null;
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-md">
-      <div className="container mx-auto px-4 h-20 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <img 
-            src="/images/lione-logo.svg" 
-            alt="LI-ONE 로고" 
-            className="h-8 w-8"
-            onError={(e) => {
-              // 이미지 로드 실패 시 폴백 SVG 표시
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-            }}
-          />
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-          <Link href="/" className="text-2xl font-bold text-gray-800">
-            LI-ONE
+    <header className="sticky top-0 z-50 bg-white/95 shadow-md backdrop-blur">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:h-20">
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
+            <Image
+              src="/images/lione-logo.svg"
+              alt="LIONE 로고"
+              width={180}
+              height={54}
+              priority
+              className="h-8 w-auto md:h-10"
+            />
           </Link>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="hidden items-center gap-4 md:flex">
           {loggedInUser && (
             <ErrorBoundary>
               <NotificationBell />
@@ -85,7 +93,108 @@ export default function Header() {
             </div>
           )}
         </div>
+        <button
+          type="button"
+          aria-label="모바일 메뉴 열기"
+          aria-expanded={mobileMenuOpen}
+          onClick={() => setMobileMenuOpen((prev) => !prev)}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-blue-200 hover:text-blue-500 md:hidden"
+        >
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
+      {mobileMenuOpen && (
+        <>
+          <button
+            type="button"
+            aria-label="모바일 메뉴 닫기"
+            onClick={() => setMobileMenuOpen(false)}
+            className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden"
+          />
+          <nav className="fixed top-0 right-0 z-50 flex h-full w-[78vw] max-w-xs flex-col gap-6 border-l border-slate-100 bg-white px-6 py-8 shadow-xl md:hidden">
+            <div className="flex items-center justify-between">
+              <Image
+                src="/images/lione-logo.svg"
+                alt="LIONE 로고"
+                width={160}
+                height={48}
+                className="h-8 w-auto"
+              />
+              <button
+                type="button"
+                aria-label="모바일 메뉴 닫기"
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-full p-2 text-slate-500 hover:bg-slate-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              {loggedInUser ? (
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <p className="text-sm font-semibold text-slate-700">{loggedInUser.name}님</p>
+                  <p className="text-xs text-slate-500">{loggedInUser.email}</p>
+                  {showMyPageButton && (
+                    <Link
+                      href="/my-page"
+                      className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700"
+                    >
+                      내페이지로 이동
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <div className="grid gap-2">
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center justify-center rounded-full border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:border-blue-300"
+                  >
+                    로그인
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700"
+                  >
+                    회원가입
+                  </Link>
+                </div>
+              )}
+            </div>
+            <ul className="flex flex-col gap-2">
+              {navLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="flex items-center justify-between rounded-xl border border-transparent px-3 py-3 text-sm font-medium text-slate-600 transition hover:border-blue-100 hover:bg-blue-50 hover:text-blue-600"
+                  >
+                    <span>{link.label}</span>
+                    <span className="text-xs text-slate-400">바로가기</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {loggedInUser ? (
+              <div className="mt-auto space-y-3">
+                <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                  <span className="text-xs font-medium text-slate-500">알림</span>
+                  <ErrorBoundary>
+                    <div className="scale-90 transform">
+                      <NotificationBell />
+                    </div>
+                  </ErrorBoundary>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="inline-flex w-full items-center justify-center rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:border-red-300"
+                >
+                  로그아웃
+                </button>
+              </div>
+            ) : null}
+          </nav>
+        </>
+      )}
     </header>
   );
 }
