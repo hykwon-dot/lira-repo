@@ -1,0 +1,9 @@
+@echo off
+echo Starting LIRA development server...
+start /B npm run dev
+echo Waiting for server to start...
+timeout /t 10 /nobreak > nul
+echo Running comprehensive tests...
+node comprehensive-test.js
+echo Tests completed.
+pause

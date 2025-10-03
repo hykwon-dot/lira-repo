@@ -35,7 +35,14 @@ export async function POST(
     return NextResponse.json({ error: 'NOTE_REQUIRED' }, { status: 400 });
   }
 
-  const prisma = await getPrismaClient();
+  let prisma;
+  try {
+    prisma = await getPrismaClient();
+  } catch (error) {
+    console.error('[investigators:reject] Prisma init failed', error);
+    return NextResponse.json({ error: 'SERVICE_UNAVAILABLE' }, { status: 503 });
+  }
+
   const profile = await prisma.investigatorProfile.findUnique({
     where: { id: investigatorId },
     include: { user: true },

@@ -6,12 +6,16 @@ import cuid from "cuid";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   FiAlertCircle,
+  FiClock,
   FiChevronDown,
   FiCpu,
+  FiBookOpen,
+  FiRefreshCcw,
   FiLoader,
   FiMessageCircle,
   FiSend,
   FiStar,
+  FiTrash2,
   FiUser,
 } from "react-icons/fi";
 
@@ -126,6 +130,111 @@ const assistantGreeting =
 const mapMessagesToApi = (messages: ChatMessage[]) =>
   messages.map(({ role, content }) => ({ role, content }));
 
+const buildHistoryStorageKey = (userId?: string | number | null) =>
+  `simulation.chatHistory:${userId ?? "guest"}`;
+
+const buildConversationStorageKey = (userId?: string | number | null) =>
+  `simulation.chatConversation:${userId ?? "guest"}`;
+
+const parseTimestamp = (value: unknown) => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return Date.now();
+};
+
+const mapServerRoleToChatRole = (role: unknown): ChatRole | null => {
+  if (typeof role !== "string") return null;
+  if (role.toUpperCase() === "AI" || role.toLowerCase() === "assistant") {
+    return "assistant";
+  }
+  if (role.toUpperCase() === "USER" || role.toLowerCase() === "user") {
+    return "user";
+  }
+  return null;
+};
+
+const mapServerMessageToChat = (message: unknown): ChatMessage | null => {
+  if (!message || typeof message !== "object") return null;
+  const record = message as Record<string, unknown>;
+  const role = mapServerRoleToChatRole(record.role);
+  if (!role) return null;
+  const content = typeof record.content === "string" ? record.content.trim() : "";
+  if (!content) return null;
+  const createdAt = parseTimestamp(record.createdAt);
+  const idSource = record.id ?? `${role}-${createdAt}-${Math.random()}`;
+  return {
+    id: String(idSource),
+    role,
+    content,
+    createdAt,
+  };
+};
+
+const mapServerMessagesToChat = (messages: unknown): ChatMessage[] => {
+  if (!Array.isArray(messages)) return [];
+  return messages
+    .map(mapServerMessageToChat)
+    .filter((item): item is ChatMessage => Boolean(item));
+};
+
+interface PersistedSession {
+  id: string;
+  externalId: string | null;
+  title: string | null;
+  createdAt: string;
+  updatedAt: string;
+  messages: ChatMessage[];
+}
+
+const mapConversationPayload = (value: unknown): PersistedSession | null => {
+  if (!value || typeof value !== "object") return null;
+  const record = value as { conversation?: unknown; messages?: unknown };
+  const conversationRaw = record.conversation;
+  if (!conversationRaw || typeof conversationRaw !== "object") return null;
+  const conversation = conversationRaw as Record<string, unknown>;
+  const rawId = conversation.id;
+  if (typeof rawId !== "number" && typeof rawId !== "string") return null;
+  const externalId =
+    typeof conversation.externalId === "string" && conversation.externalId.trim()
+      ? conversation.externalId.trim()
+      : null;
+  const title =
+    typeof conversation.title === "string" && conversation.title.trim()
+      ? conversation.title.trim()
+      : null;
+  const createdAt =
+    typeof conversation.createdAt === "string" && conversation.createdAt
+      ? conversation.createdAt
+      : new Date().toISOString();
+  const updatedAt =
+    typeof conversation.updatedAt === "string" && conversation.updatedAt
+      ? conversation.updatedAt
+      : createdAt;
+  const messages = mapServerMessagesToChat(record.messages);
+  return {
+    id: String(rawId),
+    externalId,
+    title,
+    createdAt,
+    updatedAt,
+    messages,
+  };
+};
+
+const sortSessionsByRecency = (sessions: PersistedSession[]) =>
+  [...sessions].sort((a, b) => {
+    const aTime = parseTimestamp(a.updatedAt ?? a.createdAt);
+    const bTime = parseTimestamp(b.updatedAt ?? b.createdAt);
+    return bTime - aTime;
+  });
+
 export const ChatSimulation = () => {
   const router = useRouter();
   const { user, logout } = useUserStore();
@@ -152,6 +261,11 @@ export const ChatSimulation = () => {
     useState(false);
   const [recommendationsError, setRecommendationsError] =
     useState<string | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [persistedSessions, setPersistedSessions] = useState<PersistedSession[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   const matchButtonLabel = useMemo(() => {
     if (!user) return "로그인 후 탐정고르기";
@@ -164,6 +278,10 @@ export const ChatSimulation = () => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const conversationIdRef = useRef<string | null>(null);
   const summaryRef = useRef<IntakeSummary | null>(null);
+  const storageKeyRef = useRef<string | null>(null);
+  const historyHydratedRef = useRef(false);
+  const bootstrapHadStoredMessagesRef = useRef(false);
+  const previousUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     summaryRef.current = intakeSummary;
@@ -181,6 +299,223 @@ export const ChatSimulation = () => {
       behavior: "smooth",
     });
   }, [messages.length]);
+
+  useEffect(() => {
+    const currentUserId = user?.id ? String(user.id) : null;
+    if (previousUserIdRef.current === currentUserId) {
+      return;
+    }
+
+    previousUserIdRef.current = currentUserId;
+    historyHydratedRef.current = false;
+    storageKeyRef.current = null;
+    bootstrapHadStoredMessagesRef.current = false;
+
+    conversationIdRef.current = null;
+    setConversationId(null);
+
+    if (!currentUserId) {
+      setMessages([
+        {
+          id: cuid(),
+          role: "assistant",
+          content: assistantGreeting,
+          createdAt: Date.now(),
+        },
+      ]);
+      setPersistedSessions([]);
+      return;
+    }
+
+    setMessages([
+      {
+        id: cuid(),
+        role: "assistant",
+        content: assistantGreeting,
+        createdAt: Date.now(),
+      },
+    ]);
+    setPersistedSessions([]);
+  }, [user?.id]);
+
+  const loadPersistedSessions = useCallback(
+    async (options?: { signal?: AbortSignal; silent?: boolean }) => {
+      if (!user?.id) {
+        setPersistedSessions([]);
+        setHistoryError(null);
+        bootstrapHadStoredMessagesRef.current = false;
+        if (!options?.silent) {
+          setIsHistoryLoading(false);
+        }
+        return;
+      }
+
+      const normalizedUserId = Number(user.id);
+      if (!Number.isInteger(normalizedUserId) || normalizedUserId <= 0) {
+        setPersistedSessions([]);
+        setHistoryError(null);
+        bootstrapHadStoredMessagesRef.current = false;
+        if (!options?.silent) {
+          setIsHistoryLoading(false);
+        }
+        return;
+      }
+
+      if (!options?.silent) {
+        setIsHistoryLoading(true);
+        setHistoryError(null);
+      }
+
+      try {
+        const response = await fetch(
+          `/api/conversation?userId=${encodeURIComponent(String(normalizedUserId))}`,
+          {
+            method: "GET",
+            signal: options?.signal,
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch conversations: ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const mappedSessions = Array.isArray(payload)
+          ? payload
+              .map(mapConversationPayload)
+              .filter((item): item is PersistedSession => Boolean(item))
+          : [];
+
+        const sortedSessions = sortSessionsByRecency(mappedSessions);
+        setPersistedSessions(sortedSessions);
+
+        if (!bootstrapHadStoredMessagesRef.current && sortedSessions.length > 0) {
+          const latestSession = sortedSessions[0];
+          if (latestSession.messages.length > 0) {
+            setMessages(latestSession.messages);
+            conversationIdRef.current = latestSession.externalId ?? null;
+            setConversationId(latestSession.externalId ?? null);
+            bootstrapHadStoredMessagesRef.current = true;
+          }
+        }
+      } catch (error) {
+        if (options?.signal?.aborted) return;
+        console.error("[SIMULATION_HISTORY_FETCH_ERROR]", error);
+        setHistoryError("이전 상담 내역을 가져오지 못했습니다.");
+      } finally {
+        if (!options?.silent) {
+          setIsHistoryLoading(false);
+        }
+      }
+    },
+    [user?.id],
+  );
+
+  useEffect(() => {
+    if (!user?.id) {
+      setPersistedSessions([]);
+      setHistoryError(null);
+      setIsHistoryLoading(false);
+      bootstrapHadStoredMessagesRef.current = false;
+      return;
+    }
+
+    const controller = new AbortController();
+    void loadPersistedSessions({ signal: controller.signal, silent: false });
+
+    return () => controller.abort();
+  }, [loadPersistedSessions, user?.id]);
+
+  const handleRefreshHistory = useCallback(() => {
+    void loadPersistedSessions();
+  }, [loadPersistedSessions]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!user?.id) {
+      storageKeyRef.current = null;
+      historyHydratedRef.current = true;
+      bootstrapHadStoredMessagesRef.current = false;
+      return;
+    }
+
+    const keySuffix = String(user.id);
+    const historyKey = buildHistoryStorageKey(keySuffix);
+    const conversationKey = buildConversationStorageKey(keySuffix);
+
+    storageKeyRef.current = historyKey;
+
+    let restoredMessages: ChatMessage[] | null = null;
+    let restoredConversationId: string | null = null;
+
+    try {
+      const rawHistory = window.localStorage.getItem(historyKey);
+      if (rawHistory) {
+        const parsed = JSON.parse(rawHistory) as {
+          messages?: ChatMessage[];
+        };
+        if (Array.isArray(parsed?.messages) && parsed.messages.length > 0) {
+          restoredMessages = parsed.messages;
+        }
+      }
+
+      const rawConversationId = window.localStorage.getItem(conversationKey);
+      if (rawConversationId) {
+        restoredConversationId = rawConversationId;
+      }
+    } catch (error) {
+      console.warn("[SIMULATION_HISTORY_RESTORE_ERROR]", error);
+    }
+
+    if (restoredMessages) {
+      setMessages(restoredMessages);
+      bootstrapHadStoredMessagesRef.current = true;
+    } else {
+      bootstrapHadStoredMessagesRef.current = false;
+    }
+
+    if (restoredConversationId) {
+      conversationIdRef.current = restoredConversationId;
+      setConversationId(restoredConversationId);
+    } else {
+      conversationIdRef.current = null;
+      setConversationId(null);
+    }
+
+    historyHydratedRef.current = true;
+
+    return () => {
+      storageKeyRef.current = null;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!historyHydratedRef.current) return;
+    if (!user?.id) return;
+
+    const keySuffix = String(user.id);
+    const historyKey = storageKeyRef.current ?? buildHistoryStorageKey(keySuffix);
+    const conversationKey = buildConversationStorageKey(keySuffix);
+
+    try {
+      window.localStorage.setItem(
+        historyKey,
+        JSON.stringify({ messages }),
+      );
+
+      if (conversationId) {
+        window.localStorage.setItem(
+          conversationKey,
+          conversationId,
+        );
+      } else {
+        window.localStorage.removeItem(conversationKey);
+      }
+    } catch (error) {
+      console.warn("[SIMULATION_HISTORY_STORE_ERROR]", error);
+    }
+  }, [messages, conversationId, user?.id]);
 
   const persistConversation = useCallback(
     async (question: string, answer: string) => {
@@ -210,13 +545,31 @@ export const ChatSimulation = () => {
         const data = await res.json();
         const externalId = data?.conversation?.externalId;
         if (typeof externalId === "string" && externalId.trim()) {
-          conversationIdRef.current = externalId.trim();
+          const normalized = externalId.trim();
+          conversationIdRef.current = normalized;
+          setConversationId(normalized);
         }
+
+        const persistedSession = mapConversationPayload({
+          conversation: data?.conversation,
+          messages: data?.messages,
+        });
+        if (persistedSession) {
+          setPersistedSessions((prev) =>
+            sortSessionsByRecency([
+              ...prev.filter((session) => session.id !== persistedSession.id),
+              persistedSession,
+            ]),
+          );
+          setHistoryError(null);
+        }
+
+        void loadPersistedSessions({ silent: true });
       } catch (error) {
         console.error("[SIMULATION_CONVERSATION_SAVE_ERROR]", error);
       }
     },
-    [user]
+    [loadPersistedSessions, user?.id],
   );
 
   const transcriptForHandoff = useMemo(
@@ -245,6 +598,8 @@ export const ChatSimulation = () => {
         createdAt: Date.now(),
       };
 
+      bootstrapHadStoredMessagesRef.current = true;
+
       setMessages((prev) => [...prev, userMessage]);
 
       const payloadMessages = mapMessagesToApi([...messages, userMessage]);
@@ -261,6 +616,7 @@ export const ChatSimulation = () => {
             mode: "intake",
             messages: payloadMessages,
             currentSummary: summaryRef.current,
+            conversationId: conversationIdRef.current,
           }),
         });
 
@@ -321,6 +677,54 @@ export const ChatSimulation = () => {
     },
     [handleSendMessage, isAssistantThinking]
   );
+
+  const handleClearHistory = useCallback(() => {
+    const resetMessage: ChatMessage = {
+      id: cuid(),
+      role: "assistant",
+      content: assistantGreeting,
+      createdAt: Date.now(),
+    };
+
+    const previousConversationId = conversationIdRef.current;
+
+    setMessages([resetMessage]);
+    conversationIdRef.current = null;
+    setConversationId(null);
+
+    const keySuffix = user?.id ? String(user.id) : null;
+    if (keySuffix && typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(buildHistoryStorageKey(keySuffix));
+        window.localStorage.removeItem(buildConversationStorageKey(keySuffix));
+      } catch (error) {
+        console.warn("[SIMULATION_HISTORY_CLEAR_ERROR]", error);
+      }
+    }
+
+    if (previousConversationId) {
+      setPersistedSessions((prev) =>
+        prev.filter(
+          (session) =>
+            session.externalId !== previousConversationId &&
+            session.id !== previousConversationId,
+        ),
+      );
+    }
+
+    setIsHistoryOpen(false);
+    bootstrapHadStoredMessagesRef.current = true;
+  }, [user?.id]);
+
+  const handleLoadSession = useCallback((session: PersistedSession) => {
+    if (!session?.messages?.length) return;
+
+    setMessages(session.messages);
+    const normalizedExternalId = session.externalId ?? null;
+    conversationIdRef.current = normalizedExternalId;
+    setConversationId(normalizedExternalId);
+    bootstrapHadStoredMessagesRef.current = true;
+  }, []);
 
   const handleMatchNow = useCallback(
     (recommendation: InvestigatorRecommendation) => {
@@ -476,6 +880,17 @@ export const ChatSimulation = () => {
     [conversationSummary, intakeSummary, transcriptForHandoff]
   );
 
+  const filteredPersistedSessions = useMemo(() => {
+    if (!persistedSessions.length) return [] as PersistedSession[];
+    return persistedSessions.filter((session) => {
+      if (!session.messages.length) return false;
+      if (conversationId && session.externalId) {
+        return session.externalId !== conversationId;
+      }
+      return true;
+    });
+  }, [conversationId, persistedSessions]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -561,8 +976,8 @@ export const ChatSimulation = () => {
           </div>
         </header>
 
-  <div className="grid flex-1 min-h-0 grid-cols-1 gap-5 md:gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1.1fr)_minmax(0,1.1fr)] lg:items-stretch xl:h-[calc(100vh-200px)] xl:min-h-[calc(100vh-200px)] xl:max-h-[calc(100vh-200px)] xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1.2fr)_minmax(0,1.2fr)] xl:gap-8">
-          <section className="flex h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 shadow-2xl sm:min-h-[560px] lg:col-span-1 lg:min-h-[620px] xl:h-full xl:min-h-0 xl:max-h-full">
+  <div className="grid flex-1 min-h-0 grid-cols-1 gap-5 overflow-hidden md:gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1.1fr)_minmax(0,1.1fr)] lg:items-stretch lg:auto-rows-[minmax(0,1fr)] xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1.2fr)_minmax(0,1.2fr)] xl:gap-8 xl:auto-rows-[minmax(0,1fr)]">
+          <section className="flex h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 shadow-2xl sm:min-h-[560px] lg:col-span-1 lg:min-h-0 lg:max-h-[calc(100svh-260px)] xl:max-h-[calc(100svh-240px)]">
             <div className="border-b border-slate-200/80 bg-slate-50/80 p-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -585,18 +1000,245 @@ export const ChatSimulation = () => {
                   )}
                 </span>
               </div>
-              <div className="mt-4 flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap">
-                {quickPrompts.map((prompt) => (
+              <div className="mt-4 space-y-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <button
-                    key={prompt}
                     type="button"
-                    onClick={() => handleQuickPromptClick(prompt)}
-                    disabled={isAssistantThinking}
-                    className="max-w-[260px] rounded-full border border-indigo-100 bg-white px-3 py-1 text-[11px] font-medium text-indigo-600 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={() => setIsHistoryOpen((prev) => !prev)}
+                    className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white px-3 py-1 text-[11px] font-semibold text-indigo-600 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50"
                   >
-                    <span className="inline-block text-left leading-snug text-balance">{prompt}</span>
+                    <FiClock className="h-3.5 w-3.5" />
+                    {isHistoryOpen ? "이전 대화내역 닫기" : "이전 대화내역 열어보기"}
                   </button>
-                ))}
+                  {messages.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={handleClearHistory}
+                      className="inline-flex items-center gap-2 self-start rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-medium text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500 sm:self-auto"
+                    >
+                      <FiTrash2 className="h-3.5 w-3.5" /> 대화 초기화
+                    </button>
+                  ) : null}
+                </div>
+                {isHistoryOpen ? (
+                  <div className="space-y-3">
+                    <div className="rounded-2xl border border-indigo-100 bg-white/95 p-3 shadow-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="inline-flex items-center gap-2 text-[11px] font-semibold text-indigo-600">
+                          <FiBookOpen className="h-3.5 w-3.5" /> 현재 상담 기록
+                        </span>
+                        {conversationId ? (
+                          <span className="text-[10px] font-medium text-indigo-400">
+                            ID: {conversationId}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="custom-scrollbar mt-3 max-h-52 space-y-2 overflow-y-auto pr-1 text-[12px] text-slate-700">
+                        {messages.length > 0 ? (
+                          messages.map((message) => {
+                            const timestampLabel = Number.isFinite(message.createdAt)
+                              ? new Date(message.createdAt).toLocaleString("ko-KR", {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : null;
+
+                            return (
+                              <div
+                                key={`history-current-${message.id}`}
+                                className={cn(
+                                  "flex flex-col gap-1 rounded-xl bg-white/90 px-3 py-2 shadow-sm",
+                                  message.role === "assistant"
+                                    ? "border border-indigo-100"
+                                    : "border border-slate-200",
+                                )}
+                              >
+                                <div className="flex items-center justify-between text-[11px] font-semibold">
+                                  <span
+                                    className={cn(
+                                      "inline-flex items-center gap-1",
+                                      message.role === "assistant"
+                                        ? "text-indigo-600"
+                                        : "text-slate-600",
+                                    )}
+                                  >
+                                    {message.role === "assistant" ? "AI 응답" : "내 메시지"}
+                                  </span>
+                                  {timestampLabel ? (
+                                    <span className="text-[10px] font-medium text-slate-400">
+                                      {timestampLabel}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <p className="whitespace-pre-wrap break-words leading-relaxed text-slate-700">
+                                  {message.content}
+                                </p>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/60 px-3 py-5 text-center text-[12px] text-indigo-500">
+                            아직 대화를 시작하지 않았습니다.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-indigo-100 bg-white/95 p-3 shadow-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-2 text-[11px] font-semibold text-indigo-600">
+                          <FiClock className="h-3.5 w-3.5" /> 이전 상담 내역
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {filteredPersistedSessions.length ? (
+                            <span className="rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-0.5 text-[10px] font-semibold text-indigo-500">
+                              {filteredPersistedSessions.length}건
+                            </span>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={handleRefreshHistory}
+                            disabled={!user || isHistoryLoading}
+                            className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500 transition hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <FiRefreshCcw className="h-3 w-3" /> 새로고침
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 space-y-2 text-[12px] text-slate-700">
+                        {!user ? (
+                          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-[12px] text-slate-500">
+                            로그인하면 이전 상담 내역을 확인할 수 있습니다.
+                          </div>
+                        ) : historyError ? (
+                          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-3 text-xs text-amber-700">
+                            <FiAlertCircle className="mt-0.5 h-4 w-4" />
+                            <span>{historyError}</span>
+                          </div>
+                        ) : isHistoryLoading ? (
+                          <div className="flex items-center justify-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50/70 px-3 py-4 text-[12px] text-indigo-500">
+                            <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
+                            불러오는 중...
+                          </div>
+                        ) : filteredPersistedSessions.length > 0 ? (
+                          <div className="custom-scrollbar max-h-60 space-y-2 overflow-y-auto pr-1">
+                            {filteredPersistedSessions.map((session) => {
+                                const updatedTime = new Date(
+                                  session.updatedAt ?? session.createdAt,
+                                ).toLocaleString("ko-KR", {
+                                  year: "numeric",
+                                  month: "2-digit",
+                                  day: "2-digit",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                });
+                                const messageCount = session.messages.length;
+                                const sessionTitle = session.title ?? `상담 #${session.id}`;
+
+                                return (
+                                  <details
+                                    key={`session-${session.id}`}
+                                    className="group rounded-2xl border border-indigo-50 bg-white/95 p-3 shadow-sm"
+                                  >
+                                    <summary className="flex cursor-pointer items-start justify-between gap-3 text-left">
+                                      <div className="min-w-0 space-y-1">
+                                        <p className="text-sm font-semibold text-slate-800">
+                                          {sessionTitle}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400">
+                                          {updatedTime}
+                                        </p>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                                          {messageCount}개 메시지
+                                        </span>
+                                        <FiChevronDown className="mt-1 h-4 w-4 text-slate-400 transition group-open:rotate-180" />
+                                      </div>
+                                    </summary>
+                                    <div className="custom-scrollbar mt-3 max-h-48 space-y-2 overflow-y-auto pr-1">
+                                      {session.messages.map((message) => {
+                                        const timestampLabel = Number.isFinite(message.createdAt)
+                                          ? new Date(message.createdAt).toLocaleString("ko-KR", {
+                                              month: "short",
+                                              day: "numeric",
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })
+                                          : null;
+
+                                        return (
+                                          <div
+                                            key={`${session.id}-${message.id}`}
+                                            className={cn(
+                                              "flex flex-col gap-1 rounded-xl bg-white px-3 py-2 shadow-sm",
+                                              message.role === "assistant"
+                                                ? "border border-indigo-100"
+                                                : "border border-slate-200",
+                                            )}
+                                          >
+                                            <div className="flex items-center justify-between text-[11px] font-semibold">
+                                              <span
+                                                className={cn(
+                                                  "inline-flex items-center gap-1",
+                                                  message.role === "assistant"
+                                                    ? "text-indigo-600"
+                                                    : "text-slate-600",
+                                                )}
+                                              >
+                                                {message.role === "assistant" ? "AI 응답" : "의뢰인"}
+                                              </span>
+                                              {timestampLabel ? (
+                                                <span className="text-[10px] font-medium text-slate-400">
+                                                  {timestampLabel}
+                                                </span>
+                                              ) : null}
+                                            </div>
+                                            <p className="whitespace-pre-wrap break-words leading-relaxed text-slate-700">
+                                              {message.content}
+                                            </p>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                    <div className="mt-3 flex items-center justify-end">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleLoadSession(session)}
+                                        className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-[11px] font-semibold text-indigo-600 transition hover:border-indigo-300 hover:bg-indigo-100"
+                                      >
+                                        이 대화 불러오기
+                                      </button>
+                                    </div>
+                                  </details>
+                                );
+                              })}
+                          </div>
+                        ) : (
+                          <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/60 px-3 py-5 text-center text-[12px] text-indigo-500">
+                            아직 저장된 상담 내역이 없습니다.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+                <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap">
+                  {quickPrompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => handleQuickPromptClick(prompt)}
+                      disabled={isAssistantThinking}
+                      className="max-w-[260px] rounded-full border border-indigo-100 bg-white px-3 py-1 text-[11px] font-medium text-indigo-600 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <span className="inline-block text-left leading-snug text-balance">{prompt}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -730,7 +1372,7 @@ export const ChatSimulation = () => {
             </div>
           </section>
 
-          <section className="hidden h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 shadow-2xl lg:col-span-1 lg:flex lg:min-h-[620px] xl:h-full xl:min-h-0 xl:max-h-full">
+          <section className="hidden h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 shadow-2xl lg:col-span-1 lg:flex lg:min-h-0 lg:max-h-[calc(100svh-260px)] xl:max-h-[calc(100svh-240px)]">
               <div className="border-b border-slate-200/80 bg-slate-50/80 p-5">
                 <h2 className="text-lg font-semibold text-slate-900">사건 요약</h2>
                 <p className="mt-1 text-xs text-slate-500">
@@ -753,7 +1395,7 @@ export const ChatSimulation = () => {
               </div>
           </section>
 
-          <section className="hidden h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 shadow-2xl lg:col-span-1 lg:flex lg:min-h-[620px] xl:h-full xl:min-h-0 xl:max-h-full">
+          <section className="hidden h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 shadow-2xl lg:col-span-1 lg:flex lg:min-h-0 lg:max-h-[calc(100svh-260px)] xl:max-h-[calc(100svh-240px)]">
               <div className="border-b border-slate-200/80 bg-slate-50/80 p-5">
                 <h2 className="text-lg font-semibold text-slate-900">탐정 추천</h2>
                 <p className="mt-1 text-xs text-slate-500">

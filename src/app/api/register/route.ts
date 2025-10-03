@@ -24,6 +24,7 @@ interface InvestigatorPayload extends BasePayload {
   licenseNumber?: string | null;
   experienceYears?: number;
   serviceArea?: string | null;
+  serviceAreas?: unknown;
   introduction?: string | null;
   portfolioUrl?: string | null;
   contactPhone?: string | null;
@@ -94,7 +95,8 @@ export async function POST(req: NextRequest) {
         specialties,
         licenseNumber,
         experienceYears,
-        serviceArea,
+  serviceArea,
+  serviceAreas,
         introduction,
         portfolioUrl,
         contactPhone,
@@ -124,6 +126,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'experienceYears 는 0 이상의 숫자여야 합니다.' }, { status: 400 });
       }
 
+      const serviceAreaList = Array.isArray(serviceAreas) ? serviceAreas : [];
+      const sanitizedServiceAreas = serviceAreaList
+        .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+        .map((item) => item.trim());
+      const normalizedServiceArea =
+        typeof serviceArea === 'string' && serviceArea.trim().length > 0
+          ? serviceArea.trim()
+          : sanitizedServiceAreas.join(', ');
+
       const now = new Date();
       // Prisma 타입 캐싱 지연으로 delegate 접근 인식 문제 발생 시 ts-ignore 처리
       const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -137,7 +148,7 @@ export async function POST(req: NextRequest) {
             licenseNumber: licenseNumber ?? null,
             experienceYears: years,
             contactPhone: contactPhone?.trim() ?? null,
-            serviceArea: serviceArea ?? null,
+            serviceArea: normalizedServiceArea || null,
             introduction: introduction ?? null,
             portfolioUrl: portfolioUrl ?? null,
             termsAcceptedAt: now,

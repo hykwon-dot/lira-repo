@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useUserStore } from '@/lib/userStore';
 import ScenarioAdmin from './ScenarioAdmin';
 import AdminFeedback from './AdminFeedback';
@@ -160,13 +160,24 @@ export default function AdminPage() {
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [removingInvestigatorId, setRemovingInvestigatorId] = useState<number | null>(null);
   const [removingCustomerId, setRemovingCustomerId] = useState<number | null>(null);
-  const { user, setUser, logout } = useUserStore();
+  const { user, token, setUser, logout } = useUserStore();
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
 
   const isAuthorized = user && (user.role === 'admin' || user.role === 'super_admin');
+
+  const resolveAuthToken = useCallback(() => {
+    if (token) return token;
+    if (typeof window === 'undefined') return null;
+    try {
+      return sessionStorage.getItem('lira.authToken');
+    } catch (storageError) {
+      console.warn('Failed to read auth token', storageError);
+      return null;
+    }
+  }, [token]);
 
   const handleAdminLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -226,7 +237,20 @@ export default function AdminPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('/api/admin/dashboard');
+        const authToken = resolveAuthToken();
+        const headers: HeadersInit = authToken
+          ? { Authorization: `Bearer ${authToken}` }
+          : {};
+        const res = await fetch('/api/admin/dashboard', {
+          headers,
+          cache: 'no-store',
+        });
+        if (res.status === 401 || res.status === 403) {
+          setError('관리자 인증이 만료되었습니다. 다시 로그인해주세요.');
+          setDashboard(null);
+          logout();
+          return;
+        }
         if (!res.ok) {
           throw new Error('대시보드 데이터를 불러오지 못했습니다.');
         }
@@ -242,15 +266,24 @@ export default function AdminPage() {
     if (isAuthorized) {
       load();
     }
-  }, [isAuthorized]);
+  }, [isAuthorized, logout, resolveAuthToken]);
 
   const handleApproveInvestigator = async (id: number) => {
     if (!dashboard) return;
     setApprovingId(id);
     try {
+      const authToken = resolveAuthToken();
+      if (!authToken) {
+        setError('관리자 인증이 만료되었습니다. 다시 로그인해주세요.');
+        logout();
+        return;
+      }
       const res = await fetch(`/api/admin/investigators/${id}/approve`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -289,9 +322,18 @@ export default function AdminPage() {
     if (!dashboard) return;
     setUpdatingId(id);
     try {
+      const authToken = resolveAuthToken();
+      if (!authToken) {
+        setError('관리자 인증이 만료되었습니다. 다시 로그인해주세요.');
+        logout();
+        return;
+      }
       const res = await fetch(`/api/admin/investigation-requests/${id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
         body: JSON.stringify({ status }),
       });
       if (!res.ok) {
@@ -333,8 +375,17 @@ export default function AdminPage() {
     if (!dashboard) return;
     setRemovingInvestigatorId(profileId);
     try {
+      const authToken = resolveAuthToken();
+      if (!authToken) {
+        setError('관리자 인증이 만료되었습니다. 다시 로그인해주세요.');
+        logout();
+        return;
+      }
       const res = await fetch(`/api/admin/investigators/${profileId}`, {
         method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
@@ -374,8 +425,17 @@ export default function AdminPage() {
     if (!dashboard) return;
     setRemovingCustomerId(customerProfileId);
     try {
+      const authToken = resolveAuthToken();
+      if (!authToken) {
+        setError('관리자 인증이 만료되었습니다. 다시 로그인해주세요.');
+        logout();
+        return;
+      }
       const res = await fetch(`/api/admin/customers/${customerProfileId}`, {
         method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));

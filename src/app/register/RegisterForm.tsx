@@ -5,7 +5,11 @@ import Link from 'next/link';
 import { useUserStore } from '@/lib/userStore';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
-import { CASE_TYPE_OPTIONS, INVESTIGATOR_SPECIALTIES } from '@/lib/options';
+import {
+  CASE_TYPE_OPTIONS,
+  INVESTIGATOR_REGION_OPTIONS,
+  INVESTIGATOR_SPECIALTY_GROUPS,
+} from '@/lib/options';
 
 type PublicRole = 'USER' | 'INVESTIGATOR';
 
@@ -37,7 +41,7 @@ export default function RegisterForm() {
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [licenseNumber, setLicenseNumber] = useState('');
   const [experienceYears, setExperienceYears] = useState('');
-  const [serviceArea, setServiceArea] = useState('');
+  const [serviceAreas, setServiceAreas] = useState<string[]>([]);
   const [intro, setIntro] = useState('');
   const [portfolioUrl, setPortfolioUrl] = useState('');
 
@@ -60,7 +64,7 @@ export default function RegisterForm() {
     setSpecialties([]);
     setLicenseNumber('');
     setExperienceYears('');
-    setServiceArea('');
+  setServiceAreas([]);
     setIntro('');
     setPortfolioUrl('');
   };
@@ -186,6 +190,10 @@ export default function RegisterForm() {
         setError('최소 한 개 이상의 전문 분야를 선택해 주세요.');
         return;
       }
+      if (serviceAreas.length === 0) {
+        setError('주요 활동 지역을 최소 1개 이상 선택해 주세요.');
+        return;
+      }
       const expNumber = experienceYears ? Number(experienceYears) : 0;
       if (experienceYears && Number.isNaN(expNumber)) {
         setError('경력 연수는 숫자로 입력해 주세요.');
@@ -200,7 +208,8 @@ export default function RegisterForm() {
         licenseNumber: licenseNumber || null,
         specialties,
         experienceYears: expNumber,
-        serviceArea: serviceArea || null,
+        serviceAreas,
+        serviceArea: serviceAreas.join(', '),
         introduction: intro || null,
         portfolioUrl: portfolioUrl || null,
         contactPhone: phone || null,
@@ -484,29 +493,49 @@ export default function RegisterForm() {
             </div>
 
             <div className="mt-6 space-y-5">
-              <div>
-                <p className="text-sm font-semibold text-[#1a2340]">전문 분야 (최소 1개 선택)</p>
-                <p className="mt-1 text-xs text-slate-500">특화된 분야를 알려주시면 적합한 사건과 빠르게 매칭됩니다.</p>
-                <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
-                  {INVESTIGATOR_SPECIALTIES.map((option) => {
-                    const checked = specialties.includes(option.value);
-                    return (
-                      <label
-                        key={option.value}
-                        className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-sm shadow-sm transition ${
-                          checked ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => setSpecialties((prev) => toggleSelection(prev, option.value))}
-                          className="lira-checkbox"
-                        />
-                        <span>{option.label}</span>
-                      </label>
-                    );
-                  })}
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-semibold text-[#1a2340]">전문 분야 (최소 1개 선택)</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    대분류별 전문 역량을 선택하면 적합한 사건과 빠르게 매칭됩니다.
+                  </p>
+                </div>
+                <div className="space-y-6">
+                  {INVESTIGATOR_SPECIALTY_GROUPS.map((group) => (
+                    <div key={group.category} className="space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-500">
+                        {group.category}
+                      </p>
+                      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                        {group.options.map((option) => {
+                          const checked = specialties.includes(option.value);
+                          return (
+                            <label
+                              key={option.value}
+                              className={`flex cursor-pointer flex-col gap-2 rounded-xl border px-4 py-3 text-sm shadow-sm transition ${
+                                checked
+                                  ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
+                                  : 'border-slate-200 bg-white text-slate-600'
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => setSpecialties((prev) => toggleSelection(prev, option.value))}
+                                  className="mt-1 lira-checkbox"
+                                />
+                                <div className="space-y-1">
+                                  <span className="font-semibold text-[#0f172a]">{option.label}</span>
+                                  <p className="text-xs leading-relaxed text-slate-500">{option.description}</p>
+                                </div>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -534,16 +563,36 @@ export default function RegisterForm() {
                 </label>
               </div>
 
-              <label className="lira-field">
-                주요 활동 지역
-                <input
-                  type="text"
-                  value={serviceArea}
-                  onChange={(e) => setServiceArea(e.target.value)}
-                  className="lira-input"
-                  placeholder="예: 전국, 수도권, 온라인"
-                />
-              </label>
+              <div className="space-y-3">
+                <p className="text-sm font-semibold text-[#1a2340]">주요 활동 지역 (복수 선택)</p>
+                <p className="text-xs text-slate-500">활동 가능한 지역을 모두 선택해 주세요. 지역별 맞춤 매칭에 활용됩니다.</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {INVESTIGATOR_REGION_OPTIONS.map((option) => {
+                    const checked = serviceAreas.includes(option.value);
+                    return (
+                      <label
+                        key={option.value}
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-sm shadow-sm transition ${
+                          checked ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => setServiceAreas((prev) => toggleSelection(prev, option.value))}
+                          className="lira-checkbox"
+                        />
+                        <span>{option.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {serviceAreas.length > 0 && (
+                  <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-2 text-xs text-emerald-700">
+                    선택한 지역: {serviceAreas.join(', ')}
+                  </div>
+                )}
+              </div>
 
               <label className="lira-field">
                 전문 분야 소개

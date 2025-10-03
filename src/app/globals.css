@@ -25,6 +25,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  scrollbar-gutter: stable both-edges;
 }
 
 .lira-container {
@@ -311,6 +312,10 @@ body {
   }
 
   /* Custom Scrollbar */
+  .custom-scrollbar {
+    scrollbar-gutter: stable both-edges;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
   }

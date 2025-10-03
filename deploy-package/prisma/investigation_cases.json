@@ -1,0 +1,296 @@
+{
+  "adultery_investigation_case": {
+    "overview": {
+      "industry": "불륜 조사",
+      "objective": "배우자의 불륜 의혹에 대한 증거 수집 및 법적 대응 방안 제시",
+      "totalDurationDays": 14,
+      "budget": { "currency": "KRW", "recommended": 3000000, "hardCap": 5000000 },
+      "overallKPI": {
+        "evidenceQuality": 4.5,
+        "legalValidation": true,
+        "clientSatisfaction": 4.3,
+        "successRate": 0.85
+      },
+      "difficulty": "중간"
+    },
+    "phases": [
+      { 
+        "id": "A1", 
+        "name": "사건 접수 및 초기 상담", 
+        "durationDays": 2, 
+        "scheduleOffset": 0, 
+        "budget": { "min": 200000, "recommended": 300000, "max": 500000 }, 
+        "phaseKPI": { "initialAssessment": true, "contractSigned": true }, 
+        "deliverables": ["상담 기록서", "계약서", "조사 계획서"], 
+        "tasks": [ 
+          { "taskId": "A1.1", "desc": "의뢰인 상담 및 사건 개요 파악", "competency": ["상담"] }, 
+          { "taskId": "A1.2", "desc": "증거 수집 가능성 및 합법성 검토", "competency": ["법률검토"] }, 
+          { "taskId": "A1.3", "desc": "조사 일정 및 방법 계획 수립", "competency": ["조사기획"] }, 
+          { "taskId": "A1.4", "desc": "계약서 작성 및 서명", "competency": ["계약관리"] } 
+        ], 
+        "risks": [ 
+          { "riskId": "AR1", "name": "불법 조사 요구", "severity": "H", "trigger": "불법적 증거 수집 요구", "mitigation": "법적 한계 설명 및 대안 제시" } 
+        ], 
+        "nextPhase": "A2" 
+      },
+      { 
+        "id": "A2", 
+        "name": "대상자 신원 확인 및 행동 패턴 분석", 
+        "durationDays": 3, 
+        "scheduleOffset": 2, 
+        "budget": { "min": 400000, "recommended": 600000, "max": 1000000 }, 
+        "phaseKPI": { "identityConfirmed": true, "patternAnalyzed": true }, 
+        "deliverables": ["신원 조사 보고서", "행동 패턴 분석서", "스케줄 추적표"], 
+        "tasks": [ 
+          { "taskId": "A2.1", "desc": "대상자 기본 신원 정보 수집", "competency": ["신원조사"] }, 
+          { "taskId": "A2.2", "desc": "일상 생활 패턴 및 동선 파악", "competency": ["추적조사"] }, 
+          { "taskId": "A2.3", "desc": "직장 및 사회 활동 조사", "competency": ["사회관계조사"] }, 
+          { "taskId": "A2.4", "desc": "SNS 및 온라인 활동 모니터링", "competency": ["디지털조사"] } 
+        ], 
+        "risks": [ 
+          { "riskId": "AR2", "name": "대상자 경계", "severity": "M", "trigger": "이상 행동 감지", "mitigation": "조사 방법 변경 및 거리 유지" } 
+        ], 
+        "nextPhase": "A3" 
+      },
+      { 
+        "id": "A3", 
+        "name": "현장 감시 및 증거 수집", 
+        "durationDays": 7, 
+        "scheduleOffset": 5, 
+        "budget": { "min": 1500000, "recommended": 2000000, "max": 3000000 }, 
+        "phaseKPI": { "evidenceCollected": true, "photoVideoQuality": 4.0 }, 
+        "deliverables": ["현장 감시 일지", "사진/영상 증거", "통화 기록", "만남 현장 보고서"], 
+        "tasks": [ 
+          { "taskId": "A3.1", "desc": "현장 감시 및 미행 조사", "competency": ["현장조사"] }, 
+          { "taskId": "A3.2", "desc": "사진 및 영상 증거 수집", "competency": ["촬영기술"] }, 
+          { "taskId": "A3.3", "desc": "제3자와의 만남 현장 포착", "competency": ["감시조사"] }, 
+          { "taskId": "A3.4", "desc": "숙박업소 출입 확인", "competency": ["추적조사"] } 
+        ], 
+        "risks": [ 
+          { "riskId": "AR3", "name": "증거 수집 실패", "severity": "H", "trigger": "결정적 증거 미확보", "mitigation": "조사 기간 연장 및 방법 변경" } 
+        ], 
+        "nextPhase": "A4" 
+      },
+      { 
+        "id": "A4", 
+        "name": "증거 분석 및 법적 검토", 
+        "durationDays": 2, 
+        "scheduleOffset": 12, 
+        "budget": { "min": 300000, "recommended": 500000, "max": 800000 }, 
+        "phaseKPI": { "legalValidation": true, "evidenceOrganized": true }, 
+        "deliverables": ["증거 분석 보고서", "법적 유효성 검토서", "조사 결과 요약"], 
+        "tasks": [ 
+          { "taskId": "A4.1", "desc": "수집된 증거의 법적 유효성 검토", "competency": ["법무검토"] }, 
+          { "taskId": "A4.2", "desc": "증거 자료 정리 및 분석", "competency": ["데이터분석"] }, 
+          { "taskId": "A4.3", "desc": "추가 보완 조사 필요성 검토", "competency": ["조사기획"] }, 
+          { "taskId": "A4.4", "desc": "최종 보고서 작성 준비", "competency": ["보고서작성"] } 
+        ], 
+        "risks": [ 
+          { "riskId": "AR4", "name": "증거 법적 무효", "severity": "H", "trigger": "불법 수집 증거 발견", "mitigation": "적법한 대안 증거 제시" } 
+        ], 
+        "nextPhase": null 
+      }
+    ]
+  },
+  "credit_investigation_case": {
+    "overview": {
+      "industry": "신용 조사",
+      "objective": "거래 상대방의 신용도 및 재정 상태 조사를 통한 투자/거래 리스크 평가",
+      "totalDurationDays": 10,
+      "budget": { "currency": "KRW", "recommended": 2000000, "hardCap": 3500000 },
+      "overallKPI": {
+        "accuracyRate": 0.95,
+        "reportCompleteness": 4.8,
+        "clientSatisfaction": 4.5,
+        "riskAssessment": true
+      },
+      "difficulty": "보통"
+    },
+    "phases": [
+      { 
+        "id": "C1", 
+        "name": "기본 정보 수집", 
+        "durationDays": 2, 
+        "scheduleOffset": 0, 
+        "budget": { "min": 200000, "recommended": 400000, "max": 600000 }, 
+        "phaseKPI": { "basicInfoComplete": true }, 
+        "deliverables": ["기본 신상 정보", "사업자 등록증", "법인 등기부등본"], 
+        "tasks": [ 
+          { "taskId": "C1.1", "desc": "대상자 기본 신상 정보 확인", "competency": ["신원조사"] }, 
+          { "taskId": "C1.2", "desc": "사업자등록증 및 법인등기부등본 수집", "competency": ["서류조사"] }, 
+          { "taskId": "C1.3", "desc": "주소지 및 사업장 실태 확인", "competency": ["현장조사"] } 
+        ], 
+        "risks": [ 
+          { "riskId": "CR1", "name": "정보 접근 제한", "severity": "M", "trigger": "필수 서류 미확보", "mitigation": "대체 정보원 활용" } 
+        ], 
+        "nextPhase": "C2" 
+      },
+      { 
+        "id": "C2", 
+        "name": "재정 상태 조사", 
+        "durationDays": 4, 
+        "scheduleOffset": 2, 
+        "budget": { "min": 800000, "recommended": 1200000, "max": 1800000 }, 
+        "phaseKPI": { "financialDataComplete": true }, 
+        "deliverables": ["재무제표 분석", "부채 현황", "자산 목록"], 
+        "tasks": [ 
+          { "taskId": "C2.1", "desc": "재무제표 및 세무 신고 내역 확인", "competency": ["재무분석"] }, 
+          { "taskId": "C2.2", "desc": "금융기관 대출 및 부채 현황 조사", "competency": ["금융조사"] }, 
+          { "taskId": "C2.3", "desc": "부동산 및 주요 자산 현황 파악", "competency": ["자산조사"] }, 
+          { "taskId": "C2.4", "desc": "매출 및 수익성 분석", "competency": ["경영분석"] } 
+        ], 
+        "risks": [ 
+          { "riskId": "CR2", "name": "재무 정보 은닉", "severity": "H", "trigger": "재무 정보 불일치", "mitigation": "다각도 검증 및 교차 확인" } 
+        ], 
+        "nextPhase": "C3" 
+      },
+      { 
+        "id": "C3", 
+        "name": "거래 이력 및 평판 조사", 
+        "durationDays": 3, 
+        "scheduleOffset": 6, 
+        "budget": { "min": 400000, "recommended": 600000, "max": 900000 }, 
+        "phaseKPI": { "reputationAssessed": true }, 
+        "deliverables": ["거래 이력 보고서", "평판 조사 결과", "분쟁 이력"], 
+        "tasks": [ 
+          { "taskId": "C3.1", "desc": "주요 거래처 및 거래 이력 조사", "competency": ["거래조사"] }, 
+          { "taskId": "C3.2", "desc": "업계 내 평판 및 신뢰도 조사", "competency": ["평판조사"] }, 
+          { "taskId": "C3.3", "desc": "법적 분쟁 및 소송 이력 확인", "competency": ["법무조사"] } 
+        ], 
+        "risks": [ 
+          { "riskId": "CR3", "name": "평판 정보 부족", "severity": "M", "trigger": "신뢰할 만한 정보원 부족", "mitigation": "간접 정보 및 공개 자료 활용" } 
+        ], 
+        "nextPhase": "C4" 
+      },
+      { 
+        "id": "C4", 
+        "name": "종합 분석 및 보고서 작성", 
+        "durationDays": 1, 
+        "scheduleOffset": 9, 
+        "budget": { "min": 200000, "recommended": 400000, "max": 600000 }, 
+        "phaseKPI": { "reportCompleted": true }, 
+        "deliverables": ["종합 신용 보고서", "리스크 평가", "권고사항"], 
+        "tasks": [ 
+          { "taskId": "C4.1", "desc": "수집 정보 종합 분석", "competency": ["데이터분석"] }, 
+          { "taskId": "C4.2", "desc": "신용도 등급 산정", "competency": ["신용평가"] }, 
+          { "taskId": "C4.3", "desc": "최종 보고서 작성", "competency": ["보고서작성"] } 
+        ], 
+        "risks": [ 
+          { "riskId": "CR4", "name": "평가 오류", "severity": "H", "trigger": "정보 분석 실수", "mitigation": "다중 검토 및 검증" } 
+        ], 
+        "nextPhase": null 
+      }
+    ]
+  },
+  "missing_person_case": {
+    "overview": {
+      "industry": "실종자 수색",
+      "objective": "실종된 가족/지인의 행방 추적 및 안전 확인",
+      "totalDurationDays": 21,
+      "budget": { "currency": "KRW", "recommended": 4000000, "hardCap": 7000000 },
+      "overallKPI": {
+        "discoveryRate": 0.75,
+        "responseTime": 24,
+        "familySatisfaction": 4.0,
+        "safetyConfirmed": true
+      },
+      "difficulty": "높음"
+    },
+    "phases": [
+      { 
+        "id": "M1", 
+        "name": "실종 신고 접수 및 초기 대응", 
+        "durationDays": 1, 
+        "scheduleOffset": 0, 
+        "budget": { "min": 100000, "recommended": 200000, "max": 400000 }, 
+        "phaseKPI": { "reportReceived": true, "urgencyAssessed": true }, 
+        "deliverables": ["실종 신고서", "초기 상황 보고서", "수색 계획"], 
+        "tasks": [ 
+          { "taskId": "M1.1", "desc": "실종 상황 접수 및 긴급도 평가", "competency": ["위기관리"] }, 
+          { "taskId": "M1.2", "desc": "실종자 기본 정보 수집", "competency": ["정보수집"] }, 
+          { "taskId": "M1.3", "desc": "최종 목격 장소 및 시간 확인", "competency": ["현장조사"] }, 
+          { "taskId": "M1.4", "desc": "경찰 신고 여부 확인", "competency": ["협력조사"] } 
+        ], 
+        "risks": [ 
+          { "riskId": "MR1", "name": "골든타임 경과", "severity": "H", "trigger": "실종 후 48시간 경과", "mitigation": "집중 수색 및 인력 확대" } 
+        ], 
+        "nextPhase": "M2" 
+      },
+      { 
+        "id": "M2", 
+        "name": "주변 인물 및 관계망 조사", 
+        "durationDays": 5, 
+        "scheduleOffset": 1, 
+        "budget": { "min": 800000, "recommended": 1200000, "max": 2000000 }, 
+        "phaseKPI": { "networkMapped": true, "leadsIdentified": true }, 
+        "deliverables": ["인맥 지도", "증언 기록", "행동 패턴 분석"], 
+        "tasks": [ 
+          { "taskId": "M2.1", "desc": "가족 및 친구 인터뷰", "competency": ["인터뷰"] }, 
+          { "taskId": "M2.2", "desc": "직장 동료 및 학교 관계자 면담", "competency": ["사회관계조사"] }, 
+          { "taskId": "M2.3", "desc": "최근 연락한 사람들 추적", "competency": ["통신조사"] }, 
+          { "taskId": "M2.4", "desc": "평소 행동 패턴 분석", "competency": ["행동분석"] } 
+        ], 
+        "risks": [ 
+          { "riskId": "MR2", "name": "증언 불일치", "severity": "M", "trigger": "상충되는 증언", "mitigation": "교차 검증 및 추가 확인" } 
+        ], 
+        "nextPhase": "M3" 
+      },
+      { 
+        "id": "M3", 
+        "name": "디지털 발자취 추적", 
+        "durationDays": 4, 
+        "scheduleOffset": 6, 
+        "budget": { "min": 600000, "recommended": 1000000, "max": 1500000 }, 
+        "phaseKPI": { "digitalTraceFound": true }, 
+        "deliverables": ["통화 기록 분석", "SNS 활동 내역", "카드 사용 기록"], 
+        "tasks": [ 
+          { "taskId": "M3.1", "desc": "휴대폰 통화 및 문자 기록 분석", "competency": ["디지털포렌식"] }, 
+          { "taskId": "M3.2", "desc": "SNS 계정 활동 추적", "competency": ["SNS조사"] }, 
+          { "taskId": "M3.3", "desc": "신용카드 사용 내역 확인", "competency": ["금융조사"] }, 
+          { "taskId": "M3.4", "desc": "CCTV 영상 분석", "competency": ["영상분석"] } 
+        ], 
+        "risks": [ 
+          { "riskId": "MR3", "name": "디지털 증거 부족", "severity": "M", "trigger": "디지털 활동 중단", "mitigation": "물리적 수색 강화" } 
+        ], 
+        "nextPhase": "M4" 
+      },
+      { 
+        "id": "M4", 
+        "name": "현장 수색 및 목격자 수소문", 
+        "durationDays": 10, 
+        "scheduleOffset": 10, 
+        "budget": { "min": 2000000, "recommended": 3000000, "max": 5000000 }, 
+        "phaseKPI": { "areaSearched": 0.8, "witnessesFound": 5 }, 
+        "deliverables": ["수색 지역 맵", "목격자 증언", "현장 증거"], 
+        "tasks": [ 
+          { "taskId": "M4.1", "desc": "최종 목격 지역 집중 수색", "competency": ["현장수색"] }, 
+          { "taskId": "M4.2", "desc": "주변 상가 및 주민 수소문", "competency": ["지역조사"] }, 
+          { "taskId": "M4.3", "desc": "대중교통 이용 기록 확인", "competency": ["교통조사"] }, 
+          { "taskId": "M4.4", "desc": "숙박업소 및 찜질방 확인", "competency": ["시설조사"] } 
+        ], 
+        "risks": [ 
+          { "riskId": "MR4", "name": "수색 지역 확대", "severity": "M", "trigger": "단서 부족", "mitigation": "수색 범위 체계적 확대" } 
+        ], 
+        "nextPhase": "M5" 
+      },
+      { 
+        "id": "M5", 
+        "name": "최종 확인 및 보고", 
+        "durationDays": 1, 
+        "scheduleOffset": 20, 
+        "budget": { "min": 200000, "recommended": 400000, "max": 600000 }, 
+        "phaseKPI": { "finalReportCompleted": true }, 
+        "deliverables": ["최종 수색 보고서", "발견 경위", "사후 조치 방안"], 
+        "tasks": [ 
+          { "taskId": "M5.1", "desc": "발견 시 안전 확인", "competency": ["안전확인"] }, 
+          { "taskId": "M5.2", "desc": "가족 연락 및 인계", "competency": ["가족상담"] }, 
+          { "taskId": "M5.3", "desc": "최종 보고서 작성", "competency": ["보고서작성"] } 
+        ], 
+        "risks": [ 
+          { "riskId": "MR5", "name": "미발견 지속", "severity": "H", "trigger": "수색 기간 종료", "mitigation": "장기 수색 계획 수립" } 
+        ], 
+        "nextPhase": null 
+      }
+    ]
+  }
+}

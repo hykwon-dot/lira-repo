@@ -1,0 +1,304 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getPrismaClient } from '@/lib/prisma';
+import { signToken } from '@/lib/jwt';
+import { hash as hashPassword } from '@node-rs/bcrypt';
+import type { Prisma } from '@prisma/client';
+
+export const dynamic = 'force-dynamic';
+
+
+// 허용된 공개 가입 역할 (SUPER_ADMIN 은 seed 또는 내부 승격 전용)
+const ALLOWED_PUBLIC_ROLES = ['USER', 'INVESTIGATOR', 'ENTERPRISE'] as const;
+
+type PublicRole = (typeof ALLOWED_PUBLIC_ROLES)[number];
+
+interface BasePayload {
+  email: string;
+  password: string;
+  name: string;
+  role?: PublicRole;
+}
+
+interface InvestigatorPayload extends BasePayload {
+  specialties?: unknown;
+  licenseNumber?: string | null;
+  experienceYears?: number;
+  serviceArea?: string | null;
+  introduction?: string | null;
+  portfolioUrl?: string | null;
+  contactPhone?: string | null;
+  acceptsTerms?: boolean;
+  acceptsPrivacy?: boolean;
+}
+
+interface EnterprisePayload extends BasePayload {
+  companyName?: string;
+  businessNumber?: string | null;
+  contactPhone?: string | null;
+  sizeCode?: string | null;
+  note?: string | null;
+}
+interface CustomerPayload extends BasePayload {
+  displayName?: string | null;
+  phone?: string | null;
+  birthDate?: string | null;
+  gender?: string | null;
+  occupation?: string | null;
+  region?: string | null;
+  preferredCaseTypes?: string[];
+  budgetMin?: number | null;
+  budgetMax?: number | null;
+  urgencyLevel?: string | null;
+  securityQuestion?: string | null;
+  securityAnswer?: string | null;
+  acceptsTerms?: boolean;
+  acceptsPrivacy?: boolean;
+  marketingOptIn?: boolean;
+}
+
+export async function POST(req: NextRequest) {
+  console.log('[API] POST /api/register - Request received');
+  
+  try {
+
+    console.log('[API] Parsing request body...');
+    const body: unknown = await req.json();
+    console.log('[API] Request body parsed successfully');
+    const { email, password, name } = body as BasePayload;
+    let { role } = body as BasePayload;
+
+    if (!email || !password || !name) {
+      return NextResponse.json({ error: '이메일/비밀번호/이름은 필수입니다.' }, { status: 400 });
+    }
+
+    // 기본 역할 USER
+    if (!role) role = 'USER';
+    if (!ALLOWED_PUBLIC_ROLES.includes(role as PublicRole)) {
+      return NextResponse.json({ error: '허용되지 않은 역할입니다.' }, { status: 400 });
+    }
+
+  console.log('[API] Getting Prisma client...');
+  const prisma = await getPrismaClient();
+  console.log('[API] Prisma client obtained successfully');
+
+  const existingUser = await prisma.user.findFirst({ where: { email, deletedAt: null } });
+    if (existingUser) {
+      return NextResponse.json({ error: '이미 사용중인 이메일입니다.' }, { status: 409 });
+    }
+
+  const hashedPassword = await hashPassword(password, 10);
+
+    // 역할별 검증 & 데이터 구성
+    if (role === 'INVESTIGATOR') {
+      const {
+        specialties,
+        licenseNumber,
+        experienceYears,
+        serviceArea,
+        introduction,
+        portfolioUrl,
+        contactPhone,
+        acceptsTerms,
+        acceptsPrivacy,
+      } = body as InvestigatorPayload;
+
+      if (!acceptsTerms || !acceptsPrivacy) {
+        return NextResponse.json({ error: '약관 및 개인정보 동의는 필수입니다.' }, { status: 400 });
+      }
+
+      const specialtyList = Array.isArray(specialties) ? specialties : [];
+      const sanitizedSpecialties = specialtyList
+        .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+        .map((item) => item.trim());
+
+      if (sanitizedSpecialties.length === 0) {
+        return NextResponse.json({ error: '민간조사원은 최소 1개 이상의 전문분야(specialties)가 필요합니다.' }, { status: 400 });
+      }
+
+      if (!contactPhone || typeof contactPhone !== 'string' || contactPhone.trim().length < 6) {
+        return NextResponse.json({ error: '민간조사원은 연락 가능한 휴대폰 번호를 입력해야 합니다.' }, { status: 400 });
+      }
+
+      const years = Number.isFinite(experienceYears as number) ? Number(experienceYears) : 0;
+      if (years < 0) {
+        return NextResponse.json({ error: 'experienceYears 는 0 이상의 숫자여야 합니다.' }, { status: 400 });
+      }
+
+      const now = new Date();
+      // Prisma 타입 캐싱 지연으로 delegate 접근 인식 문제 발생 시 ts-ignore 처리
+      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        const user = await tx.user.create({
+          data: { email, name, password: hashedPassword, role: 'INVESTIGATOR' },
+        });
+        const profile = await tx.investigatorProfile.create({
+          data: {
+            userId: user.id,
+            specialties: sanitizedSpecialties,
+            licenseNumber: licenseNumber ?? null,
+            experienceYears: years,
+            contactPhone: contactPhone?.trim() ?? null,
+            serviceArea: serviceArea ?? null,
+            introduction: introduction ?? null,
+            portfolioUrl: portfolioUrl ?? null,
+            termsAcceptedAt: now,
+            privacyAcceptedAt: now,
+          },
+        });
+        return { user, profile };
+      });
+      const { password: removedPassword, ...userSanitized } = result.user;
+      void removedPassword;
+      return NextResponse.json(
+        {
+          ...userSanitized,
+          investigator: result.profile,
+          investigatorStatus: result.profile.status,
+        },
+        { status: 201 },
+      );
+    }
+
+    if (role === 'ENTERPRISE') {
+      const { companyName, businessNumber, contactPhone, sizeCode, note } = body as EnterprisePayload;
+      if (!companyName) {
+        return NextResponse.json({ error: '기업 가입에는 companyName 이 필요합니다.' }, { status: 400 });
+      }
+      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        const user = await tx.user.create({
+          data: { email, name, password: hashedPassword, role: 'ENTERPRISE' },
+        });
+        const organizationWithMembers = await tx.organization.create({
+          data: {
+            name: companyName,
+            businessNumber: businessNumber ?? null,
+            contactName: name,
+            contactPhone: contactPhone ?? null,
+            sizeCode: sizeCode ?? null,
+            note: note ?? null,
+            ownerId: user.id,
+            members: {
+              create: {
+                userId: user.id,
+                role: 'OWNER',
+              },
+            },
+          },
+          include: {
+            members: {
+              where: { userId: user.id },
+            },
+          },
+        });
+        const { members: memberList, ...organization } = organizationWithMembers;
+        const membership = memberList[0];
+        if (!membership) {
+          throw new Error('FAILED_TO_CREATE_ORG_OWNER');
+        }
+        return { user, organization, membership };
+      });
+      const { password: removedPassword, ...userSanitized } = result.user;
+      void removedPassword;
+      const token = signToken({ userId: Number(result.user.id), role: result.user.role });
+      return NextResponse.json(
+        {
+          ...userSanitized,
+          organization: result.organization,
+          membership: {
+            id: result.membership.id,
+            role: result.membership.role,
+            organizationId: result.membership.organizationId,
+            userId: result.membership.userId,
+            invitedById: result.membership.invitedById,
+            createdAt: result.membership.createdAt,
+            updatedAt: result.membership.updatedAt,
+          },
+          token,
+        },
+        { status: 201 },
+      );
+    }
+
+    // 기본 USER 가입 (고객 프로필 확장)
+  const customerPayload = body as CustomerPayload;
+  if (!customerPayload.acceptsTerms || !customerPayload.acceptsPrivacy) {
+      return NextResponse.json({ error: '약관 및 개인정보 동의는 필수입니다.' }, { status: 400 });
+    }
+
+    if ((customerPayload.securityQuestion && !customerPayload.securityAnswer) || (!customerPayload.securityQuestion && customerPayload.securityAnswer)) {
+      return NextResponse.json({ error: '보안 질문과 답변은 함께 입력해야 합니다.' }, { status: 400 });
+    }
+
+    let birthDate: Date | null = null;
+    if (customerPayload.birthDate) {
+      const parsed = new Date(customerPayload.birthDate);
+      if (Number.isNaN(parsed.getTime())) {
+        return NextResponse.json({ error: 'birthDate 형식이 올바르지 않습니다.' }, { status: 400 });
+      }
+      birthDate = parsed;
+    }
+
+    const preferredCaseTypes = Array.isArray(customerPayload.preferredCaseTypes)
+      ? customerPayload.preferredCaseTypes.filter((item) => typeof item === 'string')
+      : [];
+
+    const budgetMin = customerPayload.budgetMin != null ? Number(customerPayload.budgetMin) : null;
+    const budgetMax = customerPayload.budgetMax != null ? Number(customerPayload.budgetMax) : null;
+    if (budgetMin != null && Number.isNaN(budgetMin)) {
+      return NextResponse.json({ error: 'budgetMin 은 숫자여야 합니다.' }, { status: 400 });
+    }
+    if (budgetMax != null && Number.isNaN(budgetMax)) {
+      return NextResponse.json({ error: 'budgetMax 는 숫자여야 합니다.' }, { status: 400 });
+    }
+
+    let securityAnswerHash: string | null = null;
+    if (customerPayload.securityAnswer) {
+      securityAnswerHash = await hashPassword(customerPayload.securityAnswer, 10);
+    }
+
+    const now = new Date();
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const user = await tx.user.create({
+        data: {
+          email,
+          name,
+          password: hashedPassword,
+          role: 'USER',
+        },
+      });
+      const profile = await tx.customerProfile.create({
+        data: {
+          userId: user.id,
+          displayName: customerPayload.displayName ?? null,
+          phone: customerPayload.phone ?? null,
+          birthDate,
+          gender: customerPayload.gender ?? null,
+          occupation: customerPayload.occupation ?? null,
+          region: customerPayload.region ?? null,
+          preferredCaseTypes,
+          budgetMin,
+          budgetMax,
+          urgencyLevel: customerPayload.urgencyLevel ?? null,
+          securityQuestion: customerPayload.securityQuestion ?? null,
+          securityAnswerHash,
+          termsAcceptedAt: now,
+          privacyAcceptedAt: now,
+          marketingOptIn: Boolean(customerPayload.marketingOptIn),
+        },
+      });
+      return { user, profile };
+    });
+
+    const { password: removedPassword, ...userWithoutPassword } = result.user;
+    void removedPassword;
+    const token = signToken({ userId: Number(result.user.id), role: result.user.role });
+    return NextResponse.json({ ...userWithoutPassword, customerProfile: result.profile, token }, { status: 201 });
+  } catch (error) {
+    console.error('[API] Registration error:', error);
+    console.error('[API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    return NextResponse.json({ 
+      error: '서버 오류가 발생했습니다.',
+      details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : String(error) : undefined
+    }, { status: 500 });
+  }
+}
