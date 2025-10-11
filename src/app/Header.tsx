@@ -62,10 +62,10 @@ export default function Header() {
         <div className="flex flex-1 items-center gap-6">
           <Link href="/" className="flex items-center gap-3">
             <Image
-              src="/images/lione-logo.svg"
-              alt="LIONE 로고"
-              width={180}
-              height={54}
+              src="/images/lira-logo.svg"
+              alt="LIRA 로고"
+              width={168}
+              height={48}
               priority
               className="h-8 w-auto md:h-10"
             />
@@ -144,8 +144,8 @@ export default function Header() {
           <nav className="fixed top-0 right-0 z-50 flex h-full w-[78vw] max-w-xs flex-col gap-6 border-l border-slate-100 bg-white px-6 py-8 shadow-xl md:hidden">
             <div className="flex items-center justify-between">
               <Image
-                src="/images/lione-logo.svg"
-                alt="LIONE 로고"
+                src="/images/lira-logo.svg"
+                alt="LIRA 로고"
                 width={160}
                 height={48}
                 className="h-8 w-auto"

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="52" viewBox="0 0 200 52" fill="none">
+  <rect x="4" y="4" width="44" height="44" rx="14" fill="url(#paint0_linear)" />
+  <path d="M31 16C26.0294 16 22 20.0294 22 25C22 29.9706 26.0294 34 31 34C35.9706 34 40 29.9706 40 25" stroke="white" stroke-width="3.4" stroke-linecap="round" />
+  <path d="M37 20L41 16" stroke="white" stroke-width="3.4" stroke-linecap="round" />
+  <path d="M26 30L22.8 33.2L26 36.4" stroke="white" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
+  <rect x="18" y="32" width="28" height="8" rx="4" fill="white" fill-opacity="0.16" />
+  <text x="60" y="34" font-family="'Pretendard', 'Inter', sans-serif" font-size="24" font-weight="700" letter-spacing="0.16em" fill="#0f172a">LIRA</text>
+  <text x="60" y="46" font-family="'Pretendard', 'Inter', sans-serif" font-size="11" font-weight="500" letter-spacing="0.38em" fill="#2563eb">SIMULATION</text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="10" y1="8" x2="44" y2="48" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1d4ed8" />
+      <stop offset="0.4" stop-color="#4f46e5" />
+      <stop offset="1" stop-color="#0f172a" />
+    </linearGradient>
+  </defs>
+</svg>
