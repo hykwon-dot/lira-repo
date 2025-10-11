@@ -18,6 +18,7 @@ interface ReportDraftPanelProps {
   isLoading: boolean;
   error: string | null;
   onGenerate: () => void;
+  showInvestigatorInsights?: boolean;
 }
 
 const severityTone = {
@@ -32,7 +33,7 @@ const statusTone: Record<string, string> = {
   대기: "text-slate-500",
 };
 
-export function ReportDraftPanel({ report, isLoading, error, onGenerate }: ReportDraftPanelProps) {
+export function ReportDraftPanel({ report, isLoading, error, onGenerate, showInvestigatorInsights = false }: ReportDraftPanelProps) {
   const generatedLabel = useMemo(() => {
     if (!report?.generatedAt) return null;
     try {
@@ -194,29 +195,43 @@ export function ReportDraftPanel({ report, isLoading, error, onGenerate }: Repor
           ) : null}
 
           {report.followUpChecklist.length ? (
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-600 shadow-sm">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                <FiClipboard className="h-3.5 w-3.5" /> Follow-up Checklist
-              </p>
-              <ul className="mt-2 list-disc space-y-1 pl-4">
-                {report.followUpChecklist.map((item, index) => (
-                  <li key={`follow-up-${index}`}>{item}</li>
-                ))}
-              </ul>
-            </div>
+            showInvestigatorInsights ? (
+              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-600 shadow-sm">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  <FiClipboard className="h-3.5 w-3.5" /> Follow-up Checklist
+                </p>
+                <ul className="mt-2 list-disc space-y-1 pl-4">
+                  {report.followUpChecklist.map((item, index) => (
+                    <li key={`follow-up-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] text-slate-500">
+                <p className="text-xs font-semibold text-slate-600">Follow-up Checklist (탐정 전용)</p>
+                <p className="mt-1 leading-relaxed">사건을 담당한 민간조사원 계정에서만 후속 점검 목록을 확인할 수 있습니다.</p>
+              </div>
+            )
           ) : null}
 
           {report.appendixNotes.length ? (
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-600 shadow-sm">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                <FiAlertTriangle className="h-3.5 w-3.5" /> Appendix Notes
-              </p>
-              <ul className="mt-2 list-disc space-y-1 pl-4">
-                {report.appendixNotes.map((note, index) => (
-                  <li key={`appendix-${index}`}>{note}</li>
-                ))}
-              </ul>
-            </div>
+            showInvestigatorInsights ? (
+              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-600 shadow-sm">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  <FiAlertTriangle className="h-3.5 w-3.5" /> Appendix Notes
+                </p>
+                <ul className="mt-2 list-disc space-y-1 pl-4">
+                  {report.appendixNotes.map((note, index) => (
+                    <li key={`appendix-${index}`}>{note}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] text-slate-500">
+                <p className="text-xs font-semibold text-slate-600">Appendix Notes (탐정 전용)</p>
+                <p className="mt-1 leading-relaxed">부록 분석 메모는 탐정 또는 관리자 권한에서 확인 가능합니다.</p>
+              </div>
+            )
           ) : null}
         </div>
       ) : (

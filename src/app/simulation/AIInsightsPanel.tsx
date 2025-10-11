@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   FiActivity,
   FiAlertCircle,
@@ -22,6 +22,10 @@ interface AIInsightsPanelProps {
   isLoading: boolean;
   error: string | null;
   onRetry?: () => void;
+  showInvestigatorInsights?: boolean;
+  investigatorSlot?: ReactNode;
+  gatedNotice?: ReactNode;
+  customerRecommendationsSlot?: ReactNode;
 }
 
 const riskBadgeStyle: Record<"low" | "medium" | "high", string> = {
@@ -36,7 +40,16 @@ const phaseLabel: Record<"p0" | "p1" | "backup", string> = {
   backup: "Backup · 대안 시나리오",
 };
 
-export function AIInsightsPanel({ insights, isLoading, error, onRetry }: AIInsightsPanelProps) {
+export function AIInsightsPanel({
+  insights,
+  isLoading,
+  error,
+  onRetry,
+  showInvestigatorInsights = false,
+  investigatorSlot,
+  gatedNotice,
+  customerRecommendationsSlot,
+}: AIInsightsPanelProps) {
   const formattedTimestamp = useMemo(() => {
     if (!insights?.generatedAt) return null;
     try {
@@ -48,6 +61,16 @@ export function AIInsightsPanel({ insights, isLoading, error, onRetry }: AIInsig
       return null;
     }
   }, [insights?.generatedAt]);
+
+  const isInvestigatorView = showInvestigatorInsights;
+  const investigatorOnlyNotice = gatedNotice ?? (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] text-slate-500">
+      <p className="text-xs font-semibold text-slate-600">탐정 전용 심층 인사이트</p>
+      <p className="mt-1 leading-relaxed">
+        승인된 민간조사원 계정으로 접속하면 트렌드 경보, 내부 체크리스트, 협상 전략 등 추가 정보를 확인할 수 있습니다.
+      </p>
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -105,34 +128,36 @@ export function AIInsightsPanel({ insights, isLoading, error, onRetry }: AIInsig
       </div>
 
       <div className="space-y-4">
-        <div>
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <FiBell className="h-4 w-4 text-amber-500" /> 트렌드 기반 알림
-          </h3>
-          <div className="mt-2 space-y-2">
-            {insights?.alerts?.length ? (
-              insights.alerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-[12px] text-amber-700 shadow-sm"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-amber-800">{alert.title}</span>
-                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${riskBadgeStyle[alert.severity]}`}>
-                      {alert.severity === "high" ? "긴급" : alert.severity === "medium" ? "주의" : "관찰"}
-                    </span>
+        {isInvestigatorView ? (
+          <div>
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <FiBell className="h-4 w-4 text-amber-500" /> 트렌드 기반 알림
+            </h3>
+            <div className="mt-2 space-y-2">
+              {insights?.alerts?.length ? (
+                insights.alerts.map((alert) => (
+                  <div
+                    key={alert.id}
+                    className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-[12px] text-amber-700 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-amber-800">{alert.title}</span>
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${riskBadgeStyle[alert.severity]}`}>
+                        {alert.severity === "high" ? "긴급" : alert.severity === "medium" ? "주의" : "관찰"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-amber-600">{alert.message}</p>
+                    <p className="mt-2 leading-relaxed text-amber-700">{alert.suggestion}</p>
                   </div>
-                  <p className="mt-1 text-[11px] text-amber-600">{alert.message}</p>
-                  <p className="mt-2 leading-relaxed text-amber-700">{alert.suggestion}</p>
-                </div>
-              ))
-            ) : (
-              <p className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center text-[12px] text-slate-400">
-                아직 표시할 트렌드 경보가 없습니다.
-              </p>
-            )}
+                ))
+              ) : (
+                <p className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center text-[12px] text-slate-400">
+                  아직 표시할 트렌드 경보가 없습니다.
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <div>
           <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
@@ -287,27 +312,29 @@ export function AIInsightsPanel({ insights, isLoading, error, onRetry }: AIInsig
           )}
         </div>
 
-        <div>
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <FiCheckCircle className="h-4 w-4 text-emerald-500" /> 다음 행동 제안
-          </h3>
-          <div className="mt-2 space-y-2">
-            {insights?.nextActions?.map((action) => (
-              <div
-                key={action.id}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-600 shadow-sm"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-slate-900">{action.label}</span>
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${riskBadgeStyle[action.priority]}`}>
-                    {action.priority === "high" ? "최우선" : action.priority === "medium" ? "중요" : "선택"}
-                  </span>
+        {isInvestigatorView ? (
+          <div>
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <FiCheckCircle className="h-4 w-4 text-emerald-500" /> 다음 행동 제안
+            </h3>
+            <div className="mt-2 space-y-2">
+              {insights?.nextActions?.map((action) => (
+                <div
+                  key={action.id}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[12px] text-slate-600 shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-slate-900">{action.label}</span>
+                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${riskBadgeStyle[action.priority]}`}>
+                      {action.priority === "high" ? "최우선" : action.priority === "medium" ? "중요" : "선택"}
+                    </span>
+                  </div>
+                  <p className="mt-1 leading-relaxed">{action.description}</p>
                 </div>
-                <p className="mt-1 leading-relaxed">{action.description}</p>
-              </div>
-            )) ?? null}
+              )) ?? null}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <div>
           <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
@@ -395,6 +422,34 @@ export function AIInsightsPanel({ insights, isLoading, error, onRetry }: AIInsig
                 )}
           </div>
         </div>
+
+        {isInvestigatorView && investigatorSlot ? (
+          <div>
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <FiActivity className="h-4 w-4 text-indigo-500" /> 탐정 추천
+            </h3>
+            <div className="mt-2 space-y-3">{investigatorSlot}</div>
+          </div>
+        ) : null}
+
+        {!isInvestigatorView && customerRecommendationsSlot ? (
+          <div className="space-y-3">
+            <div>
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                <FiActivity className="h-4 w-4 text-indigo-500" /> 탐정 추천
+              </h3>
+              <div className="mt-2 space-y-3">{customerRecommendationsSlot}</div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] text-slate-500">
+              <p className="text-xs font-semibold text-slate-600">전문가 심화 인사이트</p>
+              <p className="mt-1 leading-relaxed">
+                트렌드 경보, 내부 체크리스트, 협상 전략 등은 사건을 담당한 민간조사원과 관리자 전용으로 제공됩니다.
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        {!isInvestigatorView && !customerRecommendationsSlot ? investigatorOnlyNotice : null}
       </div>
     </div>
   );

@@ -9,6 +9,8 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Menu, X } from "lucide-react";
 
+const LOGO_SRC = "/images/lione-logo.svg" as const;
+
 export default function Header() {
   const { user, logout } = useUserStore();
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
@@ -62,7 +64,7 @@ export default function Header() {
         <div className="flex flex-1 items-center gap-6">
           <Link href="/" className="flex items-center gap-3">
             <Image
-              src="/images/lira-logo.svg"
+              src={LOGO_SRC}
               alt="LIRA 로고"
               width={168}
               height={48}
@@ -144,7 +146,7 @@ export default function Header() {
           <nav className="fixed top-0 right-0 z-50 flex h-full w-[78vw] max-w-xs flex-col gap-6 border-l border-slate-100 bg-white px-6 py-8 shadow-xl md:hidden">
             <div className="flex items-center justify-between">
               <Image
-                src="/images/lira-logo.svg"
+                src={LOGO_SRC}
                 alt="LIRA 로고"
                 width={160}
                 height={48}

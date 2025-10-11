@@ -13,6 +13,7 @@ import {
   FiRefreshCcw,
   FiLoader,
   FiMessageCircle,
+  FiPlay,
   FiSend,
   FiStar,
   FiTrash2,
@@ -303,6 +304,9 @@ export const ChatSimulation = () => {
   }, [user]);
 
   const isMatchDisabled = user?.role === "investigator";
+  const canViewInvestigatorIntel = Boolean(
+    user && ["investigator", "admin", "super_admin"].includes(user.role)
+  );
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const conversationIdRef = useRef<string | null>(null);
@@ -1178,6 +1182,36 @@ export const ChatSimulation = () => {
     return Array.from(unique.values());
   }, [intakeSummary]);
 
+  const investigatorInsightsSlot = canViewInvestigatorIntel ? (
+    <>
+      <InvestigatorRecommendationsCard
+        recommendations={recommendations}
+        isLoading={isRecommendationsLoading}
+        scenarioTitle={intakeSummary?.caseTitle}
+        matchButtonLabel={matchButtonLabel}
+        isMatchDisabled={isMatchDisabled}
+        onMatchNow={handleMatchNow}
+      />
+      {recommendationsError ? (
+        <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-xs text-amber-700">
+          <FiAlertCircle className="mt-0.5 h-4 w-4" />
+          <span>{recommendationsError}</span>
+        </div>
+      ) : null}
+    </>
+  ) : null;
+
+  const customerRecommendationsSlot = !canViewInvestigatorIntel ? (
+    <InvestigatorRecommendationsCard
+      recommendations={recommendations}
+      isLoading={isRecommendationsLoading}
+      scenarioTitle={intakeSummary?.caseTitle}
+      matchButtonLabel={matchButtonLabel}
+      isMatchDisabled={isMatchDisabled}
+      onMatchNow={handleMatchNow}
+    />
+  ) : null;
+
   const analyzeEvidence = useCallback(
     async (artifacts: EvidenceArtifactInput[], options?: { signal?: AbortSignal }) => {
       if (!artifacts.length) {
@@ -1581,6 +1615,18 @@ export const ChatSimulation = () => {
                 </span>
                 <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">
                   # 탐정 매칭 준비
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => router.push("/simulation/twin")}
+                  className="inline-flex items-center gap-2 rounded-full border border-indigo-200/60 bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-indigo-100 transition hover:border-indigo-100 hover:bg-indigo-200/10"
+                >
+                  <FiPlay className="h-3.5 w-3.5" /> 사건 시뮬레이션 해보기
+                </button>
+                <span className="text-[11px] text-indigo-200/70">
+                  디지털 트윈으로 현장 변수 기반 성공률을 예측합니다.
                 </span>
               </div>
             </div>
@@ -1990,6 +2036,9 @@ export const ChatSimulation = () => {
                       isLoading={isRealtimeLoading}
                       error={realtimeError}
                       onRetry={handleRetryRealtimeAnalysis}
+                      showInvestigatorInsights={canViewInvestigatorIntel}
+                      investigatorSlot={investigatorInsightsSlot}
+                      customerRecommendationsSlot={customerRecommendationsSlot}
                     />
                   </div>
                 </details>
@@ -2018,6 +2067,7 @@ export const ChatSimulation = () => {
                       isLoading={isNegotiationLoading}
                       error={negotiationError}
                       onRegenerate={handleRegenerateNegotiationPlan}
+                      showInvestigatorInsights={canViewInvestigatorIntel}
                     />
                   </div>
                 </details>
@@ -2049,29 +2099,8 @@ export const ChatSimulation = () => {
                       onGenerate={() => {
                         void handleGenerateReport();
                       }}
+                      showInvestigatorInsights={canViewInvestigatorIntel}
                     />
-                  </div>
-                </details>
-                <details className="group rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
-                  <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-slate-800">
-                    탐정 추천
-                    <FiChevronDown className="h-4 w-4 text-slate-500 transition group-open:rotate-180" />
-                  </summary>
-                  <div className="custom-scrollbar max-h-72 space-y-4 overflow-y-auto border-t border-slate-100 px-4 py-4 text-[13px]">
-                    <InvestigatorRecommendationsCard
-                      recommendations={recommendations}
-                      isLoading={isRecommendationsLoading}
-                      scenarioTitle={intakeSummary?.caseTitle}
-                      matchButtonLabel={matchButtonLabel}
-                      isMatchDisabled={isMatchDisabled}
-                      onMatchNow={handleMatchNow}
-                    />
-                    {recommendationsError ? (
-                      <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-xs text-amber-700">
-                        <FiAlertCircle className="mt-0.5 h-4 w-4" />
-                        <span>{recommendationsError}</span>
-                      </div>
-                    ) : null}
                   </div>
                 </details>
               </div>
@@ -2114,6 +2143,9 @@ export const ChatSimulation = () => {
                   isLoading={isRealtimeLoading}
                   error={realtimeError}
                   onRetry={handleRetryRealtimeAnalysis}
+                  showInvestigatorInsights={canViewInvestigatorIntel}
+                  investigatorSlot={investigatorInsightsSlot}
+                  customerRecommendationsSlot={customerRecommendationsSlot}
                 />
                 <div>
                   <h3 className="mb-3 text-sm font-semibold text-slate-700">규제·윤리 감시</h3>
@@ -2138,6 +2170,7 @@ export const ChatSimulation = () => {
                   onGenerate={() => {
                     void handleGenerateReport();
                   }}
+                  showInvestigatorInsights={canViewInvestigatorIntel}
                 />
                 <div>
                   <h3 className="mb-3 text-sm font-semibold text-slate-700">협상 스크립트 코치</h3>
@@ -2146,25 +2179,9 @@ export const ChatSimulation = () => {
                     isLoading={isNegotiationLoading}
                     error={negotiationError}
                     onRegenerate={handleRegenerateNegotiationPlan}
+                    showInvestigatorInsights={canViewInvestigatorIntel}
                   />
                 </div>
-                <div>
-                  <h3 className="mb-3 text-sm font-semibold text-slate-700">탐정 추천</h3>
-                  <InvestigatorRecommendationsCard
-                    recommendations={recommendations}
-                    isLoading={isRecommendationsLoading}
-                    scenarioTitle={intakeSummary?.caseTitle}
-                    matchButtonLabel={matchButtonLabel}
-                    isMatchDisabled={isMatchDisabled}
-                    onMatchNow={handleMatchNow}
-                  />
-                </div>
-                {recommendationsError ? (
-                  <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-xs text-amber-700">
-                    <FiAlertCircle className="mt-0.5 h-4 w-4" />
-                    <span>{recommendationsError}</span>
-                  </div>
-                ) : null}
               </div>
           </section>
         </div>

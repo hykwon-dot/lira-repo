@@ -1,6 +1,7 @@
 "use client";
 
 import { FiAnchor, FiAward, FiFeather, FiHeadphones, FiRefreshCcw, FiShield, FiTarget, FiUsers } from "react-icons/fi";
+import type { ReactNode } from "react";
 import type { AiNegotiationCoachPlan } from "@/lib/ai/types";
 
 interface NegotiationCoachPanelProps {
@@ -8,6 +9,8 @@ interface NegotiationCoachPanelProps {
   isLoading: boolean;
   error?: string | null;
   onRegenerate?: () => void;
+  showInvestigatorInsights?: boolean;
+  restrictedNotice?: ReactNode;
 }
 
 const severityBadge: Record<AiNegotiationCoachPlan["riskWarnings"][number]["severity"], string> = {
@@ -16,7 +19,26 @@ const severityBadge: Record<AiNegotiationCoachPlan["riskWarnings"][number]["seve
   low: "border-emerald-200 bg-emerald-50 text-emerald-700",
 };
 
-export function NegotiationCoachPanel({ plan, isLoading, error, onRegenerate }: NegotiationCoachPanelProps) {
+export function NegotiationCoachPanel({
+  plan,
+  isLoading,
+  error,
+  onRegenerate,
+  showInvestigatorInsights = true,
+  restrictedNotice,
+}: NegotiationCoachPanelProps) {
+  if (!showInvestigatorInsights) {
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+        {restrictedNotice ?? (
+          <p className="leading-relaxed">
+            협상 스크립트 코치는 탐정 또는 관리자 전용 기능입니다. 사건을 맡은 민간조사원 계정으로 접속하면 전략 지침을 확인할 수 있습니다.
+          </p>
+        )}
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-4">

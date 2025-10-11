@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "AI 시뮬레이션 기반 민간조사 매칭 | LIRA",
     description: "실시간 AI 분석과 시뮬레이션으로 의뢰인과 전문 민간조사원을 연결하는 LIRA 플랫폼",
-    images: ["/images/lira-logo.svg"],
+  images: ["/images/lione-logo.svg"],
   },
 };
 

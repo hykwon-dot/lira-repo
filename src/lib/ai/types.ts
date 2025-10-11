@@ -253,3 +253,22 @@ export interface AiStressTestReport {
   systemicRisks: string[];
   mitigationThemes: string[];
 }
+
+export interface AiTwinTimelineStep {
+  phase: string;
+  detail: string;
+  emphasis?: string | null;
+}
+
+export interface AiTwinAnalysis {
+  id: string;
+  generatedAt: string;
+  successRate: number;
+  confidenceLabel: "높음" | "중간" | "낮음";
+  keyFactors: string[];
+  riskAlerts: string[];
+  recommendedActions: string[];
+  timeline: AiTwinTimelineStep[];
+  knowledgeBase: string[];
+  rationale?: string;
+}
