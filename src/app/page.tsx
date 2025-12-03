@@ -2,34 +2,122 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState, useEffect } from 'react';
+
+type Banner = {
+  id: number;
+  title: string | null;
+  imageUrl: string;
+  linkUrl: string | null;
+  type: 'MAIN_LARGE' | 'MAIN_SMALL';
+  isActive: boolean;
+  order: number;
+};
+
+type Award = {
+  id: number;
+  title: string;
+  description: string | null;
+  imageUrl: string;
+  date: string;
+};
 
 export default function Home() {
+  const [mainBanner, setMainBanner] = useState<Banner | null>(null);
+  const [subBanners, setSubBanners] = useState<Banner[]>([]);
+  const [awards, setAwards] = useState<Award[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [bannersRes, awardsRes] = await Promise.all([
+          fetch('/api/banners'),
+          fetch('/api/awards')
+        ]);
+        
+        const bannersData = await bannersRes.json();
+        const awardsData = await awardsRes.json();
+
+        if (bannersData.banners) {
+          const large = bannersData.banners.find((b: Banner) => b.type === 'MAIN_LARGE' && b.isActive);
+          const small = bannersData.banners.filter((b: Banner) => b.type === 'MAIN_SMALL' && b.isActive);
+          setMainBanner(large || null);
+          setSubBanners(small);
+        }
+
+        if (awardsData.awards) {
+          setAwards(awardsData.awards);
+        }
+      } catch (error) {
+        console.error('Failed to fetch home data', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col text-gray-800">
       {/* Hero Section */}
       <main className="flex-1">
         <section className="relative h-[50vh] flex flex-col justify-center items-center text-center -mt-20">
-          <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=2574&auto=format&fit=crop')" }}></div>
+          <div 
+            className="absolute inset-0 bg-cover bg-center opacity-20" 
+            style={{ 
+              backgroundImage: `url('${mainBanner?.imageUrl || "https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=2574&auto=format&fit=crop"}')` 
+            }}
+          ></div>
           <div className="container mx-auto px-4 relative">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-4">
-              AI를 통해서 쉽고 간편하게<br/>24시간 맞춤형 민간조사원을 매칭받고,<br/>믿을 수 있는 전문가와 전문적인 일을 진행하세요
+              {mainBanner?.title || (
+                <>
+                  AI를 통해서 쉽고 간편하게<br/>24시간 맞춤형 민간조사원을 매칭받고,<br/>믿을 수 있는 전문가와 전문적인 일을 진행하세요
+                </>
+              )}
             </h1>
             <p className="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto mb-8">
               AI 상담을 통해 사건을 분석하고, 경험이 풍부한 전문 민간조사원과 매칭을 받으세요. 유사한 사건 사례를 참고하여 더 나은 결과를 얻으실 수 있습니다.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-               <Link href="/simulation" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
-                AI를 통해 상담해서 사건 맡기기
+               <Link href={mainBanner?.linkUrl || "/simulation"} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
+                {mainBanner ? '자세히 보기' : 'AI를 통해 상담해서 사건 맡기기'}
               </Link>
-              <Link href="/scenario" className="bg-white hover:bg-gray-200 text-blue-600 font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105 border border-blue-600">
-                나와 유사한 사건 찾기
-              </Link>
-              <Link href="/investigators" className="bg-gray-900 hover:bg-black text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
-                탐정 명단 보기
-              </Link>
+              {!mainBanner && (
+                <>
+                  <Link href="/scenario" className="bg-white hover:bg-gray-200 text-blue-600 font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105 border border-blue-600">
+                    나와 유사한 사건 찾기
+                  </Link>
+                  <Link href="/investigators" className="bg-gray-900 hover:bg-black text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
+                    탐정 명단 보기
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </section>
+
+        {/* Sub Banners */}
+        {subBanners.length > 0 && (
+          <section className="py-10 bg-gray-50">
+            <div className="container mx-auto px-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {subBanners.map((banner) => (
+                  <Link key={banner.id} href={banner.linkUrl || '#'} className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow">
+                    <div className="aspect-w-16 aspect-h-9 bg-gray-200 h-48">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={banner.imageUrl} alt={banner.title || 'Banner'} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" />
+                    </div>
+                    {banner.title && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                        <h3 className="text-white font-bold text-lg">{banner.title}</h3>
+                      </div>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Why WeeklyAiving? */}
         <section className="py-20 bg-white">
@@ -119,6 +207,28 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* Awards Section */}
+        {awards.length > 0 && (
+          <section className="py-20 bg-gray-50">
+            <div className="container mx-auto px-4">
+              <h2 className="text-3xl font-bold text-center mb-12">수상 및 인증 내역</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                {awards.map((award) => (
+                  <div key={award.id} className="flex flex-col items-center text-center">
+                    <div className="w-32 h-32 relative mb-4 grayscale hover:grayscale-0 transition-all duration-300">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={award.imageUrl} alt={award.title} className="object-contain w-full h-full" />
+                    </div>
+                    <h3 className="font-bold text-lg mb-1">{award.title}</h3>
+                    <p className="text-sm text-gray-500">{new Date(award.date).toLocaleDateString()}</p>
+                    {award.description && <p className="text-sm text-gray-600 mt-2">{award.description}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* CTA Section */}
         <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">

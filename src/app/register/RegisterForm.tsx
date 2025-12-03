@@ -44,6 +44,7 @@ export default function RegisterForm() {
   const [serviceAreas, setServiceAreas] = useState<string[]>([]);
   const [intro, setIntro] = useState('');
   const [portfolioUrl, setPortfolioUrl] = useState('');
+  const [businessLicenseFile, setBusinessLicenseFile] = useState<File | null>(null);
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -64,9 +65,10 @@ export default function RegisterForm() {
     setSpecialties([]);
     setLicenseNumber('');
     setExperienceYears('');
-  setServiceAreas([]);
+    setServiceAreas([]);
     setIntro('');
     setPortfolioUrl('');
+    setBusinessLicenseFile(null);
   };
 
   const resetCustomerFields = () => {
@@ -194,33 +196,36 @@ export default function RegisterForm() {
         setError('주요 활동 지역을 최소 1개 이상 선택해 주세요.');
         return;
       }
+      if (!businessLicenseFile) {
+        setError('사업자등록증 파일을 업로드해 주세요.');
+        return;
+      }
       const expNumber = experienceYears ? Number(experienceYears) : 0;
       if (experienceYears && Number.isNaN(expNumber)) {
         setError('경력 연수는 숫자로 입력해 주세요.');
         return;
       }
 
-      const payload = {
-        role: 'INVESTIGATOR',
-        email,
-        password,
-        name,
-        licenseNumber: licenseNumber || null,
-        specialties,
-        experienceYears: expNumber,
-        serviceAreas,
-        serviceArea: serviceAreas.join(', '),
-        introduction: intro || null,
-        portfolioUrl: portfolioUrl || null,
-        contactPhone: phone || null,
-        acceptsTerms,
-        acceptsPrivacy,
-      };
+      const formData = new FormData();
+      formData.append('role', 'INVESTIGATOR');
+      formData.append('email', email);
+      formData.append('password', password);
+      formData.append('name', name);
+      if (licenseNumber) formData.append('licenseNumber', licenseNumber);
+      formData.append('specialties', JSON.stringify(specialties));
+      formData.append('experienceYears', String(expNumber));
+      formData.append('serviceAreas', JSON.stringify(serviceAreas));
+      formData.append('serviceArea', serviceAreas.join(', '));
+      if (intro) formData.append('introduction', intro);
+      if (portfolioUrl) formData.append('portfolioUrl', portfolioUrl);
+      if (phone) formData.append('contactPhone', phone);
+      formData.append('acceptsTerms', String(acceptsTerms));
+      formData.append('acceptsPrivacy', String(acceptsPrivacy));
+      formData.append('businessLicense', businessLicenseFile);
 
       const res = await fetch('/api/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: formData,
       });
       const data = await res.json();
       if (!res.ok) {
@@ -613,6 +618,18 @@ export default function RegisterForm() {
                   className="lira-input"
                   placeholder="https://example.com"
                 />
+              </label>
+
+              <label className="lira-field">
+                사업자등록증 (필수)
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => setBusinessLicenseFile(e.target.files?.[0] || null)}
+                  className="lira-input"
+                  required
+                />
+                <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 5MB)</span>
               </label>
             </div>
           </section>

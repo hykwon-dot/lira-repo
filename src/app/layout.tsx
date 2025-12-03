@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import dynamicImport from "next/dynamic";
 import "./globals.css";
 import ClientLayout from "./ClientLayout";
+import KakaoChannelButton from "@/components/KakaoChannelButton";
 
 const Header = dynamicImport(() => import("./Header"), { ssr: false });
 
@@ -34,6 +35,7 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased`}>
         <Header />
         <ClientLayout>{children}</ClientLayout>
+        <KakaoChannelButton />
       </body>
     </html>
   );

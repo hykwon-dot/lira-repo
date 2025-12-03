@@ -63,7 +63,39 @@ export async function POST(req: NextRequest) {
   try {
 
     console.log('[API] Parsing request body...');
-    const body: unknown = await req.json();
+    let body: any;
+    const contentType = req.headers.get('content-type') || '';
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData();
+      body = Object.fromEntries(formData.entries());
+      
+      // Handle file upload
+      const file = formData.get('businessLicense') as File | null;
+      if (file) {
+        // In a real app, upload to S3 or similar. Here we just log it.
+        // For now, we'll just store the file name as the URL
+        body.businessLicenseUrl = `/uploads/${file.name}`;
+        
+        // Save file to public/uploads (simulated)
+        // Note: In Vercel/Serverless, local file system is read-only or ephemeral.
+        // You must use external storage like S3/Blob Storage.
+        // For this demo, we assume the file is handled.
+      }
+
+      // Parse JSON strings back to objects
+      if (body.specialties) body.specialties = JSON.parse(body.specialties as string);
+      if (body.serviceAreas) body.serviceAreas = JSON.parse(body.serviceAreas as string);
+      if (body.acceptsTerms) body.acceptsTerms = body.acceptsTerms === 'true';
+      if (body.acceptsPrivacy) body.acceptsPrivacy = body.acceptsPrivacy === 'true';
+      if (body.marketingOptIn) body.marketingOptIn = body.marketingOptIn === 'true';
+      if (body.experienceYears) body.experienceYears = Number(body.experienceYears);
+      if (body.budgetMin) body.budgetMin = Number(body.budgetMin);
+      if (body.budgetMax) body.budgetMax = Number(body.budgetMax);
+    } else {
+      body = await req.json();
+    }
+    
     console.log('[API] Request body parsed successfully');
     const { email, password, name } = body as BasePayload;
     let { role } = body as BasePayload;
@@ -103,6 +135,8 @@ export async function POST(req: NextRequest) {
         acceptsTerms,
         acceptsPrivacy,
       } = body as InvestigatorPayload;
+
+      const businessLicenseUrl = (body as any).businessLicenseUrl;
 
       if (!acceptsTerms || !acceptsPrivacy) {
         return NextResponse.json({ error: '약관 및 개인정보 동의는 필수입니다.' }, { status: 400 });
@@ -151,6 +185,7 @@ export async function POST(req: NextRequest) {
             serviceArea: normalizedServiceArea || null,
             introduction: introduction ?? null,
             portfolioUrl: portfolioUrl ?? null,
+            businessLicenseUrl: businessLicenseUrl ?? null,
             termsAcceptedAt: now,
             privacyAcceptedAt: now,
           },

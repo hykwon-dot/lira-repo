@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Menu, X } from "lucide-react";
+import { RiKakaoTalkFill } from "react-icons/ri";
 
 const LOGO_SRC = "/images/lione-logo.svg" as const;
 
@@ -40,7 +41,6 @@ export default function Header() {
     { href: "/", label: "홈" },
     { href: "/simulation", label: "AI 시뮬레이션" },
     { href: "/scenarios", label: "시나리오 라이브러리" },
-    { href: "/report", label: "데이터 리포트" },
   ];
 
   const isLinkActive = useMemo(() => {
@@ -92,6 +92,15 @@ export default function Header() {
           </nav>
         </div>
         <div className="hidden flex-shrink-0 items-center gap-4 md:flex">
+          <Link
+            href="http://pf.kakao.com/_grQtn"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-full bg-[#FEE500] px-3 py-1.5 text-xs font-bold text-[#191919] hover:bg-[#FDD835] transition-colors"
+          >
+            <RiKakaoTalkFill className="h-4 w-4" />
+            <span>카카오톡 상담</span>
+          </Link>
           {loggedInUser && (
             <ErrorBoundary>
               <NotificationBell />
@@ -204,6 +213,20 @@ export default function Header() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link
+                  href="http://pf.kakao.com/_grQtn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between rounded-xl border border-[#FEE500] bg-[#FEE500]/10 px-3 py-3 text-sm font-medium text-[#3c1e1e] transition hover:bg-[#FEE500]/20"
+                >
+                  <div className="flex items-center gap-2">
+                    <RiKakaoTalkFill className="h-5 w-5 text-[#3c1e1e]" />
+                    <span>카카오톡 상담</span>
+                  </div>
+                  <span className="text-xs text-slate-400">문의하기</span>
+                </Link>
+              </li>
             </ul>
             {loggedInUser ? (
               <div className="mt-auto space-y-3">

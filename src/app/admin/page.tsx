@@ -5,6 +5,7 @@ import { useUserStore } from '@/lib/userStore';
 import ScenarioAdmin from './ScenarioAdmin';
 import AdminFeedback from './AdminFeedback';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type RequestStatus =
   | 'OPEN'
@@ -612,6 +613,35 @@ export default function AdminPage() {
                   </div>
                 </div>
               ))}
+        </section>
+
+        <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <Link href="/admin/banners" className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">배너 관리</h3>
+                <p className="text-sm text-slate-500">메인 페이지 배너 및 프로모션 관리</p>
+              </div>
+              <div className="rounded-full bg-blue-50 p-3 text-blue-600 group-hover:bg-blue-100">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                </svg>
+              </div>
+            </div>
+          </Link>
+          <Link href="/admin/awards" className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">수상 내역 관리</h3>
+                <p className="text-sm text-slate-500">수상 실적 및 인증 내역 관리</p>
+              </div>
+              <div className="rounded-full bg-amber-50 p-3 text-amber-600 group-hover:bg-amber-100">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0V5.625a2.25 2.25 0 11-4.5 0v9.75m0-9.75a2.25 2.25 0 012.25-2.25h.008c.621 0 1.125.504 1.125 1.125m0 0v1.125m-2.25 0h2.25" />
+                </svg>
+              </div>
+            </div>
+          </Link>
         </section>
 
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">

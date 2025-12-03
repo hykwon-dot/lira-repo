@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useUserStore, UserRole } from '@/lib/userStore';
+import SocialLoginButtons from '@/components/SocialLoginButtons';
 
 export default function LoginForm({ onLogin }: { onLogin?: () => void }) {
   const [email, setEmail] = useState('');
@@ -90,6 +91,8 @@ export default function LoginForm({ onLogin }: { onLogin?: () => void }) {
         </button>
         {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-center text-sm text-rose-600">{error}</div>}
       </form>
+
+      <SocialLoginButtons />
 
       <div className="lira-section space-y-4 text-center text-sm text-slate-600">
         <div className="flex items-center justify-center gap-3 text-xs text-slate-500">

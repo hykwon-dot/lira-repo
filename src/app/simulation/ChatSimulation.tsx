@@ -18,9 +18,14 @@ import {
   FiStar,
   FiTrash2,
   FiUser,
+  FiPaperclip,
+  FiFile,
+  FiImage,
+  FiEye,
 } from "react-icons/fi";
 
 import { useUserStore } from "@/lib/userStore";
+import { useChatStore, type ChatMessage, type ChatRole } from "@/lib/chatStore";
 import { CaseSummarySidebar } from "./CaseSummarySidebar";
 import type { IntakeSummary } from "./types";
 import {
@@ -41,14 +46,7 @@ import type {
   EvidenceArtifactInput,
 } from "@/lib/ai/types";
 
-type ChatRole = "user" | "assistant";
 
-interface ChatMessage {
-  id: string;
-  role: ChatRole;
-  content: string;
-  createdAt: number;
-}
 
 const DEFAULT_QUICK_PROMPTS = [
   "사건의 배경과 지금까지의 경과를 알려주세요.",
@@ -253,14 +251,53 @@ export const ChatSimulation = () => {
   const router = useRouter();
   const { user, logout } = useUserStore();
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: cuid(),
-      role: "assistant",
-      content: assistantGreeting,
-      createdAt: Date.now(),
-    },
-  ]);
+  const { messages, setMessages } = useChatStore();
+  const [mounted, setMounted] = useState(false);
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const performOCR = async (fileName: string) => {
+    return new Promise<string>((resolve) => {
+      setTimeout(() => {
+        resolve(`[OCR 분석 결과 - ${fileName}]\n\n문서 내용이 성공적으로 추출되었습니다.\n\n1. 문서 제목: 사건 관련 증거 자료\n2. 주요 내용: 상기 본인은 2024년 12월 1일 발생한 사건에 대해...\n3. 특이사항: 하단 서명 확인됨.\n\n(이것은 시뮬레이션된 OCR 결과입니다.)`);
+      }, 1500);
+    });
+  };
+
+  const handleOCRClick = async (messageId: string, fileName: string) => {
+    const ocrResult = await performOCR(fileName);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: cuid(),
+        role: "assistant",
+        content: ocrResult,
+        createdAt: Date.now(),
+      },
+    ]);
+  };
+
+  useEffect(() => {
+    setMounted(true);
+    if (useChatStore.getState().messages.length === 0) {
+      setMessages([
+        {
+          id: cuid(),
+          role: "assistant",
+          content: assistantGreeting,
+          createdAt: Date.now(),
+        },
+      ]);
+    }
+  }, [setMessages]);
+
   const [isAssistantThinking, setIsAssistantThinking] = useState(false);
   const [intakeSummary, setIntakeSummary] = useState<IntakeSummary | null>(null);
   const [conversationSummary, setConversationSummary] = useState<string | null>(
@@ -782,23 +819,33 @@ export const ChatSimulation = () => {
   const handleSendMessage = useCallback(
     async (rawInput: string) => {
       const content = rawInput.trim();
-      if (!content || isAssistantThinking) return;
+      if ((!content && !selectedFile) || isAssistantThinking) return;
 
       if (!user) {
         router.push("/login?redirect=/simulation");
         return;
       }
 
+      let messageContent = content;
+      const attachments = selectedFile ? [{ name: selectedFile.name, type: selectedFile.type }] : undefined;
+
+      if (selectedFile) {
+        messageContent = content ? `${content}\n[첨부파일: ${selectedFile.name}]` : `[첨부파일: ${selectedFile.name}]`;
+      }
+
       const userMessage: ChatMessage = {
         id: cuid(),
         role: "user",
-        content,
+        content: messageContent,
         createdAt: Date.now(),
+        attachments,
       };
 
       bootstrapHadStoredMessagesRef.current = true;
 
       setMessages((prev) => [...prev, userMessage]);
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
 
       const payloadMessages = mapMessagesToApi([...messages, userMessage]);
 
@@ -849,7 +896,7 @@ export const ChatSimulation = () => {
 
         setMessages((prev) => [...prev, assistantMessage]);
 
-        void persistConversation(content, assistantMessageText);
+        void persistConversation(messageContent, assistantMessageText);
       } catch (error) {
         console.error("[SIMULATION_INTAKE_ERROR]", error);
         setSummaryError("대화 요약을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.");
@@ -865,7 +912,7 @@ export const ChatSimulation = () => {
         setIsSummaryLoading(false);
       }
     },
-    [isAssistantThinking, messages, persistConversation, router, user]
+    [isAssistantThinking, messages, persistConversation, router, user, selectedFile]
   );
 
   const handleQuickPromptClick = useCallback(
@@ -1555,6 +1602,8 @@ export const ChatSimulation = () => {
     router.push("/login");
   }, [logout, router]);
 
+
+
   useEffect(() => {
     return () => {
       realtimeAbortControllerRef.current?.abort();
@@ -1964,6 +2013,34 @@ export const ChatSimulation = () => {
                         )}
                       >
                         <p className="whitespace-pre-wrap break-words text-balance">{message.content}</p>
+                        {message.attachments?.map((att, idx) => (
+                          <div key={idx} className="mt-2 flex items-center gap-2 rounded-lg bg-white/20 p-2 text-xs">
+                            <FiFile className="h-4 w-4" />
+                            <span>{att.name}</span>
+                            {(att.type.startsWith("image/") || att.type === "application/pdf") && (
+                              <button
+                                onClick={() => handleOCRClick(message.id, att.name)}
+                                className="ml-auto flex items-center gap-1 rounded bg-indigo-600 px-2 py-1 text-[10px] text-white hover:bg-indigo-500"
+                              >
+                                <FiEye className="h-3 w-3" />
+                                OCR 분석
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        {!message.attachments && message.content.includes("[첨부파일:") && (
+                           <div className="mt-2 flex items-center gap-2 rounded-lg bg-white/20 p-2 text-xs">
+                             <FiFile className="h-4 w-4" />
+                             <span>{message.content.match(/\[첨부파일: (.*?)\]/)?.[1] ?? "파일"}</span>
+                             <button
+                                onClick={() => handleOCRClick(message.id, message.content.match(/\[첨부파일: (.*?)\]/)?.[1] ?? "파일")}
+                                className="ml-auto flex items-center gap-1 rounded bg-indigo-600 px-2 py-1 text-[10px] text-white hover:bg-indigo-500"
+                              >
+                                <FiEye className="h-3 w-3" />
+                                OCR 분석
+                              </button>
+                           </div>
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -1992,6 +2069,36 @@ export const ChatSimulation = () => {
               className="border-t border-slate-200 bg-white/95 p-4"
             >
               <div className="group relative flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-200">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept="image/*,.pdf,.doc,.docx"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-slate-400 hover:text-indigo-600 transition-colors"
+                  title="파일 첨부"
+                >
+                  <FiPaperclip className="h-5 w-5" />
+                </button>
+                {selectedFile && (
+                  <div className="flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs text-indigo-700">
+                    <span className="max-w-[100px] truncate">{selectedFile.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedFile(null);
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }}
+                      className="ml-1 text-indigo-400 hover:text-indigo-600"
+                    >
+                      <FiTrash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
                 <textarea
                   name="message"
                   placeholder="사건의 세부 상황이나 궁금한 점을 알려주세요."
