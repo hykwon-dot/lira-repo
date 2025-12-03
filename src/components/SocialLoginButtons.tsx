@@ -1,7 +1,5 @@
 "use client";
 
-import Image from 'next/image';
-
 export default function SocialLoginButtons() {
   const handleSocialLogin = (provider: string) => {
     // In a real app, this would redirect to the OAuth provider

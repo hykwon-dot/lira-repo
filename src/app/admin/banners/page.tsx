@@ -134,7 +134,7 @@ export default function AdminBannersPage() {
               <label className="block text-sm font-medium text-gray-700">타입</label>
               <select
                 value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value as 'MAIN_LARGE' | 'MAIN_SMALL' })}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2"
               >
                 <option value="MAIN_LARGE">메인 (큰 배너)</option>

@@ -20,7 +20,6 @@ import {
   FiUser,
   FiPaperclip,
   FiFile,
-  FiImage,
   FiEye,
 } from "react-icons/fi";
 
@@ -252,7 +251,6 @@ export const ChatSimulation = () => {
   const { user, logout } = useUserStore();
 
   const { messages, setMessages } = useChatStore();
-  const [mounted, setMounted] = useState(false);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -285,7 +283,6 @@ export const ChatSimulation = () => {
   };
 
   useEffect(() => {
-    setMounted(true);
     if (useChatStore.getState().messages.length === 0) {
       setMessages([
         {

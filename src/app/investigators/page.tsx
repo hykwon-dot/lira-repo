@@ -96,7 +96,6 @@ export default function InvestigatorsPage() {
   const [investigators, setInvestigators] = useState<InvestigatorRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     async function fetchInvestigators() {
@@ -114,7 +113,6 @@ export default function InvestigatorsPage() {
       } catch (error) {
         console.error('Failed to fetch investigators:', error);
         setHasError(true);
-        setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
         setInvestigators([]);
       } finally {
         setLoading(false);

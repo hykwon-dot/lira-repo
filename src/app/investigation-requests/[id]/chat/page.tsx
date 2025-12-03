@@ -7,7 +7,7 @@ import { CASE_STATUS_META, CaseStatusKey } from "@/lib/investigationWorkflow";
 import { extractTimelinePayloadText, getTimelineMeta } from "@/lib/timelineMeta";
 import { useUserStore } from "@/lib/userStore";
 import type { CaseTimelineEntry } from "@/types/investigation";
-import { FiPaperclip, FiFile, FiImage, FiEye, FiTrash2 } from "react-icons/fi";
+import { FiPaperclip, FiFile, FiEye, FiTrash2 } from "react-icons/fi";
 
 interface ChatParticipant {
   id: number;

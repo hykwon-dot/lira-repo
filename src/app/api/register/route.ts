@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
   try {
 
     console.log('[API] Parsing request body...');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let body: any;
     const contentType = req.headers.get('content-type') || '';
 
@@ -136,6 +137,7 @@ export async function POST(req: NextRequest) {
         acceptsPrivacy,
       } = body as InvestigatorPayload;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const businessLicenseUrl = (body as any).businessLicenseUrl;
 
       if (!acceptsTerms || !acceptsPrivacy) {

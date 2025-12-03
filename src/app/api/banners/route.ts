@@ -4,7 +4,7 @@ import { requireCapability } from '@/lib/authz';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const prisma = await getPrismaClient();
     const banners = await prisma.banner.findMany({
