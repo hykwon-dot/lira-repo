@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
     const contentType = req.headers.get('content-type') || '';
 
     if (contentType.includes('multipart/form-data')) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const formData = await req.formData() as any;
       body = {};
       

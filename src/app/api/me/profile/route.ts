@@ -292,6 +292,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (isMultipart) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const formData = await req.formData() as any;
   const updateData: Record<string, unknown> = {};
       let uploadedAvatarUrl: string | null = null;
