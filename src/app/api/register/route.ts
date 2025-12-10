@@ -68,25 +68,37 @@ export async function POST(req: NextRequest) {
     const contentType = req.headers.get('content-type') || '';
 
     if (contentType.includes('multipart/form-data')) {
-      const formData = await req.formData();
-      body = Object.fromEntries(formData.entries());
+      const formData = await req.formData() as any;
+      body = {};
+      
+      // Extract all form fields
+      const keys = ['role', 'email', 'password', 'name', 'licenseNumber', 'specialties', 
+                    'experienceYears', 'serviceAreas', 'serviceArea', 'introduction', 
+                    'portfolioUrl', 'contactPhone', 'acceptsTerms', 'acceptsPrivacy',
+                    'businessLicense', 'displayName', 'phone', 'birthDate', 'gender',
+                    'occupation', 'region', 'preferredCaseTypes', 'budgetMin', 'budgetMax',
+                    'urgencyLevel', 'securityQuestion', 'securityAnswer', 'marketingOptIn'];
+      
+      for (const key of keys) {
+        const value = formData.get(key);
+        if (value !== null) {
+          body[key] = value;
+        }
+      }
       
       // Handle file upload
-      const file = formData.get('businessLicense') as File | null;
-      if (file) {
-        // In a real app, upload to S3 or similar. Here we just log it.
-        // For now, we'll just store the file name as the URL
-        body.businessLicenseUrl = `/uploads/${file.name}`;
-        
-        // Save file to public/uploads (simulated)
-        // Note: In Vercel/Serverless, local file system is read-only or ephemeral.
-        // You must use external storage like S3/Blob Storage.
-        // For this demo, we assume the file is handled.
+      const file = body.businessLicense;
+      if (file && typeof file === 'object' && 'name' in file) {
+        body.businessLicenseUrl = `/uploads/${(file as File).name}`;
       }
 
       // Parse JSON strings back to objects
-      if (body.specialties) body.specialties = JSON.parse(body.specialties as string);
-      if (body.serviceAreas) body.serviceAreas = JSON.parse(body.serviceAreas as string);
+      if (body.specialties && typeof body.specialties === 'string') {
+        body.specialties = JSON.parse(body.specialties);
+      }
+      if (body.serviceAreas && typeof body.serviceAreas === 'string') {
+        body.serviceAreas = JSON.parse(body.serviceAreas);
+      }
       if (body.acceptsTerms) body.acceptsTerms = body.acceptsTerms === 'true';
       if (body.acceptsPrivacy) body.acceptsPrivacy = body.acceptsPrivacy === 'true';
       if (body.marketingOptIn) body.marketingOptIn = body.marketingOptIn === 'true';

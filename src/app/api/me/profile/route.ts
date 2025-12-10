@@ -292,7 +292,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (isMultipart) {
-      const formData = await req.formData();
+      const formData = await req.formData() as any;
   const updateData: Record<string, unknown> = {};
       let uploadedAvatarUrl: string | null = null;
       let requestedAvatarRemoval = false;
