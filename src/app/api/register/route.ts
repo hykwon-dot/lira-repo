@@ -196,11 +196,13 @@ export async function POST(req: NextRequest) {
       });
       const { password: removedPassword, ...userSanitized } = result.user;
       void removedPassword;
+      const token = signToken({ userId: Number(result.user.id), role: result.user.role });
       return NextResponse.json(
         {
           ...userSanitized,
           investigator: result.profile,
           investigatorStatus: result.profile.status,
+          token,
         },
         { status: 201 },
       );

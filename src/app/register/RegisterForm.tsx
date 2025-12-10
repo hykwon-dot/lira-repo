@@ -227,13 +227,23 @@ export default function RegisterForm() {
         method: 'POST',
         body: formData,
       });
+      
+      console.log('Registration response status:', res.status);
       const data = await res.json();
+      console.log('Registration response data:', data);
+      
       if (!res.ok) {
         setError(data.error || '민간조사원 등록에 실패했습니다.');
         return;
       }
 
       setSuccess('등록 신청이 완료되었습니다. 관리자 승인 후 안내 메일을 드릴게요.');
+      
+      // Store user data if token is provided
+      if (data.token) {
+        setUser(data);
+      }
+      
       setTimeout(() => {
         router.push('/login?pending=investigator');
       }, 2000);
