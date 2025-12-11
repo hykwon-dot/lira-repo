@@ -823,8 +823,8 @@ export const ChatSimulation = () => {
       const now = new Date();
       
       if (now > expiryDate) {
-        alert('서비스 이용 기간이 만료되었습니다. 관리자에게 문의해주세요.\n📧 jylee@lira365.com\n📞 070-7599-4030');
-        return;
+        // 만료됨 - 조용히 에러 발생
+        throw new Error('Service expired');
       }
 
       const content = rawInput.trim();
