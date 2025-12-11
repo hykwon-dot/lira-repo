@@ -815,6 +815,18 @@ export const ChatSimulation = () => {
 
   const handleSendMessage = useCallback(
     async (rawInput: string) => {
+      // 2주 만료 체크 - AI 대화 기능 비활성화
+      const buildTimestamp = process.env.NEXT_PUBLIC_BUILD_TIME || '2025-12-11T00:00:00+09:00';
+      const buildDate = new Date(buildTimestamp);
+      const expiryDate = new Date(buildDate);
+      expiryDate.setDate(expiryDate.getDate() + 14);
+      const now = new Date();
+      
+      if (now > expiryDate) {
+        alert('서비스 이용 기간이 만료되었습니다. 관리자에게 문의해주세요.\n📧 jylee@lira365.com\n📞 070-7599-4030');
+        return;
+      }
+
       const content = rawInput.trim();
       if ((!content && !selectedFile) || isAssistantThinking) return;
 

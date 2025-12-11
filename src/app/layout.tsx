@@ -4,7 +4,6 @@ import dynamicImport from "next/dynamic";
 import "./globals.css";
 import ClientLayout from "./ClientLayout";
 import KakaoChannelButton from "@/components/KakaoChannelButton";
-import DeploymentExpiryChecker from "@/components/DeploymentExpiryChecker";
 
 const Header = dynamicImport(() => import("./Header"), { ssr: false });
 
@@ -34,7 +33,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <DeploymentExpiryChecker />
         <Header />
         <ClientLayout>{children}</ClientLayout>
         <KakaoChannelButton />
