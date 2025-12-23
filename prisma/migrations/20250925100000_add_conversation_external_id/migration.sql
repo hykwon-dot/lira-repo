@@ -1,0 +1,1 @@
+-- Migration intentionally left blank. Conversation externalId column handled in 20250925101104_init_mysql.

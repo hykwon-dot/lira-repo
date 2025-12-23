@@ -1,0 +1,320 @@
+{
+  "case_001": {
+    "overview": {
+      "title": "불륜 증거 수집 및 위자료 청구 지원",
+      "caseType": "불륜조사",
+      "totalDurationDays": 15,
+      "budget": {
+        "recommended": 3000000,
+        "minimum": 2000000,
+        "maximum": 5000000
+      },
+      "difficulty": "중급",
+      "successRate": 85
+    },
+    "phases": [
+      {
+        "name": "예비 조사",
+        "description": "기본 정보 수집 및 조사 계획 수립",
+        "durationDays": 3,
+        "budget": "500000원",
+        "deliverables": ["조사 계획서", "기본 정보 분석 보고서"],
+        "tasks": [
+          {
+            "taskKey": "info_gathering",
+            "desc": "의뢰인 면담 및 기본 정보 수집",
+            "competency": "면담 전문가"
+          },
+          {
+            "taskKey": "plan_setup",
+            "desc": "증거 수집 계획 수립",
+            "competency": "조사 기획"
+          }
+        ],
+        "phaseKPI": ["정보 수집 완료율 90%", "계획서 승인"],
+        "risks": [
+          {
+            "riskKey": "info_leak",
+            "name": "정보 유출",
+            "severity": "높음",
+            "trigger": "부주의한 정보 관리",
+            "mitigation": "보안 프로토콜 준수"
+          }
+        ],
+        "recommendedDetectives": ["면담 전문 탐정", "조사 기획 전문가"]
+      },
+      {
+        "name": "증거 수집",
+        "description": "실제 불륜 행위에 대한 증거 수집",
+        "durationDays": 10,
+        "budget": "2000000원",
+        "deliverables": ["사진/영상 증거", "행적 추적 보고서", "증인 진술서"],
+        "tasks": [
+          {
+            "taskKey": "surveillance",
+            "desc": "대상자 감시 및 증거 촬영",
+            "competency": "감시 전문가"
+          },
+          {
+            "taskKey": "tracking",
+            "desc": "행적 추적 및 기록",
+            "competency": "추적 전문가"
+          }
+        ],
+        "phaseKPI": ["증거 수집 완료", "법적 효력 있는 증거 확보"],
+        "risks": [
+          {
+            "riskKey": "detection",
+            "name": "감시 발각",
+            "severity": "높음",
+            "trigger": "부주의한 감시",
+            "mitigation": "전문 장비 사용 및 은밀한 조사"
+          }
+        ],
+        "recommendedDetectives": ["감시 전문 탐정", "증거 수집 전문가"]
+      },
+      {
+        "name": "보고서 작성",
+        "description": "수집된 증거를 바탕으로 최종 보고서 작성",
+        "durationDays": 2,
+        "budget": "500000원",
+        "deliverables": ["최종 조사 보고서", "증거 자료집", "법적 자문"],
+        "tasks": [
+          {
+            "taskKey": "report_writing",
+            "desc": "종합 보고서 작성",
+            "competency": "보고서 작성 전문가"
+          },
+          {
+            "taskKey": "legal_advice",
+            "desc": "법적 절차 안내",
+            "competency": "법무 전문가"
+          }
+        ],
+        "phaseKPI": ["보고서 완성도 95%", "법적 활용 가능성 확보"],
+        "risks": [
+          {
+            "riskKey": "legal_issue",
+            "name": "법적 문제",
+            "severity": "중간",
+            "trigger": "부적절한 증거 수집",
+            "mitigation": "법적 절차 준수"
+          }
+        ],
+        "recommendedDetectives": ["보고서 작성 전문가", "법무 전문 탐정"]
+      }
+    ]
+  },
+  "case_002": {
+    "overview": {
+      "title": "기업 내부 정보 유출 조사",
+      "caseType": "기업조사",
+      "totalDurationDays": 20,
+      "budget": {
+        "recommended": 5000000,
+        "minimum": 3000000,
+        "maximum": 8000000
+      },
+      "difficulty": "고급",
+      "successRate": 75
+    },
+    "phases": [
+      {
+        "name": "사전 조사",
+        "description": "내부 정보 분석 및 유출 경로 파악",
+        "durationDays": 5,
+        "budget": "1000000원",
+        "deliverables": ["내부 시스템 분석 보고서", "유출 경로 예측 보고서"],
+        "tasks": [
+          {
+            "taskKey": "system_analysis",
+            "desc": "내부 시스템 보안 분석",
+            "competency": "사이버 보안 전문가"
+          },
+          {
+            "taskKey": "leak_path",
+            "desc": "정보 유출 경로 분석",
+            "competency": "정보 분석 전문가"
+          }
+        ],
+        "phaseKPI": ["시스템 분석 완료", "유출 경로 특정"],
+        "risks": [
+          {
+            "riskKey": "internal_alert",
+            "name": "내부 경계 강화",
+            "severity": "높음",
+            "trigger": "조사 활동 노출",
+            "mitigation": "은밀한 조사 진행"
+          }
+        ],
+        "recommendedDetectives": ["사이버 보안 전문 탐정", "기업 조사 전문가"]
+      },
+      {
+        "name": "증거 수집",
+        "description": "실제 유출 증거 확보 및 관련자 특정",
+        "durationDays": 12,
+        "budget": "3000000원",
+        "deliverables": ["유출 증거 자료", "관련자 명단", "유출 규모 분석"],
+        "tasks": [
+          {
+            "taskKey": "evidence_collection",
+            "desc": "디지털 증거 수집",
+            "competency": "디지털 포렌식 전문가"
+          },
+          {
+            "taskKey": "person_identification",
+            "desc": "관련자 특정 및 조사",
+            "competency": "인물 조사 전문가"
+          }
+        ],
+        "phaseKPI": ["증거 확보 완료", "관련자 특정 완료"],
+        "risks": [
+          {
+            "riskKey": "evidence_destruction",
+            "name": "증거 인멸",
+            "severity": "높음",
+            "trigger": "조사 발각",
+            "mitigation": "신속한 증거 보전"
+          }
+        ],
+        "recommendedDetectives": ["디지털 포렌식 전문 탐정", "기업 내부 조사 전문가"]
+      },
+      {
+        "name": "최종 보고",
+        "description": "조사 결과 종합 및 대응 방안 제시",
+        "durationDays": 3,
+        "budget": "1000000원",
+        "deliverables": ["최종 조사 보고서", "대응 방안", "법적 절차 가이드"],
+        "tasks": [
+          {
+            "taskKey": "final_report",
+            "desc": "종합 보고서 작성",
+            "competency": "보고서 작성 전문가"
+          },
+          {
+            "taskKey": "response_plan",
+            "desc": "대응 방안 수립",
+            "competency": "기업 보안 컨설턴트"
+          }
+        ],
+        "phaseKPI": ["보고서 완성", "대응 방안 제시"],
+        "risks": [
+          {
+            "riskKey": "legal_complexity",
+            "name": "법적 복잡성",
+            "severity": "중간",
+            "trigger": "복잡한 법적 관계",
+            "mitigation": "전문 법률 자문"
+          }
+        ],
+        "recommendedDetectives": ["기업 보안 컨설턴트", "법무 전문 탐정"]
+      }
+    ]
+  },
+  "case_003": {
+    "overview": {
+      "title": "실종자 수색 및 소재 파악",
+      "caseType": "실종자수색",
+      "totalDurationDays": 30,
+      "budget": {
+        "recommended": 4000000,
+        "minimum": 2500000,
+        "maximum": 7000000
+      },
+      "difficulty": "고급",
+      "successRate": 70
+    },
+    "phases": [
+      {
+        "name": "초기 조사",
+        "description": "실종자 정보 수집 및 마지막 행적 파악",
+        "durationDays": 7,
+        "budget": "800000원",
+        "deliverables": ["실종자 프로필", "마지막 행적 보고서", "관련자 명단"],
+        "tasks": [
+          {
+            "taskKey": "profile_creation",
+            "desc": "실종자 상세 프로필 작성",
+            "competency": "프로파일링 전문가"
+          },
+          {
+            "taskKey": "last_trace",
+            "desc": "마지막 행적 추적",
+            "competency": "추적 전문가"
+          }
+        ],
+        "phaseKPI": ["프로필 완성", "마지막 행적 파악"],
+        "risks": [
+          {
+            "riskKey": "time_delay",
+            "name": "시간 지연",
+            "severity": "높음",
+            "trigger": "정보 부족",
+            "mitigation": "신속한 정보 수집"
+          }
+        ],
+        "recommendedDetectives": ["프로파일링 전문 탐정", "실종자 수색 전문가"]
+      },
+      {
+        "name": "광범위 수색",
+        "description": "다양한 경로를 통한 실종자 수색",
+        "durationDays": 20,
+        "budget": "2700000원",
+        "deliverables": ["수색 활동 보고서", "목격자 진술서", "CCTV 분석 결과"],
+        "tasks": [
+          {
+            "taskKey": "field_search",
+            "desc": "현장 수색 활동",
+            "competency": "현장 수색 전문가"
+          },
+          {
+            "taskKey": "cctv_analysis",
+            "desc": "CCTV 영상 분석",
+            "competency": "영상 분석 전문가"
+          }
+        ],
+        "phaseKPI": ["수색 지역 커버리지 80%", "유력 단서 발견"],
+        "risks": [
+          {
+            "riskKey": "trail_cold",
+            "name": "단서 소멸",
+            "severity": "높음",
+            "trigger": "시간 경과",
+            "mitigation": "다각적 접근"
+          }
+        ],
+        "recommendedDetectives": ["현장 수색 전문 탐정", "영상 분석 전문가"]
+      },
+      {
+        "name": "소재 파악",
+        "description": "실종자 소재 확인 및 가족 연결",
+        "durationDays": 3,
+        "budget": "500000원",
+        "deliverables": ["소재 확인 보고서", "안전 상태 확인", "가족 연결 지원"],
+        "tasks": [
+          {
+            "taskKey": "location_confirm",
+            "desc": "실종자 소재 최종 확인",
+            "competency": "소재 확인 전문가"
+          },
+          {
+            "taskKey": "family_connection",
+            "desc": "가족과의 연결 지원",
+            "competency": "중재 전문가"
+          }
+        ],
+        "phaseKPI": ["소재 확인 완료", "가족 연결 성공"],
+        "risks": [
+          {
+            "riskKey": "safety_concern",
+            "name": "안전 문제",
+            "severity": "높음",
+            "trigger": "위험한 상황",
+            "mitigation": "안전 우선 접근"
+          }
+        ],
+        "recommendedDetectives": ["소재 확인 전문 탐정", "중재 전문가"]
+      }
+    ]
+  }
+}

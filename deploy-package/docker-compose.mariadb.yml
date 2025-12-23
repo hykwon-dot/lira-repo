@@ -1,0 +1,23 @@
+services:
+  mariadb:
+    image: mariadb:11.4
+    container_name: lira-mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpass
+      MARIADB_DATABASE: lira
+      MARIADB_USER: lira_user
+      MARIADB_PASSWORD: StrongPW123!
+    # mariadb 11.x는 기본 엔트리포인트에서 mariadbd를 사용하므로 바이너리를 명시하지 않고 인자만 전달합니다.
+    command: >-
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --innodb-buffer-pool-size=512M
+      --innodb-log-file-size=256M
+      --innodb_flush_log_at_trx_commit=1
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+volumes:
+  mariadb_data:

@@ -1,0 +1,34 @@
+# Files and directories that should not be uploaded to Elastic Beanstalk
+# Keep the bundle lean so the platform installs fresh dependencies on the instance.
+
+# Node dependencies and build artifacts
+node_modules/
+.next/
+out/
+coverage/
+dist/
+build/
+
+# Local caches and tooling
+.vscode/
+.idea/
+.eslintcache
+npm-debug.log*
+yarn-*.log
+pnpm-debug.log
+
+# Environment files (manage from EB vars or Secrets Manager)
+.env
+.env.*
+
+# Git metadata and local assets
+.git/
+.gitignore
+.github/
+
+# Temporary folders
+.tmp/
+tmp/
+test-results/
+logs/
+.elasticbeanstalk/logs/

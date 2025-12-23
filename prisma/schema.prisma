@@ -1,0 +1,519 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id                                 Int                          @id @default(autoincrement())
+  email                              String                       @unique
+  name                               String
+  password                           String
+  role                               UserRole                     @default(USER)
+  createdAt                          DateTime                     @default(now())
+  updatedAt                          DateTime                     @updatedAt
+  deletedAt                          DateTime?
+  conversations                      Conversation[]
+  customerProfile                    CustomerProfile?
+  investigationChatMessages          InvestigationChatMessage[]
+  investigationChatRoomsCustomer     InvestigationChatRoom[]      @relation("InvestigationChatCustomer")
+  investigationChatRoomsInvestigator InvestigationChatRoom[]      @relation("InvestigationChatInvestigator")
+  requests                           InvestigationRequest[]
+  timelineEntries                    InvestigationTimelineEntry[]
+  reviewedInvestigators              InvestigatorProfile[]        @relation("InvestigatorReviewedBy")
+  investigator                       InvestigatorProfile?
+  submittedReviews                   InvestigatorReview[]         @relation("CustomerReviews")
+  notifications                      Notification[]
+  ownedOrganizations                 Organization[]               @relation("OrganizationOwner")
+  organizationInvitationsSent        OrganizationMember[]         @relation("OrganizationInvitedBy")
+  organizationMemberships            OrganizationMember[]         @relation("OrganizationMembershipUser")
+  simulationEvents                   SimulationEvent[]
+  simulationRuns                     SimulationRun[]
+  summaries                          UserSummary[]
+}
+
+model InvestigatorProfile {
+  id                Int                    @id @default(autoincrement())
+  userId            Int                    @unique
+  licenseNumber     String?
+  experienceYears   Int                    @default(0)
+  specialties       Json
+  status            InvestigatorStatus     @default(PENDING)
+  ratingAverage     Decimal?               @db.Decimal(5, 2)
+  successRate       Decimal?               @db.Decimal(5, 2)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  reviewNote        String?                @db.Text
+  reviewedAt        DateTime?
+  reviewedById      Int?
+  contactPhone      String?
+  serviceArea       String?
+  introduction      String?                @db.Text
+  portfolioUrl      String?
+  businessLicenseUrl String?                @db.VarChar(255)
+  termsAcceptedAt   DateTime?
+  privacyAcceptedAt DateTime?
+  avatarUrl         String?                @db.VarChar(255)
+  deletedAt         DateTime?
+  assignedRequests  InvestigationRequest[]
+  matches           InvestigatorMatch[]
+  reviewedBy        User?                  @relation("InvestigatorReviewedBy", fields: [reviewedById], references: [id])
+  user              User                   @relation(fields: [userId], references: [id])
+  reviews           InvestigatorReview[]   @relation("InvestigatorProfileReviews")
+
+  @@index([status])
+  @@index([reviewedById], map: "InvestigatorProfile_reviewedById_fkey")
+}
+
+model CustomerProfile {
+  id                 Int       @id @default(autoincrement())
+  userId             Int       @unique
+  displayName        String?
+  phone              String?
+  birthDate          DateTime?
+  gender             String?
+  occupation         String?
+  region             String?
+  preferredCaseTypes Json?
+  budgetMin          Int?
+  budgetMax          Int?
+  urgencyLevel       String?
+  securityQuestion   String?
+  securityAnswerHash String?
+  termsAcceptedAt    DateTime
+  privacyAcceptedAt  DateTime
+  marketingOptIn     Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+  user               User      @relation(fields: [userId], references: [id])
+}
+
+model Organization {
+  id             Int                  @id @default(autoincrement())
+  name           String
+  businessNumber String?
+  contactName    String?
+  contactPhone   String?
+  sizeCode       String?
+  note           String?              @db.Text
+  ownerId        Int
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  owner          User                 @relation("OrganizationOwner", fields: [ownerId], references: [id])
+  members        OrganizationMember[]
+
+  @@index([ownerId])
+}
+
+model OrganizationMember {
+  id             Int                    @id @default(autoincrement())
+  organizationId Int
+  userId         Int
+  role           OrganizationMemberRole @default(MEMBER)
+  invitedById    Int?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  invitedBy      User?                  @relation("OrganizationInvitedBy", fields: [invitedById], references: [id])
+  organization   Organization           @relation(fields: [organizationId], references: [id])
+  user           User                   @relation("OrganizationMembershipUser", fields: [userId], references: [id])
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([invitedById], map: "OrganizationMember_invitedById_fkey")
+}
+
+model Conversation {
+  id         Int                   @id @default(autoincrement())
+  userId     Int
+  title      String
+  status     ConversationStatus    @default(ACTIVE)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  externalId String?               @unique
+  user       User                  @relation(fields: [userId], references: [id])
+  analysis   ConversationAnalysis?
+  messages   Message[]
+
+  @@index([userId, status])
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  role           MessageRole
+  content        String       @db.Text
+  meta           Json?
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId, createdAt])
+}
+
+model ConversationAnalysis {
+  id              Int          @id @default(autoincrement())
+  conversationId  Int          @unique
+  summary         String       @db.Text
+  recommendedTags Json?
+  suggestedNext   Json?
+  createdAt       DateTime     @default(now())
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+}
+
+model Scenario {
+  id                  Int                    @id @default(autoincrement())
+  title               String
+  description         String                 @db.Text
+  category            String?
+  difficulty          String?                @default("중간")
+  image               String?
+  overview            Json?
+  spendTracking       Json?
+  raciMatrix          Json?
+  scheduleTemplate    Json?
+  riskLevel           String?
+  caseType            String?
+  successRate         Int?                   @default(0)
+  typicalDurationDays Int?
+  budgetRange         Json?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  isActive            Boolean                @default(true)
+  requests            InvestigationRequest[]
+  phases              Phase[]
+  simulationRuns      SimulationRun[]
+
+  @@index([category])
+  @@fulltext([title])
+}
+
+model Phase {
+  id             Int      @id @default(autoincrement())
+  order          Int      @default(0)
+  scenarioId     Int
+  phaseKey       String
+  name           String
+  description    String?  @db.Text
+  durationDays   Int
+  scheduleOffset Int
+  budget         Json
+  phaseKPI       Json
+  deliverables   Json
+  nextPhase      String?
+  scenario       Scenario @relation(fields: [scenarioId], references: [id])
+  risks          Risk[]
+  tasks          Task[]
+
+  @@index([scenarioId], map: "Phase_scenarioId_fkey")
+}
+
+model Task {
+  id           Int     @id @default(autoincrement())
+  order        Int     @default(0)
+  phaseId      Int
+  taskKey      String
+  desc         String  @db.Text
+  competency   Json
+  durationDays Int?
+  priority     String?
+  status       String  @default("PENDING")
+  phase        Phase   @relation(fields: [phaseId], references: [id])
+
+  @@index([phaseId], map: "Task_phaseId_fkey")
+}
+
+model Risk {
+  id         Int    @id @default(autoincrement())
+  phaseId    Int
+  riskKey    String
+  name       String
+  severity   String
+  trigger    String
+  mitigation String
+  phase      Phase  @relation(fields: [phaseId], references: [id])
+
+  @@index([phaseId], map: "Risk_phaseId_fkey")
+}
+
+model UserSummary {
+  id              Int      @id @default(autoincrement())
+  stepNumber      Int
+  title           String
+  shortDesc       String
+  fullDesc        String   @db.Text
+  status          String
+  relatedQuestion String
+  workflow        String?
+  parentStepId    Int?
+  isSubTask       Boolean  @default(false)
+  conversationId  Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  userId          Int
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "UserSummary_userId_fkey")
+}
+
+model SimulationRun {
+  id             Int                 @id @default(autoincrement())
+  userId         Int
+  scenarioId     Int
+  currentPhaseId Int?
+  status         SimulationRunStatus @default(ACTIVE)
+  metadata       Json?
+  startedAt      DateTime            @default(now())
+  completedAt    DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  events         SimulationEvent[]
+  scenario       Scenario            @relation(fields: [scenarioId], references: [id])
+  user           User                @relation(fields: [userId], references: [id])
+
+  @@index([userId, status])
+  @@index([scenarioId])
+}
+
+model SimulationEvent {
+  id        Int                 @id @default(autoincrement())
+  runId     Int
+  userId    Int
+  eventType SimulationEventType
+  payload   Json
+  phaseId   Int?
+  taskId    Int?
+  createdAt DateTime            @default(now())
+  run       SimulationRun       @relation(fields: [runId], references: [id])
+  user      User                @relation(fields: [userId], references: [id])
+
+  @@index([runId, createdAt])
+  @@index([userId], map: "SimulationEvent_userId_fkey")
+}
+
+model InvestigationRequest {
+  id             Int                          @id @default(autoincrement())
+  userId         Int
+  scenarioId     Int?
+  title          String
+  details        String                       @db.Text
+  desiredOutcome String?
+  budgetMin      Int?
+  budgetMax      Int?
+  status         String                       @default("MATCHING")
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+  investigatorId Int?
+  acceptedAt     DateTime?
+  declinedAt     DateTime?
+  declineReason  String?                      @db.Text
+  cancelledAt    DateTime?
+  completedAt    DateTime?
+  chatRoom       InvestigationChatRoom?
+  investigator   InvestigatorProfile?         @relation(fields: [investigatorId], references: [id])
+  scenario       Scenario?                    @relation(fields: [scenarioId], references: [id])
+  user           User                         @relation(fields: [userId], references: [id])
+  timeline       InvestigationTimelineEntry[]
+  matches        InvestigatorMatch[]
+  review         InvestigatorReview?
+
+  @@index([status])
+  @@index([investigatorId])
+  @@index([scenarioId], map: "InvestigationRequest_scenarioId_fkey")
+  @@index([userId], map: "InvestigationRequest_userId_fkey")
+}
+
+model InvestigatorMatch {
+  id             Int                  @id @default(autoincrement())
+  requestId      Int
+  investigatorId Int
+  score          Decimal              @db.Decimal(5, 2)
+  reason         String?              @db.Text
+  createdAt      DateTime             @default(now())
+  investigator   InvestigatorProfile  @relation(fields: [investigatorId], references: [id])
+  request        InvestigationRequest @relation(fields: [requestId], references: [id])
+
+  @@unique([requestId, investigatorId])
+  @@index([score])
+  @@index([investigatorId], map: "InvestigatorMatch_investigatorId_fkey")
+}
+
+model InvestigationTimelineEntry {
+  id        Int                       @id @default(autoincrement())
+  requestId Int
+  type      InvestigationTimelineType
+  title     String?
+  note      String?                   @db.Text
+  payload   Json?
+  authorId  Int?
+  createdAt DateTime                  @default(now())
+  author    User?                     @relation(fields: [authorId], references: [id])
+  request   InvestigationRequest      @relation(fields: [requestId], references: [id])
+
+  @@index([requestId, createdAt])
+  @@index([authorId], map: "InvestigationTimelineEntry_authorId_fkey")
+}
+
+model InvestigationChatRoom {
+  id                    Int                        @id @default(autoincrement())
+  requestId             Int                        @unique
+  customerId            Int
+  investigatorUserId    Int
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+  lastMessagePreview    String?
+  lastMessageAt         DateTime?
+  customerClearedAt     DateTime?
+  investigatorClearedAt DateTime?
+  messages              InvestigationChatMessage[]
+  customer              User                       @relation("InvestigationChatCustomer", fields: [customerId], references: [id])
+  investigator          User                       @relation("InvestigationChatInvestigator", fields: [investigatorUserId], references: [id])
+  request               InvestigationRequest       @relation(fields: [requestId], references: [id])
+
+  @@index([customerId])
+  @@index([investigatorUserId])
+}
+
+model InvestigationChatMessage {
+  id           Int                   @id @default(autoincrement())
+  roomId       Int
+  senderId     Int
+  content      String?               @db.Text
+  attachments  Json?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  deletedAt    DateTime?
+  requestStage String?
+  room         InvestigationChatRoom @relation(fields: [roomId], references: [id])
+  sender       User                  @relation(fields: [senderId], references: [id])
+
+  @@index([roomId, createdAt])
+  @@index([senderId], map: "InvestigationChatMessage_senderId_fkey")
+}
+
+model InvestigatorReview {
+  id             Int                  @id @default(autoincrement())
+  requestId      Int                  @unique
+  investigatorId Int
+  customerId     Int
+  rating         Int
+  comment        String?              @db.Text
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  customer       User                 @relation("CustomerReviews", fields: [customerId], references: [id])
+  investigator   InvestigatorProfile  @relation("InvestigatorProfileReviews", fields: [investigatorId], references: [id])
+  request        InvestigationRequest @relation(fields: [requestId], references: [id])
+
+  @@index([investigatorId])
+  @@index([customerId])
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  type      NotificationType @default(SYSTEM)
+  title     String
+  message   String?          @db.Text
+  actionUrl String?          @db.VarChar(512)
+  metadata  Json?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@index([userId, readAt])
+}
+
+model Banner {
+  id        Int        @id @default(autoincrement())
+  title     String?
+  imageUrl  String
+  linkUrl   String?
+  type      BannerType @default(MAIN_LARGE)
+  isActive  Boolean    @default(true)
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+enum BannerType {
+  MAIN_LARGE
+  MAIN_SMALL
+}
+
+enum UserRole {
+  USER
+  INVESTIGATOR
+  ENTERPRISE
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum InvestigatorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum InvestigationTimelineType {
+  REQUEST_CREATED
+  INVESTIGATOR_ASSIGNED
+  INVESTIGATOR_ACCEPTED
+  INVESTIGATOR_DECLINED
+  STATUS_ADVANCED
+  PROGRESS_NOTE
+  INTERIM_REPORT
+  FINAL_REPORT
+  ATTACHMENT_SHARED
+  CUSTOMER_CANCELLED
+  SYSTEM
+}
+
+enum ConversationStatus {
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum MessageRole {
+  USER
+  AI
+  SYSTEM
+}
+
+enum NotificationType {
+  INVESTIGATION_ASSIGNED
+  INVESTIGATION_STATUS
+  CHAT_MESSAGE
+  SYSTEM
+}
+
+enum OrganizationMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum SimulationRunStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum SimulationEventType {
+  PHASE_ENTERED
+  TASK_STATUS_CHANGED
+  NOTE_ADDED
+}
+
+model Award {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  imageUrl    String?
+  date        DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
