@@ -179,7 +179,7 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
                   icon={TrendingUp}
                   value={`${totalScenarios}건`}
                   label="가용 시나리오"
-                  caption="주요 카테고리별 전략을 큐레이션했습니다."
+                  caption="주요 카테고리별 전략을 선별·추천했습니다."
                 />
                 <MetricCard
                   icon={Clock}
