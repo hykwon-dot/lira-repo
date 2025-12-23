@@ -63,7 +63,7 @@ const rankHighlights = [
   {
     badge: "특화 경험",
     tone: "from-blue-500 via-sky-500 to-cyan-500",
-    headline: "대안 플랜",
+    headline: "대안 계획",
     description: "비슷한 유형에서 높은 해결률을 보여왔어요.",
   },
   {

@@ -338,7 +338,7 @@ export function AIInsightsPanel({
 
         <div>
           <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <FiCheckSquare className="h-4 w-4 text-slate-700" /> 실행 플랜
+            <FiCheckSquare className="h-4 w-4 text-slate-700" /> 실행 계획
           </h3>
           <div className="mt-2 space-y-3">
             {insights?.actionPlan ? (
@@ -390,7 +390,7 @@ export function AIInsightsPanel({
               </>
             ) : (
               <p className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center text-[12px] text-slate-400">
-                대화가 더 진행되면 실행 플랜이 생성됩니다.
+                대화가 더 진행되면 실행 계획이 생성됩니다.
               </p>
             )}
           </div>

@@ -185,7 +185,7 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
                   icon={Clock}
                   value={`${Math.round(averageDuration) || 0}일`}
                   label="평균 예상 기간"
-                  caption="단계별 소요 시간으로 현실성 있는 플랜을 확보하세요."
+                  caption="단계별 소요 시간으로 현실성 있는 계획을 확보하세요."
                 />
                 <MetricCard
                   icon={Shield}

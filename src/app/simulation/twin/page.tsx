@@ -1505,7 +1505,7 @@ export default function TwinSimulationPage() {
 
               <div className="rounded-3xl border border-white/15 bg-slate-950/40 p-5">
                 <h3 className="flex items-center gap-2 text-sm font-semibold text-indigo-100">
-                  권장 액션 플랜
+                  권장 액션 계획
                 </h3>
                 <ul className="mt-3 space-y-2 text-sm text-indigo-100/90">
                   {(result?.recommendedActions ?? [

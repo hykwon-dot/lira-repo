@@ -204,7 +204,7 @@ export default function MyPage() {
         {
           href: "/scenarios",
           label: "시나리오 라이브러리",
-          description: "상황별 사례와 실행 플랜 탐색",
+          description: "상황별 사례와 실행 계획 탐색",
         },
         {
           href: "/simulation",

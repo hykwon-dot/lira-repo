@@ -735,7 +735,7 @@ export const ChatSimulation = () => {
   const negotiationPlanMarkdown = useMemo(() => {
     if (!negotiationPlan) return null;
     const lines: string[] = [];
-    lines.push(`# 협상 코치 플랜 (${negotiationPlan.primaryGoal})`);
+    lines.push(`# 협상 코치 계획 (${negotiationPlan.primaryGoal})`);
     lines.push(`생성시각: ${new Date(negotiationPlan.generatedAt).toLocaleString("ko-KR")}`);
     lines.push("## 톤 가이드");
     lines.push(`${negotiationPlan.toneGuidance.primaryTone}`);

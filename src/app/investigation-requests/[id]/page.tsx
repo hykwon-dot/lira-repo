@@ -714,7 +714,7 @@ export default function InvestigationRequestDetailPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.26em] text-indigo-500">Investigator Briefing</p>
                     <h2 className="mt-1 text-lg font-semibold text-[#1a2340]">AI 브리핑 허브</h2>
                     <p className="mt-1 text-sm text-slate-500">
-                      트렌드 경보, 실행 플랜, 보고 초안, 협상 전략을 한곳에서 확인하세요.
+                      트렌드 경보, 실행 계획, 보고 초안, 협상 전략을 한곳에서 확인하세요.
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
