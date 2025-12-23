@@ -1651,11 +1651,11 @@ export const ChatSimulation = () => {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-indigo-200">
-                <FiStar className="h-3.5 w-3.5" /> 사건 인테이크 어시스턴트
+                <FiStar className="h-3.5 w-3.5" /> 사건 초기 상담 어시스턴트
               </div>
               <div>
                 <h1 className="max-w-3xl text-2xl font-bold leading-tight text-balance sm:text-3xl md:text-4xl">
-                  실시간 조사 인테이크 & 전략 보드
+                  실시간 조사 초기 상담 & 전략 보드
                 </h1>
                 <p className="mt-2 hidden max-w-2xl text-sm text-indigo-100 md:mt-3 md:block md:text-base md:leading-relaxed">
                   대화를 그대로 기록하고 요약하여 탐정에게 전달할 준비를 마칩니다. 필요한 질문을 제안받으며 사건을 빠르게 정리하세요.

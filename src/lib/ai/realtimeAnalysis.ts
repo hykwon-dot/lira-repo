@@ -357,7 +357,7 @@ function buildNextActions(
   if (actions.length === 0) {
     actions.push({
       id: "intake-review",
-      label: "인테이크 내용 정리 및 검토",
+      label: "초기 상담 내용 정리 및 검토",
       description: "요약본을 확인하고 누락된 질문이 없는지 점검하세요.",
       priority: "low",
     });
