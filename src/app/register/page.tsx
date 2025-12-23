@@ -36,7 +36,7 @@ const onboardingSteps = [
     detail: "의뢰인/기업 혹은 민간조사원 유형을 선택하고 필수 정보를 입력합니다.",
   },
   {
-    title: "AI Intake & 맞춤 시나리오",
+    title: "AI 초기 상담 & 맞춤 시나리오",
     detail: "대화형 설문으로 사건 구조를 파악하고, 필요한 서류와 다음 액션을 추천받습니다.",
   },
   {
@@ -83,7 +83,7 @@ export default function RegisterPage() {
             </span>
             <div className="space-y-4">
               <h1 className="text-2xl font-semibold leading-snug text-white sm:text-[30px] lg:text-[34px]">
-                AI 시뮬레이션으로 사건 intake 를 자동화하고,
+                AI 시뮬레이션으로 사건 초기 상담을 자동화하고,
                 <span className="text-sky-200"> 실시간 전략 보드</span>로 바로 이어가세요.
               </h1>
               <p className="text-[13px] leading-relaxed text-slate-200/80 sm:text-sm">
@@ -133,7 +133,7 @@ export default function RegisterPage() {
                 },
                 {
                   icon: FiZap,
-                  text: "AI Intake → 사건 요약 → 탐정 추천으로 이어지는 일괄 자동화",
+                  text: "AI 초기 상담 → 사건 요약 → 탐정 추천으로 이어지는 일괄 자동화",
                 }].map(({ icon: Icon, text }) => (
                   <div key={text} className="flex items-start gap-3 text-[13px] leading-relaxed text-slate-100/85 sm:text-sm">
                     <span className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/15 text-sky-200">
@@ -166,7 +166,7 @@ export default function RegisterPage() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-white sm:text-base">이미 계정을 보유하고 계신가요?</p>
-                  <p className="text-xs text-slate-200/75 sm:text-[13px]">24시간 내 재접속 시 진행 중인 Intake 를 그대로 이어갈 수 있습니다.</p>
+                  <p className="text-xs text-slate-200/75 sm:text-[13px]">24시간 내 재접속 시 진행 중인 초기 상담을 그대로 이어갈 수 있습니다.</p>
                 </div>
                 <Link
                   href="/login"
@@ -189,7 +189,7 @@ export default function RegisterPage() {
                 <h2 className="text-2xl font-semibold text-[#121b3b] sm:text-3xl">회원가입으로 시작하기</h2>
               </div>
               <p className="text-[13px] text-slate-500 md:max-w-[260px] md:text-sm">
-                역할에 따라 필요한 정보를 안내해 드려요. 필수 항목만 입력하면 AI가 바로 intake 를 준비합니다.
+                역할에 따라 필요한 정보를 안내해 드려요. 필수 항목만 입력하면 AI가 바로 초기 상담을 준비합니다.
               </p>
             </div>
 
@@ -201,7 +201,7 @@ export default function RegisterPage() {
               <div className="flex items-start gap-3">
                 <FiCheckCircle className="mt-1 h-4 w-4 text-sky-500" />
                 <p className="leading-relaxed">
-                  가입이 완료되면 <strong>AI Intake 보드</strong>로 이동하며, 수집된 사건 정보는 탐정 매칭과 리포트 작성에 자동으로 연결됩니다.
+                  가입이 완료되면 <strong>AI 초기 상담 보드</strong>로 이동하며, 수집된 사건 정보는 탐정 매칭과 리포트 작성에 자동으로 연결됩니다.
                 </p>
               </div>
               <div className="flex flex-col gap-2 text-[12px] text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:text-xs">

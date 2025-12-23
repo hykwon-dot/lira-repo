@@ -466,7 +466,7 @@ export default function RequestComposer({ investigator, scenarios }: RequestComp
               <section className="rounded-3xl border border-indigo-100 bg-white/90 p-6 shadow-sm backdrop-blur">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-[#1a2340]">AI Intake 대화 기록</h2>
+                    <h2 className="text-lg font-semibold text-[#1a2340]">AI 초기 상담 대화 기록</h2>
                     <p className="mt-1 text-xs text-slate-500">
                       시뮬레이션에서 수집된 요약과 대화 내역입니다. 필요에 따라 세부 내용을 수정하거나 추가하세요.
                     </p>

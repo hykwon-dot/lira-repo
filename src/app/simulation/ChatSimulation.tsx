@@ -136,7 +136,7 @@ const deriveKeywords = (summary: IntakeSummary | null): string[] => {
 };
 
 const assistantGreeting =
-  "안녕하세요, LIONE AI Intake 파트너입니다. 사건의 전반적인 상황과 지금 걱정되는 부분부터 차근차근 이야기해 주세요.";
+  "안녕하세요, LIONE AI 초기 상담 파트너입니다. 사건의 전반적인 상황과 지금 걱정되는 부분부터 차근차근 이야기해 주세요.";
 
 const mapMessagesToApi = (messages: ChatMessage[]) =>
   messages.map(({ role, content }) => ({ role, content }));
