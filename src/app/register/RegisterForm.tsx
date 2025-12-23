@@ -279,7 +279,7 @@ export default function RegisterForm() {
               {
                 value: 'USER' as PublicRole,
                 title: '의뢰인/기업 고객',
-                description: 'AI 시나리오 추천, 사건 의뢰 관리, 맞춤형 레포트를 받아보세요.',
+                description: 'AI 시나리오 추천, 사건 의뢰 관리, 맞춤형 보고서를 받아보세요.',
                 accent: 'from-sky-500/10 to-sky-500/0 border-sky-100',
               },
               {
