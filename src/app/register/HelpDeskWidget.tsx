@@ -24,7 +24,7 @@ const FAQ_ITEMS = [
   {
     question: "기업 계정은 어떻게 전환하나요?",
     answer:
-      "온보딩 완료 후 관리자에게 조직 초대를 요청하거나, settings > 조직 관리에서 즉시 추가할 수 있습니다.",
+      "적응 완료 후 관리자에게 조직 초대를 요청하거나, settings > 조직 관리에서 즉시 추가할 수 있습니다.",
   },
 ];
 
@@ -146,7 +146,7 @@ export const HelpDeskWidget = ({ className }: HelpDeskWidgetProps) => {
 
             <div className="flex flex-col gap-3 border-t border-white/10 bg-black/20 px-6 py-5 text-xs text-slate-200/70 sm:flex-row sm:items-center sm:justify-between">
               <span>
-                보다 자세한 도큐먼트는 가입 완료 후 <strong>온보딩 센터</strong>에서 확인할 수 있습니다.
+                보다 자세한 도큐먼트는 가입 완료 후 <strong>적응 센터</strong>에서 확인할 수 있습니다.
               </span>
               <button
                 type="button"

@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 const stats = [
   {
     value: "7분",
-    label: "평균 온보딩 시간",
+    label: "평균 적응 시간",
     description: "AI 추천 단계로 빠른 전환",
   },
   {
@@ -53,7 +53,7 @@ const guarantees = [
   },
   {
     icon: FiHeadphones,
-    title: "전담 온보딩 팀",
+    title: "전담 적응 팀",
     description: "계정 설정부터 첫 의뢰까지 라이브 채널로 지원합니다.",
   },
 ];
@@ -88,7 +88,7 @@ export default function RegisterPage() {
               </h1>
               <p className="text-[13px] leading-relaxed text-slate-200/80 sm:text-sm">
                 고객은 맞춤 시나리오와 협업 툴을, 민간조사원은 신뢰도 높은 의뢰와 데이터 기반 리포트를 한 번에 관리합니다.
-                지금 가입하면 온보딩 팀이 초기 세팅을 도와드립니다.
+                지금 가입하면 적응 팀이 초기 세팅을 도와드립니다.
               </p>
             </div>
 
@@ -205,7 +205,7 @@ export default function RegisterPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 text-[12px] text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:text-xs">
-                <span>가입 중 도움이 필요하신가요? 전담 온보딩 팀이 실시간으로 상담을 도와드립니다.</span>
+                <span>가입 중 도움이 필요하신가요? 전담 적응 팀이 실시간으로 상담을 도와드립니다.</span>
                 <a
                   href="mailto:support@lira.ai"
                   className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-[12px] font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-600 sm:text-xs"
