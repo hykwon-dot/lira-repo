@@ -1333,7 +1333,7 @@ export const ChatSimulation = () => {
     async (options?: { silent?: boolean }) => {
       if (!realtimeInsights) {
         if (!options?.silent) {
-          setReportError("실시간 브리핑 결과가 있어야 리포트를 생성할 수 있습니다.");
+          setReportError("실시간 브리핑 결과가 있어야 보고서를 생성할 수 있습니다.");
         }
         return;
       }
@@ -1361,7 +1361,7 @@ export const ChatSimulation = () => {
         });
 
         if (!response.ok) {
-          throw new Error(`리포트 생성을 실패했습니다. (${response.status})`);
+          throw new Error(`보고서 생성을 실패했습니다. (${response.status})`);
         }
 
         const payload = await response.json();

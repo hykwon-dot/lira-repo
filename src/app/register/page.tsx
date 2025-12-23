@@ -87,7 +87,7 @@ export default function RegisterPage() {
                 <span className="text-sky-200"> 실시간 전략 보드</span>로 바로 이어가세요.
               </h1>
               <p className="text-[13px] leading-relaxed text-slate-200/80 sm:text-sm">
-                고객은 맞춤 시나리오와 협업 툴을, 민간조사원은 신뢰도 높은 의뢰와 데이터 기반 리포트를 한 번에 관리합니다.
+                고객은 맞춤 시나리오와 협업 툴을, 민간조사원은 신뢰도 높은 의뢰와 데이터 기반 보고서를 한 번에 관리합니다.
                 지금 가입하면 적응 팀이 초기 세팅을 도와드립니다.
               </p>
             </div>
@@ -201,7 +201,7 @@ export default function RegisterPage() {
               <div className="flex items-start gap-3">
                 <FiCheckCircle className="mt-1 h-4 w-4 text-sky-500" />
                 <p className="leading-relaxed">
-                  가입이 완료되면 <strong>AI 초기 상담 보드</strong>로 이동하며, 수집된 사건 정보는 탐정 매칭과 리포트 작성에 자동으로 연결됩니다.
+                  가입이 완료되면 <strong>AI 초기 상담 보드</strong>로 이동하며, 수집된 사건 정보는 탐정 매칭과 보고서 작성에 자동으로 연결됩니다.
                 </p>
               </div>
               <div className="flex flex-col gap-2 text-[12px] text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:text-xs">

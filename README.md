@@ -188,7 +188,7 @@ npm run db:check
 6. Elastic/OpenSearch 연동으로 시나리오, 의뢰, 대화 전문 검색
 7. ConversationAnalysis 기반 태그 추천/후속 질문 자동 생성
 8. Investigator KPI 대시보드 (완료율/평균 응답시간/성공률)
-9. Enterprise SLA / 의뢰 처리 속도 리포트
+9. Enterprise SLA / 의뢰 처리 속도 보고서
 10. 알림(Notification) 테이블 + 실시간(WebSocket or SSE)
 11. 문서/증거 파일 업로드 (Object Storage) + 접근 제어
 12. 위험 패턴 감지(의심 다중 의뢰)용 Rule Engine

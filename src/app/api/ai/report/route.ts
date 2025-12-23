@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
         ? "입력 형식이 올바르지 않습니다."
         : error instanceof Error
         ? error.message
-        : "리포트 초안 생성 중 오류가 발생했습니다.";
+        : "보고서 초안 생성 중 오류가 발생했습니다.";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

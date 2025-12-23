@@ -49,7 +49,7 @@ export default function ReportDashboard() {
     })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error('리포트 데이터를 불러오지 못했습니다.');
+          throw new Error('보고서 데이터를 불러오지 못했습니다.');
         }
         const data = await response.json();
         setRuns(Array.isArray(data.items) ? data.items : []);
@@ -88,7 +88,7 @@ export default function ReportDashboard() {
   if (!token) {
     return (
       <div className="max-w-4xl mx-auto p-8">
-        <h2 className="text-2xl font-bold mb-2">데이터 분석 & 리포트</h2>
+        <h2 className="text-2xl font-bold mb-2">데이터 분석 & 보고서</h2>
         <p className="text-slate-400 text-sm">로그인한 관리자만 접근할 수 있습니다.</p>
       </div>
     );
@@ -98,7 +98,7 @@ export default function ReportDashboard() {
     <div className="max-w-5xl mx-auto p-8 space-y-8">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">데이터 분석 & 리포트</h2>
+          <h2 className="text-2xl font-bold text-white mb-1">데이터 분석 & 보고서</h2>
           <p className="text-sm text-slate-400">
             최근 시뮬레이션 런 50건의 상태와 이벤트 로그를 집계합니다.
           </p>

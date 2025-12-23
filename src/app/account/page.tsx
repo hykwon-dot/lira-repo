@@ -677,7 +677,7 @@ export default function AccountPage() {
                         onChange={(e) => handleCustomerChange('marketingOptIn', e.target.checked)}
                         className="h-4 w-4 rounded border-slate-300 text-sky-500 focus:ring-sky-400"
                       />
-                      <span>AI 리포트, 진행 알림 등 유용한 정보를 이메일로 받겠습니다.</span>
+                      <span>AI 보고서, 진행 알림 등 유용한 정보를 이메일로 받겠습니다.</span>
                     </label>
                   </div>
                 </div>

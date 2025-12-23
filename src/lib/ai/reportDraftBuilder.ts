@@ -246,11 +246,11 @@ export function buildInvestigationReportDraft(input: ReportDraftInput): AiInvest
   const insights = input.insights ?? null;
   const intakeSummary = input.intakeSummary ?? null;
 
-  const title = sanitizeText(intakeSummary?.caseTitle) || "조사 리포트 초안";
+  const title = sanitizeText(intakeSummary?.caseTitle) || "조사 보고서 초안";
   const executiveSummary =
     sanitizeText(input.conversationSummary) ||
     sanitizeText(insights?.summary) ||
-    "AI가 수집한 정보를 바탕으로 조사 리포트 초안을 생성했습니다.";
+    "AI가 수집한 정보를 바탕으로 조사 보고서 초안을 생성했습니다.";
 
   const report: AiInvestigationReportDraft = {
     id: createReportId(),

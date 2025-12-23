@@ -224,8 +224,8 @@ export default function MyPage() {
         },
         {
           href: "/report",
-          label: "리포트 센터",
-          description: "AI 분석 리포트와 통찰 확인",
+          label: "보고서 센터",
+          description: "AI 분석 보고서와 통찰 확인",
         },
         {
           href: "/scenarios",
@@ -250,7 +250,7 @@ export default function MyPage() {
         },
         {
           href: "/report",
-          label: "리포트 센터",
+          label: "보고서 센터",
           description: "작성 중인 보고서를 모아보기",
         },
       ];
