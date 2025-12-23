@@ -1651,7 +1651,7 @@ export const ChatSimulation = () => {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-indigo-200">
-                <FiStar className="h-3.5 w-3.5" /> 사건 초기 상담 어시스턴트
+                <FiStar className="h-3.5 w-3.5" /> 사건 초기 상담 도우미
               </div>
               <div>
                 <h1 className="max-w-3xl text-2xl font-bold leading-tight text-balance sm:text-3xl md:text-4xl">
