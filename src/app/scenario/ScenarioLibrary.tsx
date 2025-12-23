@@ -156,7 +156,7 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
                   <span className="text-indigo-200"> 가장 적합한 대응 계획</span>을 제안받으세요.
                 </h1>
                 <p className="mt-3 text-sm text-indigo-100 md:text-base">
-                  AI가 정리한 핵심 메트릭과 단계별 가이드를 토대로 기업 조사부터 민감한 개인 사건까지,
+                  AI가 정리한 핵심 지표와 단계별 가이드를 토대로 기업 조사부터 민감한 개인 사건까지,
                   데이터 기반 의사결정을 지원합니다.
                 </p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
