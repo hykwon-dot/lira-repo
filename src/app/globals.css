@@ -37,14 +37,14 @@ body {
   padding-right: 1rem;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 40rem) {
   .lira-container {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 64rem) {
   .lira-container {
     padding-left: 2rem;
     padding-right: 2rem;
@@ -361,8 +361,8 @@ body {
   width: 100%;
 }
 
-/* PC 화면 (1024px 이상) */
-@media (min-width: 1024px) {
+/* PC 화면 (64rem 이상, 약 1024px) */
+@media (min-width: 64rem) {
   .box-container {
     grid-template-columns: repeat(3, 1fr); /* PC: 3열 */
   }
