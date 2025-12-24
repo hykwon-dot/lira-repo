@@ -352,3 +352,25 @@ body {
   animation-play-state: paused;
 }
 
+
+/* 반응형 그리드 레이아웃 (Grid 사용) */
+.box-container {
+  display: grid;
+  grid-template-columns: 1fr; /* 모바일/태블릿: 1열 */
+  gap: 1rem; /* 아이템 간 간격 */
+  width: 100%;
+}
+
+/* PC 화면 (1024px 이상) */
+@media (min-width: 1024px) {
+  .box-container {
+    grid-template-columns: repeat(3, 1fr); /* PC: 3열 */
+  }
+}
+
+/* 아이템 스타일 */
+.box {
+  width: 100%;
+  /* 필요한 경우 추가 스타일 작성 */
+}
+
