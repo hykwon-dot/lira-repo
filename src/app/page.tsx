@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from 'react';
-import { FiArrowRight } from "react-icons/fi";
 
 type Banner = {
   id: number;
