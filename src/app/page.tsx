@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from 'react';
+import { FiArrowRight } from "react-icons/fi";
 
 type Banner = {
   id: number;
@@ -21,6 +22,12 @@ type Award = {
   imageUrl: string;
   date: string;
 };
+
+const CustomArrow = () => (
+  <svg width="50" height="30" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0 35 H60 V15 L100 50 L60 85 V65 H0 Z" fill="#4F81BD" stroke="#385D8A" strokeWidth="3"/>
+  </svg>
+);
 
 export default function Home() {
   const [mainBanner, setMainBanner] = useState<Banner | null>(null);
@@ -163,20 +170,29 @@ export default function Home() {
         <section className="py-20 bg-gray-50">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-12">서비스 이용 방법</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-              <div className="p-6">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-4 text-center">
+              <div className="flex-1 p-6">
                 <h3 className="text-xl font-bold mb-2">사건 상담</h3>
                 <p className="text-gray-600">AI 상담을 통해 사건의 내용과 요구사항을 상세히 분석하고 적합한 조사 방향을 제시받으세요.</p>
               </div>
-              <div className="p-6">
+              <div className="hidden lg:block text-gray-400">
+                <CustomArrow />
+              </div>
+              <div className="flex-1 p-6">
                 <h3 className="text-xl font-bold mb-2">전문가 매칭</h3>
                 <p className="text-gray-600">사건의 특성에 맞는 경험이 풍부한 민간조사원과 매칭되어 전문적인 서비스를 받으실 수 있습니다.</p>
               </div>
-              <div className="p-6">
+              <div className="hidden lg:block text-gray-400">
+                <CustomArrow />
+              </div>
+              <div className="flex-1 p-6">
                 <h3 className="text-xl font-bold mb-2">조사 진행</h3>
                 <p className="text-gray-600">전문가와 함께 체계적이고 효율적인 조사를 진행하며 실시간으로 진행 상황을 확인하세요.</p>
               </div>
-              <div className="p-6">
+              <div className="hidden lg:block text-gray-400">
+                <CustomArrow />
+              </div>
+              <div className="flex-1 p-6">
                 <h3 className="text-xl font-bold mb-2">결과 분석</h3>
                 <p className="text-gray-600">조사 결과를 종합 분석하여 명확한 해결 방안과 후속 조치를 제공받으세요.</p>
               </div>
