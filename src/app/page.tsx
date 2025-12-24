@@ -98,11 +98,26 @@ export default function Home() {
 
         {/* Sub Banners */}
         {subBanners.length > 0 && (
-          <section className="py-10 bg-gray-50">
-            <div className="container mx-auto px-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <section className="py-10 bg-gray-50 overflow-hidden">
+            <div className="w-full">
+              <div className="flex animate-scroll gap-6 w-max px-4">
+                {/* Original */}
                 {subBanners.map((banner) => (
-                  <Link key={banner.id} href={banner.linkUrl || '#'} className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow">
+                  <Link key={`original-${banner.id}`} href={banner.linkUrl || '#'} className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0">
+                    <div className="aspect-w-16 aspect-h-9 bg-gray-200 h-48">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={banner.imageUrl} alt={banner.title || 'Banner'} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" />
+                    </div>
+                    {banner.title && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                        <h3 className="text-white font-bold text-lg">{banner.title}</h3>
+                      </div>
+                    )}
+                  </Link>
+                ))}
+                {/* Duplicate */}
+                {subBanners.map((banner) => (
+                  <Link key={`duplicate-${banner.id}`} href={banner.linkUrl || '#'} className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0">
                     <div className="aspect-w-16 aspect-h-9 bg-gray-200 h-48">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={banner.imageUrl} alt={banner.title || 'Banner'} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" />
