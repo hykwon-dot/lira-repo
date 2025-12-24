@@ -77,14 +77,14 @@ export default function Home() {
             <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight break-keep">
               {mainBanner?.title || (
                 <>
-                  AI를 통해서 초기 상담을 쉽고 간편하게<br className="hidden md:block" />
+                  AI와 초기 상담을 쉽고 간편하게<br className="hidden md:block" />
                   24시간 언제든지 맞춤형 민간조사원을 매칭받고,<br className="hidden md:block" />
                   믿을 수 있는 전문가와 성공적으로 일을 진행하세요
                 </>
               )}
             </h1>
             <p className="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto mb-8">
-              AI와 초기 상담을 통해 사건을 분석하고, 경험이 풍부한 전문 민간조사원과 매칭을 받으세요. <br /> 유사한 사건 사례를 참고하여 더 나은 결과를 얻으실 수 있습니다.
+              AI와 초기 상담을 통해 사건을 분석하고, <br className="hidden md:block" /> 경험이 풍부한 전문 민간조사원과 매칭을 받으세요. <br /> 유사한 사건 사례를 참고하여 더 나은 결과를 얻으실 수 있습니다.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                <Link href={mainBanner?.linkUrl || "/simulation"} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
