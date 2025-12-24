@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import dynamicImport from "next/dynamic";
 import "./globals.css";
@@ -14,6 +14,10 @@ const inter = Inter({
 
 export const dynamic = "force-dynamic";
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1.0,
+};
 export const metadata: Metadata = {
   title: "AI 시뮬레이션 기반 민간조사 매칭 | LIRA",
   description: "실시간 AI 분석과 시뮬레이션으로 의뢰인과 전문 민간조사원을 연결하는 LIRA 플랫폼",
