@@ -66,7 +66,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col text-gray-800">
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="relative h-[80vh] flex flex-col justify-center items-center text-center -mt-20">
+        <section className="relative h-[70vh] flex flex-col justify-center items-center text-center -mt-20">
           <div 
             className="absolute inset-0 bg-cover bg-center opacity-20" 
             style={{ 
@@ -74,7 +74,7 @@ export default function Home() {
             }}
           ></div>
           <div className="container mx-auto px-4 relative text-center">
-            <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-6 leading-normal break-keep">
+            <h1 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 leading-snug break-keep">
               {mainBanner?.title || (
                 <>
                   AI를 통한 쉽고 간편한 민간조사 의뢰<br className="hidden md:block" />
@@ -83,7 +83,7 @@ export default function Home() {
                 </>
               )}
             </h1>
-            <p className="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto mb-8 leading-loose break-keep">
+            <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed break-keep">
               AI와 초기 상담을 통해 사건을 분석하고,<br className="hidden md:block" />
               경험이 풍부한 전문 민간조사원과 매칭을 받으세요.<br className="hidden md:block" />
               유사한 사건 사례를 참고하여 더 나은 결과를 얻으실 수 있습니다.
