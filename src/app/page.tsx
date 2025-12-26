@@ -74,18 +74,22 @@ export default function Home() {
             }}
           ></div>
           <div className="container mx-auto px-4 relative text-center">
-            <h1 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 leading-snug break-keep">
+            <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight break-keep">
               {mainBanner?.title || (
                 <>
-                  AI를 통한 쉽고 간편한 민간조사 의뢰<br className="hidden md:block" />
-                  이제 24시간 언제든지 맞춤형 민간조사원을 매칭받고,<br className="hidden md:block" />
-                  믿을 수 있는 전문가와 일을 진행할 수 있습니다.
+                  AI를 통한 쉽고 간편한 민간조사 의뢰
+                  <br className="hidden md:block" />
+                  {' '}이제 24시간 언제든지 맞춤형 민간조사원을 매칭받고,
+                  <br className="hidden md:block" />
+                  {' '}믿을 수 있는 전문가와 일을 진행할 수 있습니다.
                 </>
               )}
             </h1>
             <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed break-keep">
-              AI와 초기 상담을 통해 사건을 분석하고,<br className="hidden md:block" />
-              경험이 풍부한 전문 민간조사원과 매칭을 받으세요.<br className="hidden md:block" />
+              AI와 초기 상담을 통해 사건을 분석하고,
+              <br className="hidden md:block" />{' '}
+              경험이 풍부한 전문 민간조사원과 매칭을 받으세요.
+              <br className="hidden md:block" />{' '}
               유사한 사건 사례를 참고하여 더 나은 결과를 얻으실 수 있습니다.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
