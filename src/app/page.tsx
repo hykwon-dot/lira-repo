@@ -66,7 +66,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col text-gray-800">
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="relative h-[60vh] flex flex-col justify-center items-center text-center -mt-20">
+        <section className="relative h-[80vh] flex flex-col justify-center items-center text-center -mt-20">
           <div 
             className="absolute inset-0 bg-cover bg-center opacity-20" 
             style={{ 
