@@ -77,9 +77,9 @@ export default function Home() {
             <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight break-keep">
               {mainBanner?.title || (
                 <>
-                  AI와 초기 상담을 쉽고 간편하게<br className="hidden md:block" />
-                  24시간 언제든지 맞춤형 민간조사원을 매칭받고,<br className="hidden md:block" />
-                  믿을 수 있는 전문가와 성공적으로 일을 진행하세요
+                  AI를 통한 쉽고 간편한 민간조사 의뢰 <br className="hidden md:block" />
+                  이제 24시간 언제든지 맞춤형 민간조사원을 매칭받고, <br className="hidden md:block" />
+                  믿을 수 있는 전문가와 일을 진행할 수 있습니다.
                 </>
               )}
             </h1>
