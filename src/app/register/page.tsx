@@ -79,12 +79,12 @@ export default function RegisterPage() {
         <aside className="flex w-full flex-col justify-between gap-10 rounded-[30px] border border-white/10 bg-white/[0.08] p-6 text-white shadow-[0_28px_90px_rgba(6,18,46,0.45)] backdrop-blur-2xl sm:p-8 lg:max-w-[420px] lg:gap-12 lg:rounded-[36px] lg:p-9">
           <div className="space-y-7 sm:space-y-8">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-sky-200 sm:px-4 sm:text-[11px]">
-              LIRA Onboarding
+              LIRA 시작하기
             </span>
             <div className="space-y-4">
               <h1 className="text-2xl font-semibold leading-snug text-white sm:text-[30px] lg:text-[34px]">
-                AI 시뮬레이션으로 사건 초기 상담을 자동화하고,
-                <span className="text-sky-200"> 실시간 전략 보드</span>로 바로 이어가세요.
+                AI 시뮬레이션으로 초기 상담을 자동화하고,
+                <span className="text-sky-200"> 검증된 조사 전략</span>으로 서비스를 바로 이어가세요.
               </h1>
               <p className="text-[13px] leading-relaxed text-slate-200/80 sm:text-sm">
                 고객은 맞춤 시나리오와 협업 툴을, 민간조사원은 신뢰도 높은 의뢰와 데이터 기반 보고서를 한 번에 관리합니다.
@@ -108,7 +108,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-200 sm:text-xs">Onboarding flow</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-200 sm:text-xs">초기 이용 및 적응 절차</p>
               <ol className="space-y-3 sm:space-y-4">
                 {onboardingSteps.map((step, index) => (
                   <li key={step.title} className="flex gap-3 sm:gap-4">

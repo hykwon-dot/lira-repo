@@ -66,7 +66,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col text-gray-800">
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="relative h-[50vh] flex flex-col justify-center items-center text-center -mt-20">
+        <section className="relative h-[60vh] flex flex-col justify-center items-center text-center -mt-20">
           <div 
             className="absolute inset-0 bg-cover bg-center opacity-20" 
             style={{ 
@@ -172,7 +172,7 @@ export default function Home() {
         {/* How It Works */}
         <section className="py-20 bg-gray-50">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-12">서비스 이용 방법</h2>
+            <h2 className="text-3xl font-bold text-center mb-12">서비스 진행 절차</h2>
             <div className="flex flex-col lg:flex-row items-center justify-between gap-4 text-center">
               <div className="flex-1 p-6">
                 <h3 className="text-xl font-bold mb-2">사건 상담</h3>
