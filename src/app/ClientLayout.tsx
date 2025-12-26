@@ -59,7 +59,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   if (pathname.startsWith("/simulation")) {
     className = "pt-10 min-h-screen bg-slate-50";
   } else if (pathname.startsWith("/scenarios")) {
-    className = "pt-10 min-h-screen";
+    className = "pt-0 min-h-screen";
   } else if (pathname === "/scenario") {
     className = "pt-6 min-h-screen";
   }
