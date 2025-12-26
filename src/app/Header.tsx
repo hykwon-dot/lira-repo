@@ -53,8 +53,8 @@ export default function Header() {
     };
   }, [pathname]);
 
-  // 로그인/회원가입 페이지에서는 헤더를 숨김
-  if (pathname === '/login' || pathname === '/register' || pathname?.startsWith('/account/')) {
+  // 로그인 페이지에서는 헤더를 숨김 (회원가입 페이지는 표시)
+  if (pathname === '/login' || pathname?.startsWith('/account/')) {
     return null;
   }
 
@@ -93,7 +93,7 @@ export default function Header() {
         </div>
         <div className="hidden flex-shrink-0 items-center gap-4 md:flex">
           <Link
-            href="https://pf.kakao.com/_grQtn"
+            href="http://pf.kakao.com/_grQtn"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 rounded-full bg-[#FEE500] px-3 py-1.5 text-xs font-bold text-[#191919] hover:bg-[#FDD835] transition-colors"
@@ -215,7 +215,7 @@ export default function Header() {
               ))}
               <li>
                 <Link
-                  href="https://pf.kakao.com/_grQtn"
+                  href="http://pf.kakao.com/_grQtn"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-between rounded-xl border border-[#FEE500] bg-[#FEE500]/10 px-3 py-3 text-sm font-medium text-[#3c1e1e] transition hover:bg-[#FEE500]/20"

@@ -4,6 +4,7 @@ import dynamicImport from "next/dynamic";
 import "./globals.css";
 import ClientLayout from "./ClientLayout";
 import KakaoChannelButton from "@/components/KakaoChannelButton";
+import Footer from "./Footer";
 
 const Header = dynamicImport(() => import("./Header"), { ssr: false });
 
@@ -39,6 +40,7 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased`}>
         <Header />
         <ClientLayout>{children}</ClientLayout>
+        <Footer />
         <KakaoChannelButton />
       </body>
     </html>
