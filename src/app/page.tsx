@@ -66,7 +66,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col text-gray-800">
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="relative h-[70vh] flex flex-col justify-center items-center text-center -mt-20">
+        <section className="relative h-[60vh] flex flex-col justify-center items-center text-center -mt-20">
           <div 
             className="absolute inset-0 bg-cover bg-center opacity-20" 
             style={{ 
@@ -74,7 +74,7 @@ export default function Home() {
             }}
           ></div>
           <div className="container mx-auto px-4 relative text-center">
-            <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight break-keep">
+            <h1 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 leading-snug break-keep">
               {mainBanner?.title || (
                 <>
                   AI를 통한 쉽고 간편한 민간조사 의뢰
