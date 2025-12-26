@@ -57,7 +57,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 
   let className = "pt-20 min-h-screen";
   if (pathname.startsWith("/simulation")) {
-    className = "min-h-screen bg-slate-50";
+    className = "pt-10 min-h-screen bg-slate-50";
+  } else if (pathname.startsWith("/scenarios")) {
+    className = "pt-10 min-h-screen";
   } else if (pathname === "/scenario") {
     className = "pt-6 min-h-screen";
   }
