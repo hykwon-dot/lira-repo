@@ -53,8 +53,8 @@ export default function Header() {
     };
   }, [pathname]);
 
-  // 로그인 페이지에서는 헤더를 숨김 (회원가입 페이지는 표시)
-  if (pathname === '/login' || pathname?.startsWith('/account/')) {
+  // 계정 찾기/비밀번호 재설정 페이지에서는 헤더를 숨김 (로그인, 회원가입 페이지는 표시)
+  if (pathname?.startsWith('/account/')) {
     return null;
   }
 
