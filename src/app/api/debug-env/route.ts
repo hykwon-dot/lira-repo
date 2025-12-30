@@ -20,7 +20,16 @@ export async function GET() {
   };
 
   // 1. Check OpenAI
-  const apiKey = (process.env.OPENAI_API_KEY || '').trim();
+  const sanitizeKey = (key: string | undefined) => {
+    if (!key) return '';
+    let cleaned = key.trim();
+    if (cleaned.startsWith('"') && cleaned.endsWith('"')) cleaned = cleaned.slice(1, -1);
+    if (cleaned.startsWith("'") && cleaned.endsWith("'")) cleaned = cleaned.slice(1, -1);
+    return cleaned;
+  };
+
+  const apiKey = sanitizeKey(process.env.OPENAI_API_KEY);
+  
   if (apiKey) {
     try {
       const openai = createOpenAI({ apiKey });

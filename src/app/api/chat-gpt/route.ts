@@ -5,8 +5,16 @@ import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
-// 환경 변수 폴백
-const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || '').trim();
+// 환경 변수 폴백 및 따옴표 제거
+const sanitizeKey = (key: string | undefined) => {
+  if (!key) return '';
+  let cleaned = key.trim();
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) cleaned = cleaned.slice(1, -1);
+  if (cleaned.startsWith("'") && cleaned.endsWith("'")) cleaned = cleaned.slice(1, -1);
+  return cleaned;
+};
+
+const OPENAI_API_KEY = sanitizeKey(process.env.OPENAI_API_KEY);
 
 const openai = createOpenAI({
   apiKey: OPENAI_API_KEY,
