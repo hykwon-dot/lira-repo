@@ -3,6 +3,8 @@
 import { getPrismaClient } from '@/lib/prisma';
 import type { Scenario, Phase, Task, Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 // Re-exporting the Task type for client components to use.
 export type { Task };
@@ -14,6 +16,18 @@ export type ScenarioWithPhases = Scenario & {
 export type PhaseWithTasks = Phase & {
   tasks: Task[];
 };
+
+async function loadScenarioFromJson(key: string) {
+  try {
+    const filePath = path.join(process.cwd(), 'prisma', 'enterprise_scenarios.json');
+    const fileContent = await fs.readFile(filePath, 'utf8');
+    const data = JSON.parse(fileContent);
+    return data[key];
+  } catch (e) {
+    console.error("Failed to load scenario from JSON", e);
+    return null;
+  }
+}
 
 export async function getScenario(id: string): Promise<ScenarioWithPhases | null> {
   try {
@@ -34,7 +48,7 @@ export async function getScenario(id: string): Promise<ScenarioWithPhases | null
       if (scenario) return scenario;
     }
 
-    const scenarioByTitle = await prisma.scenario.findFirst({
+    let scenarioByTitle = await prisma.scenario.findFirst({
       where: { title: id },
       include: {
         phases: {
@@ -44,6 +58,66 @@ export async function getScenario(id: string): Promise<ScenarioWithPhases | null
         },
       },
     });
+
+    if (!scenarioByTitle) {
+      const jsonScenario = await loadScenarioFromJson(id);
+      if (jsonScenario) {
+        try {
+          const title = jsonScenario.title || id;
+          const overview = jsonScenario.overview || {};
+          
+          scenarioByTitle = await prisma.scenario.create({
+            data: {
+              title: title,
+              description: overview.objective || '',
+              difficulty: jsonScenario.difficulty || overview.difficulty || '보통',
+              overview: overview,
+              spendTracking: jsonScenario.spendTracking,
+              raciMatrix: jsonScenario.raciMatrix,
+              scheduleTemplate: jsonScenario.scheduleTemplate,
+              phases: {
+                create: (jsonScenario.phases || []).map((phase: any, idx: number) => ({
+                  phaseKey: phase.id || `phase-${idx + 1}`,
+                  name: phase.name,
+                  durationDays: phase.durationDays || 0,
+                  scheduleOffset: phase.scheduleOffset || 0,
+                  budget: phase.budget || {},
+                  phaseKPI: phase.phaseKPI || {},
+                  deliverables: phase.deliverables || [],
+                  order: idx,
+                  tasks: {
+                    create: (phase.tasks || []).map((task: any, tIdx: number) => ({
+                      taskKey: task.taskId || `task-${idx}-${tIdx}`,
+                      desc: task.desc || task.description || '',
+                      competency: task.competency || [],
+                      order: tIdx
+                    }))
+                  },
+                  risks: {
+                    create: (phase.risks || []).map((risk: any, rIdx: number) => ({
+                      riskKey: risk.riskId || `risk-${idx}-${rIdx}`,
+                      name: typeof risk === 'string' ? risk : (risk.name || 'Risk'),
+                      severity: typeof risk === 'string' ? 'M' : (risk.severity || 'M'),
+                      trigger: typeof risk === 'string' ? '' : (risk.trigger || ''),
+                      mitigation: typeof risk === 'string' ? '' : (risk.mitigation || '')
+                    }))
+                  }
+                }))
+              }
+            },
+            include: {
+              phases: {
+                orderBy: {
+                  order: 'asc',
+                },
+              },
+            },
+          });
+        } catch (createError) {
+          console.error("Failed to create scenario from JSON", createError);
+        }
+      }
+    }
     
     return scenarioByTitle;
   } catch (error) {
