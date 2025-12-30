@@ -158,16 +158,18 @@ export const SimulationProvider = ({
     }
 
     let targetScenarioId = scenarioIdNumber;
+    let currentScenario = scenario;
 
     if (Number.isNaN(targetScenarioId)) {
-      if (scenario) {
-        targetScenarioId = scenario.id;
+      if (currentScenario) {
+        targetScenarioId = currentScenario.id;
       } else {
         try {
           const resolvedScenario = await getScenario(scenarioId);
           if (resolvedScenario) {
             targetScenarioId = resolvedScenario.id;
             setScenario(resolvedScenario);
+            currentScenario = resolvedScenario;
           } else {
             return null;
           }
@@ -176,6 +178,17 @@ export const SimulationProvider = ({
           return null;
         }
       }
+    } else if (!currentScenario) {
+       // Try to fetch scenario if we have ID but no object, to help with phase resolution
+       try {
+          const resolvedScenario = await getScenario(scenarioId);
+          if (resolvedScenario) {
+            setScenario(resolvedScenario);
+            currentScenario = resolvedScenario;
+          }
+       } catch (e) {
+          console.error('Error fetching scenario details:', e);
+       }
     }
 
     if (Number.isNaN(targetScenarioId)) {
@@ -205,8 +218,20 @@ export const SimulationProvider = ({
       const createPayload: Record<string, unknown> = {
         scenarioId: targetScenarioId,
       };
+      
       if (!Number.isNaN(initialPhaseIdNumber)) {
-        createPayload.currentPhaseId = initialPhaseIdNumber;
+        let resolvedPhaseId = initialPhaseIdNumber;
+        // Try to resolve Order -> ID
+        if (currentScenario && currentScenario.phases) {
+            const phaseById = currentScenario.phases.find(p => p.id === initialPhaseIdNumber);
+            if (!phaseById) {
+                const phaseByOrder = currentScenario.phases.find(p => p.order === initialPhaseIdNumber - 1);
+                if (phaseByOrder) {
+                    resolvedPhaseId = phaseByOrder.id;
+                }
+            }
+        }
+        createPayload.currentPhaseId = resolvedPhaseId;
       }
 
       const createResponse = await fetch('/api/simulation/runs', {
@@ -281,6 +306,55 @@ export const SimulationProvider = ({
           phaseToLoad = String(currentPhaseIdValue);
         }
 
+        // Check if we need to override with initialPhaseId (if user explicitly requested a phase)
+        if (initialPhaseId && runId) {
+             const initialNum = parseInt(initialPhaseId, 10);
+             if (!isNaN(initialNum)) {
+                 // We need scenario to resolve order
+                 let currentScenario = scenario;
+                 if (!currentScenario) {
+                     try {
+                        currentScenario = await getScenario(scenarioId);
+                        if (currentScenario) setScenario(currentScenario);
+                     } catch { /* ignore */ }
+                 }
+                 
+                 if (currentScenario && currentScenario.phases) {
+                     let targetPhaseId = initialNum;
+                     const phaseById = currentScenario.phases.find(p => p.id === initialNum);
+                     if (!phaseById) {
+                         const phaseByOrder = currentScenario.phases.find(p => p.order === initialNum - 1);
+                         if (phaseByOrder) targetPhaseId = phaseByOrder.id;
+                     } else {
+                         targetPhaseId = phaseById.id;
+                     }
+                     
+                     if (targetPhaseId && targetPhaseId !== currentPhaseIdValue) {
+                         console.log(`[Simulation] Overriding run phase ${currentPhaseIdValue} with requested ${targetPhaseId}`);
+                         phaseToLoad = String(targetPhaseId);
+                         
+                         // Update server state to reflect the jump
+                         try {
+                             await fetch(`/api/simulation/runs/${runId}/events`, {
+                                  method: 'POST',
+                                  headers: {
+                                    Authorization: `Bearer ${token}`,
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({
+                                    eventType: 'PHASE_ENTERED',
+                                    phaseId: targetPhaseId,
+                                    payload: { note: 'Started from specific phase' }
+                                  }),
+                             });
+                         } catch (error) {
+                             console.error('Failed to update run phase on server:', error);
+                         }
+                     }
+                 }
+             }
+        }
+
         const detailedRun = runId ? await fetchRunDetails(runId) : null;
         const events =
           detailedRun && Array.isArray(detailedRun.events)
@@ -342,7 +416,7 @@ export const SimulationProvider = ({
       setLoading(false);
       initializingRef.current = false;
     }
-  }, [ensureRun, fetchRunDetails, initialPhaseId, loadData, setCompletedTasks, setHistory, storeSetRunId]);
+  }, [ensureRun, fetchRunDetails, initialPhaseId, loadData, setCompletedTasks, setHistory, storeSetRunId, scenario, scenarioId, token]);
 
   useEffect(() => {
     void initializeSimulation();

@@ -108,7 +108,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-200 sm:text-xs">초기 이용 및 적응 절차</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-200 sm:text-xs">초기 이용 및 진행 절차</p>
               <ol className="space-y-3 sm:space-y-4">
                 {onboardingSteps.map((step, index) => (
                   <li key={step.title} className="flex gap-3 sm:gap-4">
