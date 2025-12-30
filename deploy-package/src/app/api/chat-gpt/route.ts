@@ -6,7 +6,7 @@ import { z } from 'zod';
 export const dynamic = 'force-dynamic';
 
 // 환경 변수 폴백
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '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';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const openai = createOpenAI({
   apiKey: OPENAI_API_KEY,
@@ -196,13 +196,16 @@ ${JSON.stringify(currentSummary, null, 2)}
         return NextResponse.json(object);
       } catch (error) {
         console.error('[INTAKE_GENERATION_ERROR]', error);
+        const isAuthError = error instanceof Error && (error.message.includes('401') || error.message.includes('invalid_api_key'));
+        const isMissingKey = error instanceof Error && error.message.includes('OPENAI_API_KEY is not set');
+        
         return NextResponse.json(
           {
-            error: 'AI_INTAKE_FAILED',
-            message: '대화 요약을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.',
+            error: isAuthError || isMissingKey ? 'INVALID_API_KEY' : 'AI_INTAKE_FAILED',
+            message: isAuthError || isMissingKey ? 'OpenAI API 키가 설정되지 않았거나 유효하지 않습니다.' : '대화 요약을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.',
             details: error instanceof Error ? { message: error.message } : 'Unknown error',
           },
-          { status: 500 }
+          { status: isAuthError || isMissingKey ? 401 : 500 }
         );
       }
     }
