@@ -76,6 +76,7 @@ export async function getScenario(id: string): Promise<ScenarioWithPhases | null
               raciMatrix: jsonScenario.raciMatrix,
               scheduleTemplate: jsonScenario.scheduleTemplate,
               phases: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 create: (jsonScenario.phases || []).map((phase: any, idx: number) => ({
                   phaseKey: phase.id || `phase-${idx + 1}`,
                   name: phase.name,
@@ -86,6 +87,7 @@ export async function getScenario(id: string): Promise<ScenarioWithPhases | null
                   deliverables: phase.deliverables || [],
                   order: idx,
                   tasks: {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     create: (phase.tasks || []).map((task: any, tIdx: number) => ({
                       taskKey: task.taskId || `task-${idx}-${tIdx}`,
                       desc: task.desc || task.description || '',
@@ -94,6 +96,7 @@ export async function getScenario(id: string): Promise<ScenarioWithPhases | null
                     }))
                   },
                   risks: {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     create: (phase.risks || []).map((risk: any, rIdx: number) => ({
                       riskKey: risk.riskId || `risk-${idx}-${rIdx}`,
                       name: typeof risk === 'string' ? risk : (risk.name || 'Risk'),
