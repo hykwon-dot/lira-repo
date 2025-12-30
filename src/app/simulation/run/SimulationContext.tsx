@@ -115,11 +115,29 @@ export const SimulationProvider = ({
     async (phaseIdToLoad: string) => {
       setLoading(true);
       try {
-        if (!scenario) {
+        let currentScenario = scenario;
+        if (!currentScenario) {
           const scenarioData = await getScenario(scenarioId);
           setScenario(scenarioData);
+          currentScenario = scenarioData;
         }
-        const phaseData = await getPhaseDetails(phaseIdToLoad);
+
+        // If phaseIdToLoad is a number (DB ID), try to load it directly.
+        // If it fails, or if it's a small number (like 1, 2, 3) that might be an index,
+        // try to find the corresponding phase in the scenario by order.
+        let phaseData = await getPhaseDetails(phaseIdToLoad);
+        
+        if (!phaseData && currentScenario) {
+           const numericPhaseId = parseInt(phaseIdToLoad, 10);
+           if (!isNaN(numericPhaseId)) {
+             // Try to find by order (assuming 1-based index from URL)
+             const phaseByOrder = currentScenario.phases.find(p => p.order === numericPhaseId - 1);
+             if (phaseByOrder) {
+               phaseData = await getPhaseDetails(phaseByOrder.id.toString());
+             }
+           }
+        }
+
         setCurrentPhase(phaseData);
         if (phaseData) {
           setTasks(phaseData.tasks);
