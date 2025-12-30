@@ -169,7 +169,7 @@ export default function InvestigatorsPage() {
               탐정 등록 안내
             </Link>
             <Link 
-              href="/investigation-requests/new" 
+              href="#investigator-list" 
               className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               사건 의뢰하기
@@ -205,7 +205,7 @@ export default function InvestigatorsPage() {
           </div>
         </div>
 
-        <section className="space-y-6">
+        <section id="investigator-list" className="space-y-6">
           <div className="flex items-center justify-between border-b border-slate-200 pb-5">
             <h2 className="text-xl font-semibold text-slate-900">전문가 목록</h2>
             <span className="text-sm text-slate-500">총 {investigators.length}명의 전문가가 활동 중입니다</span>
