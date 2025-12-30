@@ -7,6 +7,7 @@ frontend:
         - npx prisma generate
     build:
       commands:
+        - env | grep -E "OPENAI|DATABASE"
         - npm run build
   artifacts:
     baseDirectory: .next
