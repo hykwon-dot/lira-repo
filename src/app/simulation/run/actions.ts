@@ -18,8 +18,24 @@ export type PhaseWithTasks = Phase & {
 export async function getScenario(id: string): Promise<ScenarioWithPhases | null> {
   try {
     const prisma = await getPrismaClient();
-    const scenario = await prisma.scenario.findUnique({
-      where: { id: parseInt(id, 10) },
+    const numericId = parseInt(id, 10);
+    
+    if (!isNaN(numericId)) {
+      const scenario = await prisma.scenario.findUnique({
+        where: { id: numericId },
+        include: {
+          phases: {
+            orderBy: {
+              order: 'asc',
+            },
+          },
+        },
+      });
+      if (scenario) return scenario;
+    }
+
+    const scenarioByTitle = await prisma.scenario.findFirst({
+      where: { title: id },
       include: {
         phases: {
           orderBy: {
@@ -28,7 +44,8 @@ export async function getScenario(id: string): Promise<ScenarioWithPhases | null
         },
       },
     });
-    return scenario;
+    
+    return scenarioByTitle;
   } catch (error) {
     console.error('Error fetching scenario:', error);
     return null;

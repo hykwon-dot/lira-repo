@@ -141,13 +141,34 @@ export const SimulationProvider = ({
   }, [reset, scenarioId, initialPhaseId]);
 
   const ensureRun = useCallback(async () => {
-    if (!token || Number.isNaN(scenarioIdNumber)) {
+    if (!token) {
+      return null;
+    }
+
+    let targetScenarioId = scenarioIdNumber;
+
+    if (Number.isNaN(targetScenarioId)) {
+      try {
+        const resolvedScenario = await getScenario(scenarioId);
+        if (resolvedScenario) {
+          targetScenarioId = resolvedScenario.id;
+          setScenario(resolvedScenario);
+        } else {
+          return null;
+        }
+      } catch (e) {
+        console.error('Error resolving scenario ID:', e);
+        return null;
+      }
+    }
+
+    if (Number.isNaN(targetScenarioId)) {
       return null;
     }
 
     try {
       const params = new URLSearchParams({
-        scenarioId: String(scenarioIdNumber),
+        scenarioId: String(targetScenarioId),
         status: 'ACTIVE',
         limit: '1',
       });
@@ -166,7 +187,7 @@ export const SimulationProvider = ({
       }
 
       const createPayload: Record<string, unknown> = {
-        scenarioId: scenarioIdNumber,
+        scenarioId: targetScenarioId,
       };
       if (!Number.isNaN(initialPhaseIdNumber)) {
         createPayload.currentPhaseId = initialPhaseIdNumber;
@@ -192,7 +213,7 @@ export const SimulationProvider = ({
       console.error('Failed to ensure simulation run:', error);
       return null;
     }
-  }, [token, scenarioIdNumber, initialPhaseIdNumber]);
+  }, [token, scenarioIdNumber, initialPhaseIdNumber, scenarioId]);
 
   const fetchRunDetails = useCallback(
     async (runId: number) => {

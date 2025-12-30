@@ -11,7 +11,46 @@ interface ScenarioDetailPageProps {
 }
 
 async function getScenarioDetails(id: string): Promise<ScenarioWithDetails | null> {
-  // 1. Try to read from JSON
+  const prisma = await getPrismaClient();
+  const numericId = parseInt(id, 10);
+
+  // 1. Try DB by numeric ID
+  if (!isNaN(numericId)) {
+    const scenario = await prisma.scenario.findUnique({
+      where: { id: numericId },
+      include: {
+        phases: {
+          orderBy: {
+            order: 'asc',
+          },
+          include: {
+            tasks: true,
+            risks: true,
+          },
+        },
+      },
+    });
+    if (scenario) return scenario as ScenarioWithDetails;
+  }
+
+  // 2. Try DB by title (for string IDs)
+  const scenarioByTitle = await prisma.scenario.findFirst({
+    where: { title: id },
+    include: {
+      phases: {
+        orderBy: {
+          order: 'asc',
+        },
+        include: {
+          tasks: true,
+          risks: true,
+        },
+      },
+    },
+  });
+  if (scenarioByTitle) return scenarioByTitle as ScenarioWithDetails;
+
+  // 3. Try to read from JSON (Fallback)
   try {
     const filePath = path.join(process.cwd(), 'prisma', 'enterprise_scenarios.json');
     const fileContent = await fs.readFile(filePath, 'utf8');
@@ -103,28 +142,7 @@ async function getScenarioDetails(id: string): Promise<ScenarioWithDetails | nul
     console.error("Failed to read scenario JSON", e);
   }
 
-  // 2. Try DB
-  const numericId = parseInt(id, 10);
-  if (isNaN(numericId)) {
-    return null;
-  }
-
-  const prisma = await getPrismaClient();
-  const scenario = await prisma.scenario.findUnique({
-    where: { id: numericId },
-    include: {
-      phases: {
-        orderBy: {
-          order: 'asc',
-        },
-        include: {
-          tasks: true,
-          risks: true,
-        },
-      },
-    },
-  });
-  return scenario as ScenarioWithDetails | null;
+  return null;
 }
 
 export default async function ScenarioDetailPage({ params }: ScenarioDetailPageProps) {
