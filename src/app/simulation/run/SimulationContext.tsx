@@ -8,6 +8,7 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
 } from 'react';
 import {
   getScenario,
@@ -86,27 +87,20 @@ export const SimulationProvider = ({
   initialPhaseId: string;
 }) => {
   const token = useUserStore((state) => state.token);
-  const {
-    setRunId: storeSetRunId,
-    setHistory,
-    addHistoryEntry,
-    setCompletedTasks,
-    markTaskCompletion,
-    reset,
-  } = useSimulationStore((state) => ({
-    setRunId: state.setRunId,
-    setHistory: state.setHistory,
-    addHistoryEntry: state.addHistoryEntry,
-    setCompletedTasks: state.setCompletedTasks,
-    markTaskCompletion: state.markTaskCompletion,
-    reset: state.reset,
-  }));
+  
+  const storeSetRunId = useSimulationStore((state) => state.setRunId);
+  const setHistory = useSimulationStore((state) => state.setHistory);
+  const addHistoryEntry = useSimulationStore((state) => state.addHistoryEntry);
+  const setCompletedTasks = useSimulationStore((state) => state.setCompletedTasks);
+  const markTaskCompletion = useSimulationStore((state) => state.markTaskCompletion);
+  const reset = useSimulationStore((state) => state.reset);
 
   const [scenario, setScenario] = useState<ScenarioWithPhases | null>(null);
   const [currentPhase, setCurrentPhase] = useState<PhaseWithTasks | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [runIdState, setRunIdState] = useState<number | null>(null);
+  const initializingRef = useRef(false);
 
   const scenarioIdNumber = Number.parseInt(scenarioId, 10);
   const initialPhaseIdNumber = Number.parseInt(initialPhaseId, 10);
@@ -263,6 +257,8 @@ export const SimulationProvider = ({
   );
 
   const initializeSimulation = useCallback(async () => {
+    if (initializingRef.current) return;
+    initializingRef.current = true;
     setLoading(true);
     try {
       let phaseToLoad = initialPhaseId;
@@ -344,6 +340,7 @@ export const SimulationProvider = ({
       console.error('Failed to initialize simulation:', error);
     } finally {
       setLoading(false);
+      initializingRef.current = false;
     }
   }, [ensureRun, fetchRunDetails, initialPhaseId, loadData, setCompletedTasks, setHistory, storeSetRunId]);
 
