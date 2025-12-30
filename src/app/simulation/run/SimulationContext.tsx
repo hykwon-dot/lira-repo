@@ -127,7 +127,7 @@ export const SimulationProvider = ({
         // try to find the corresponding phase in the scenario by order.
         let phaseData = await getPhaseDetails(phaseIdToLoad);
         
-        if (!phaseData && currentScenario) {
+        if (!phaseData && currentScenario && currentScenario.phases) {
            const numericPhaseId = parseInt(phaseIdToLoad, 10);
            if (!isNaN(numericPhaseId)) {
              // Try to find by order (assuming 1-based index from URL)
