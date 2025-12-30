@@ -6,7 +6,7 @@ import { generateText } from 'ai';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const results: Record<string, any> = {
+  const results: Record<string, unknown> = {
     timestamp: new Date().toISOString(),
     env: {
       OPENAI_API_KEY: process.env.OPENAI_API_KEY 
@@ -16,7 +16,7 @@ export async function GET() {
         ? 'Present' 
         : 'MISSING',
     },
-    checks: {}
+    checks: {} as Record<string, unknown>
   };
 
   // 1. Check OpenAI
@@ -27,16 +27,17 @@ export async function GET() {
         model: openai('gpt-3.5-turbo'),
         prompt: 'Hello',
       });
-      results.checks.openai = { status: 'OK', response: text };
-    } catch (error: any) {
-      results.checks.openai = { 
+      (results.checks as Record<string, unknown>).openai = { status: 'OK', response: text };
+    } catch (error) {
+      const err = error as Error & { code?: string; status?: number };
+      (results.checks as Record<string, unknown>).openai = { 
         status: 'ERROR', 
-        message: error.message,
-        code: error.code || error.status 
+        message: err.message,
+        code: err.code || err.status 
       };
     }
   } else {
-    results.checks.openai = { status: 'SKIPPED', reason: 'No API Key' };
+    (results.checks as Record<string, unknown>).openai = { status: 'SKIPPED', reason: 'No API Key' };
   }
 
   // 2. Check Database
@@ -45,17 +46,18 @@ export async function GET() {
     try {
       // Try a simple query
       const userCount = await prisma.user.count();
-      results.checks.database = { status: 'OK', userCount };
-    } catch (error: any) {
-      results.checks.database = { 
+      (results.checks as Record<string, unknown>).database = { status: 'OK', userCount };
+    } catch (error) {
+      const err = error as Error;
+      (results.checks as Record<string, unknown>).database = { 
         status: 'ERROR', 
-        message: error.message 
+        message: err.message 
       };
     } finally {
       await prisma.$disconnect();
     }
   } else {
-    results.checks.database = { status: 'SKIPPED', reason: 'No Database URL' };
+    (results.checks as Record<string, unknown>).database = { status: 'SKIPPED', reason: 'No Database URL' };
   }
 
   return NextResponse.json(results, { status: 200 });
