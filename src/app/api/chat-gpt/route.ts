@@ -197,13 +197,14 @@ ${JSON.stringify(currentSummary, null, 2)}
         return NextResponse.json(object);
       } catch (error) {
         console.error('[INTAKE_GENERATION_ERROR]', error);
+        const isAuthError = error instanceof Error && (error.message.includes('401') || error.message.includes('invalid_api_key'));
         return NextResponse.json(
           {
-            error: 'AI_INTAKE_FAILED',
-            message: '대화 요약을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.',
+            error: isAuthError ? 'INVALID_API_KEY' : 'AI_INTAKE_FAILED',
+            message: isAuthError ? 'OpenAI API 키가 유효하지 않습니다.' : '대화 요약을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.',
             details: error instanceof Error ? { message: error.message } : 'Unknown error',
           },
-          { status: 500 }
+          { status: isAuthError ? 401 : 500 }
         );
       }
     }

@@ -875,7 +875,16 @@ export const ChatSimulation = () => {
         });
 
         if (!response.ok) {
-          throw new Error(`Intake request failed with status ${response.status}`);
+          let errorMessage = `Intake request failed with status ${response.status}`;
+          try {
+            const errorData = await response.json();
+            if (errorData?.message) {
+              errorMessage = errorData.message;
+            }
+          } catch {
+            // ignore json parse error
+          }
+          throw new Error(errorMessage);
         }
 
         const payload = await response.json();
@@ -908,11 +917,14 @@ export const ChatSimulation = () => {
         void persistConversation(messageContent, assistantMessageText);
       } catch (error) {
         console.error("[SIMULATION_INTAKE_ERROR]", error);
-        setSummaryError("대화 요약을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.");
+        const errorMessage = error instanceof Error ? error.message : "대화 요약을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.";
+        setSummaryError(errorMessage);
         const fallbackAssistant: ChatMessage = {
           id: cuid(),
           role: "assistant",
-          content: "죄송합니다. 잠시 후 다시 시도해 주세요.",
+          content: errorMessage.includes("API 키") || errorMessage.includes("API Key") 
+            ? "시스템 설정 오류(API Key)가 발생했습니다. 관리자에게 문의해주세요." 
+            : "죄송합니다. 잠시 후 다시 시도해 주세요.",
           createdAt: Date.now(),
         };
         setMessages((prev) => [...prev, fallbackAssistant]);
