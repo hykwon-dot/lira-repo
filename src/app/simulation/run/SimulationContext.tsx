@@ -166,17 +166,21 @@ export const SimulationProvider = ({
     let targetScenarioId = scenarioIdNumber;
 
     if (Number.isNaN(targetScenarioId)) {
-      try {
-        const resolvedScenario = await getScenario(scenarioId);
-        if (resolvedScenario) {
-          targetScenarioId = resolvedScenario.id;
-          setScenario(resolvedScenario);
-        } else {
+      if (scenario) {
+        targetScenarioId = scenario.id;
+      } else {
+        try {
+          const resolvedScenario = await getScenario(scenarioId);
+          if (resolvedScenario) {
+            targetScenarioId = resolvedScenario.id;
+            setScenario(resolvedScenario);
+          } else {
+            return null;
+          }
+        } catch (e) {
+          console.error('Error resolving scenario ID:', e);
           return null;
         }
-      } catch (e) {
-        console.error('Error resolving scenario ID:', e);
-        return null;
       }
     }
 
@@ -231,7 +235,7 @@ export const SimulationProvider = ({
       console.error('Failed to ensure simulation run:', error);
       return null;
     }
-  }, [token, scenarioIdNumber, initialPhaseIdNumber, scenarioId]);
+  }, [token, scenarioIdNumber, initialPhaseIdNumber, scenarioId, scenario]);
 
   const fetchRunDetails = useCallback(
     async (runId: number) => {
