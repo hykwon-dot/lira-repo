@@ -20,9 +20,10 @@ export async function GET() {
   };
 
   // 1. Check OpenAI
-  if (process.env.OPENAI_API_KEY) {
+  const apiKey = (process.env.OPENAI_API_KEY || '').trim();
+  if (apiKey) {
     try {
-      const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const openai = createOpenAI({ apiKey });
       const { text } = await generateText({
         model: openai('gpt-3.5-turbo'),
         prompt: 'Hello',

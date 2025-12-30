@@ -6,7 +6,7 @@ import { z } from 'zod';
 export const dynamic = 'force-dynamic';
 
 // 환경 변수 폴백
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || '').trim();
 
 const openai = createOpenAI({
   apiKey: OPENAI_API_KEY,
