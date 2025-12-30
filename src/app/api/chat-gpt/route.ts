@@ -63,6 +63,13 @@ const intakeSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    // Debugging: Check API Key status
+    if (!OPENAI_API_KEY) {
+      console.error('[API_DEBUG] OPENAI_API_KEY is missing in environment variables.');
+    } else {
+      console.log(`[API_DEBUG] OPENAI_API_KEY is present (starts with ${OPENAI_API_KEY.substring(0, 7)}...)`);
+    }
+
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY is not set in the environment variables.');
     }
