@@ -321,7 +321,7 @@ export default function RegisterForm() {
           </div>
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="lira-field md:col-span-2">
-              이름 (실명)
+              {role === 'INVESTIGATOR' ? '탐정 이름 (탐정사무소)' : '이름 (실명)'}
               <input
                 type="text"
                 value={name}
