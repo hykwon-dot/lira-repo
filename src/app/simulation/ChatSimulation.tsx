@@ -1678,7 +1678,7 @@ export const ChatSimulation = () => {
               </div>
               <div className="hidden flex-wrap gap-2 text-xs font-semibold text-indigo-200/80 sm:flex">
                 <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">
-                  # Intake 요약
+                  # 초기 상담 요약
                 </span>
                 <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">
                   # 실시간 브리핑
