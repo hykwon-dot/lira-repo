@@ -118,7 +118,7 @@ export default function Home() {
                 {/* Original */}
                 {subBanners.map((banner) => (
                   <Link key={`original-${banner.id}`} href={banner.linkUrl || '#'} className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0">
-                    <div className="aspect-w-16 aspect-h-9 bg-gray-200 h-48">
+                    <div className="aspect-w-16 aspect-h-9 bg-gray-200 h-72">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={banner.imageUrl} alt={banner.title || 'Banner'} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" />
                     </div>
@@ -132,7 +132,7 @@ export default function Home() {
                 {/* Duplicate */}
                 {subBanners.map((banner) => (
                   <Link key={`duplicate-${banner.id}`} href={banner.linkUrl || '#'} className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0">
-                    <div className="aspect-w-16 aspect-h-9 bg-gray-200 h-48">
+                    <div className="aspect-w-16 aspect-h-9 bg-gray-200 h-72">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={banner.imageUrl} alt={banner.title || 'Banner'} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" />
                     </div>
