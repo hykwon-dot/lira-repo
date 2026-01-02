@@ -2,9 +2,8 @@
 
 export default function SocialLoginButtons() {
   const handleSocialLogin = (provider: string) => {
-    // In a real app, this would redirect to the OAuth provider
-    // window.location.href = `/api/auth/${provider}`;
-    alert(`${provider} 로그인은 현재 준비 중입니다. (Client ID 설정 필요)`);
+    // Redirect to the server-side route that handles the OAuth flow
+    window.location.href = `/api/auth/social/signin?provider=${provider}`;
   };
 
   return (
