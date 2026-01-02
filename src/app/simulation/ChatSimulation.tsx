@@ -2260,7 +2260,7 @@ export const ChatSimulation = () => {
 
           <section className="hidden h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/95 shadow-2xl lg:col-span-1 lg:flex lg:min-h-0 lg:max-h-[calc(100svh-260px)] xl:max-h-[calc(100svh-240px)]">
               <div className="border-b border-slate-200/80 bg-slate-50/80 p-5">
-                <h2 className="text-lg font-semibold text-slate-900">실시간 AI 브리핑 [탐정 추천]</h2>
+                <h2 className="text-lg font-semibold text-slate-900">탐정추천 / 실시간 AI 브리핑</h2>
                 <p className="mt-1 text-xs text-slate-500">
                   대화 맥락을 분석해 위험도, 타임라인, 우선 조치를 제공합니다.
                 </p>
