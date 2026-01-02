@@ -128,6 +128,32 @@ export function AIInsightsPanel({
       </div>
 
       <div className="space-y-4">
+        {isInvestigatorView && investigatorSlot ? (
+          <div>
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <FiActivity className="h-4 w-4 text-indigo-500" /> 탐정 추천
+            </h3>
+            <div className="mt-2 space-y-3">{investigatorSlot}</div>
+          </div>
+        ) : null}
+
+        {!isInvestigatorView && customerRecommendationsSlot ? (
+          <div className="space-y-3">
+            <div>
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                <FiActivity className="h-4 w-4 text-indigo-500" /> 탐정 추천
+              </h3>
+              <div className="mt-2 space-y-3">{customerRecommendationsSlot}</div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] text-slate-500">
+              <p className="text-xs font-semibold text-slate-600">전문가 심화 인사이트</p>
+              <p className="mt-1 leading-relaxed">
+                트렌드 경보, 내부 체크리스트, 협상 전략 등은 사건을 담당한 민간조사원과 관리자 전용으로 제공됩니다.
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         {isInvestigatorView ? (
           <div>
             <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
@@ -422,32 +448,6 @@ export function AIInsightsPanel({
                 )}
           </div>
         </div>
-
-        {isInvestigatorView && investigatorSlot ? (
-          <div>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-              <FiActivity className="h-4 w-4 text-indigo-500" /> 탐정 추천
-            </h3>
-            <div className="mt-2 space-y-3">{investigatorSlot}</div>
-          </div>
-        ) : null}
-
-        {!isInvestigatorView && customerRecommendationsSlot ? (
-          <div className="space-y-3">
-            <div>
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                <FiActivity className="h-4 w-4 text-indigo-500" /> 탐정 추천
-              </h3>
-              <div className="mt-2 space-y-3">{customerRecommendationsSlot}</div>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] text-slate-500">
-              <p className="text-xs font-semibold text-slate-600">전문가 심화 인사이트</p>
-              <p className="mt-1 leading-relaxed">
-                트렌드 경보, 내부 체크리스트, 협상 전략 등은 사건을 담당한 민간조사원과 관리자 전용으로 제공됩니다.
-              </p>
-            </div>
-          </div>
-        ) : null}
 
         {!isInvestigatorView && !customerRecommendationsSlot ? investigatorOnlyNotice : null}
       </div>
