@@ -206,7 +206,7 @@ export default function Header() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="flex items-center justify-between rounded-xl border border-transparent px-3 py-3 text-sm font-medium text-slate-600 transition hover:border-blue-100 hover:bg-blue-50 hover:text-blue-600"
+                    className="flex items-center justify-between rounded-xl border border-transparent bg-slate-50 px-3 py-3 text-sm font-medium text-slate-600 transition hover:border-blue-100 hover:bg-blue-50 hover:text-blue-600"
                   >
                     <span>{link.label}</span>
                     <span className="text-xs text-slate-400">바로가기</span>
