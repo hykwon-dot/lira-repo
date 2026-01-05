@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import SignatureCanvas from 'react-signature-canvas';
 import { useUserStore } from '@/lib/userStore';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
@@ -47,7 +46,7 @@ export default function RegisterForm() {
   const [intro, setIntro] = useState('');
   const [portfolioUrl, setPortfolioUrl] = useState('');
   const [businessLicenseFile, setBusinessLicenseFile] = useState<File | null>(null);
-  const sigPadRef = useRef<SignatureCanvas>(null);
+  const [pledgeFile, setPledgeFile] = useState<File | null>(null);
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -73,7 +72,7 @@ export default function RegisterForm() {
     setPortfolioUrl('');
     setBusinessLicenseFile(null);
     setAgencyPhone('');
-    sigPadRef.current?.clear();
+    setPledgeFile(null);
   };
 
   const resetCustomerFields = () => {
@@ -211,11 +210,8 @@ export default function RegisterForm() {
         return;
       }
 
-      let signatureData = null;
-      if (sigPadRef.current && !sigPadRef.current.isEmpty()) {
-        signatureData = sigPadRef.current.getTrimmedCanvas().toDataURL('image/png');
-      } else {
-        setError('탐정 서약서에 서명해 주세요.');
+      if (!pledgeFile) {
+        setError('서명된 서약서 파일을 업로드해 주세요.');
         return;
       }
 
@@ -234,7 +230,7 @@ export default function RegisterForm() {
         portfolioUrl: portfolioUrl || null,
         contactPhone: phone || null,
         agencyPhone: agencyPhone || null,
-        signatureData,
+        pledgeUrl: pledgeFile ? `/uploads/${pledgeFile.name}` : null,
         acceptsTerms,
         acceptsPrivacy,
         // 실제 파일 전송 대신 파일명만 전송 (백엔드가 파일 저장을 지원하지 않음)
@@ -675,39 +671,36 @@ export default function RegisterForm() {
 
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
                 <h3 className="mb-3 text-sm font-bold text-[#1a2340]">탐정 윤리 서약</h3>
-                <div className="mb-4 h-32 overflow-y-auto rounded border border-slate-200 bg-white p-3 text-xs leading-relaxed text-slate-600">
+                <div className="mb-4 text-xs leading-relaxed text-slate-600">
                   <p>
-                    본인은 LIRA 플랫폼의 민간조사원으로서 다음 사항을 준수할 것을 엄숙히 서약합니다.
+                    LIONE 플랫폼의 민간조사원으로 활동하기 위해서는 윤리 서약서 작성이 필요합니다.
+                    아래 양식을 다운로드하여 서명 후 업로드해 주세요.
                   </p>
-                  <ol className="mt-2 list-decimal space-y-1 pl-4">
-                    <li>본인은 의뢰인의 비밀을 철저히 보장하며, 업무상 알게 된 정보를 제3자에게 누설하지 않겠습니다.</li>
-                    <li>본인은 관련 법령을 준수하며, 불법적인 도청, 위치 추적, 사생활 침해 행위를 하지 않겠습니다.</li>
-                    <li>본인은 정직하고 성실하게 조사 업무를 수행하며, 허위 보고서를 작성하지 않겠습니다.</li>
-                    <li>본인은 LIRA 플랫폼의 운영 정책을 따르며, 플랫폼의 명예를 훼손하는 행위를 하지 않겠습니다.</li>
-                    <li>본인은 의뢰인과의 신뢰를 최우선으로 하며, 분쟁 발생 시 원만한 해결을 위해 노력하겠습니다.</li>
-                  </ol>
-                  <p className="mt-2">
-                    위 내용을 위반할 경우, 자격 정지 및 법적 책임을 감수할 것을 서약합니다.
-                  </p>
+                  <div className="mt-3">
+                    <a
+                      href="/downloads/LIONE_Investigator_Pledge.txt"
+                      download
+                      className="inline-flex items-center gap-2 text-blue-600 hover:underline"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      LIONE 이용 서약서 양식 다운로드
+                    </a>
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-[#1a2340]">서명 (마우스 또는 터치로 서명해주세요)</p>
-                  <div className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
-                    <SignatureCanvas
-                      ref={sigPadRef}
-                      penColor="black"
-                      canvasProps={{
-                        className: 'w-full h-40 cursor-crosshair',
-                      }}
+                  <label className="lira-field">
+                    서명된 서약서 업로드 (필수)
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => setPledgeFile(e.target.files?.[0] || null)}
+                      className="lira-input"
+                      required
                     />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => sigPadRef.current?.clear()}
-                    className="text-xs text-slate-500 underline hover:text-slate-700"
-                  >
-                    서명 지우기
-                  </button>
+                    <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 5MB)</span>
+                  </label>
                 </div>
               </div>
             </div>

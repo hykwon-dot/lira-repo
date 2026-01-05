@@ -56,7 +56,7 @@ model InvestigatorProfile {
   introduction      String?                @db.Text
   portfolioUrl      String?
   businessLicenseUrl String?                @db.VarChar(255)
-  signatureData     String?                @db.Text
+  pledgeUrl         String?                @db.VarChar(255)
   termsAcceptedAt   DateTime?
   privacyAcceptedAt DateTime?
   avatarUrl         String?                @db.VarChar(255)

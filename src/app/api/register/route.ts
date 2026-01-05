@@ -29,7 +29,7 @@ interface InvestigatorPayload extends BasePayload {
   portfolioUrl?: string | null;
   contactPhone?: string | null;
   agencyPhone?: string | null;
-  signatureData?: string | null;
+  pledgeUrl?: string | null;
   acceptsTerms?: boolean;
   acceptsPrivacy?: boolean;
 }
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
         // Extract all form fields
         const keys = ['role', 'email', 'password', 'name', 'licenseNumber', 'specialties', 
                       'experienceYears', 'serviceAreas', 'serviceArea', 'introduction', 
-                      'portfolioUrl', 'contactPhone', 'agencyPhone', 'signatureData', 'acceptsTerms', 'acceptsPrivacy',
+                      'portfolioUrl', 'contactPhone', 'agencyPhone', 'pledgeUrl', 'acceptsTerms', 'acceptsPrivacy',
                       'businessLicense', 'displayName', 'phone', 'birthDate', 'gender',
                       'occupation', 'region', 'preferredCaseTypes', 'budgetMin', 'budgetMax',
                       'urgencyLevel', 'securityQuestion', 'securityAnswer', 'marketingOptIn'];
@@ -91,6 +91,10 @@ export async function POST(req: NextRequest) {
         const file = body.businessLicense;
         if (file && typeof file === 'object' && 'name' in file) {
           body.businessLicenseUrl = `/uploads/${(file as File).name}`;
+        }
+        const pledgeFile = body.pledgeFile;
+        if (pledgeFile && typeof pledgeFile === 'object' && 'name' in pledgeFile) {
+          body.pledgeUrl = `/uploads/${(pledgeFile as File).name}`;
         }
         // Parse JSON strings back to objects
         if (body.specialties && typeof body.specialties === 'string') {
@@ -144,7 +148,7 @@ export async function POST(req: NextRequest) {
         portfolioUrl,
         contactPhone,
         agencyPhone,
-        signatureData,
+        pledgeUrl,
         acceptsTerms,
         acceptsPrivacy,
       } = body as InvestigatorPayload;
@@ -201,7 +205,7 @@ export async function POST(req: NextRequest) {
             introduction: introduction ?? null,
             portfolioUrl: portfolioUrl ?? null,
             businessLicenseUrl: businessLicenseUrl ?? null,
-            signatureData: signatureData ?? null,
+            pledgeUrl: pledgeUrl ?? null,
             termsAcceptedAt: now,
             privacyAcceptedAt: now,
           },
