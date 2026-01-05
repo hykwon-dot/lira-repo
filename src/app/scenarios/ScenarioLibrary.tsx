@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Briefcase, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useUserStore } from '@/lib/userStore';
 import { ScenarioSummary } from '@/app/scenarios/types';
 
 interface ScenarioCardProps {
@@ -75,7 +77,15 @@ interface ScenarioLibraryProps {
 }
 
 export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
+    const router = useRouter();
+    const { user } = useUserStore();
     const [activeTab, setActiveTab] = useState('전체');
+
+    useEffect(() => {
+        if (!user) {
+            router.replace('/login?redirect=/scenarios');
+        }
+    }, [user, router]);
 
     const industries = useMemo(() => {
         const unique = new Set<string>();
@@ -91,6 +101,10 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
         }
         return scenarios.filter((scenario) => (scenario.industry || '기타') === activeTab);
     }, [activeTab, scenarios]);
+
+    if (!user) {
+        return null; // Redirecting...
+    }
 
     if (!scenarios || scenarios.length === 0) {
         return <p className="text-center text-slate-500 mt-10">사용 가능한 시나리오가 없습니다.</p>;
