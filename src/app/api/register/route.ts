@@ -28,6 +28,7 @@ interface InvestigatorPayload extends BasePayload {
   introduction?: string | null;
   portfolioUrl?: string | null;
   contactPhone?: string | null;
+  agencyPhone?: string | null;
   acceptsTerms?: boolean;
   acceptsPrivacy?: boolean;
 }
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
         // Extract all form fields
         const keys = ['role', 'email', 'password', 'name', 'licenseNumber', 'specialties', 
                       'experienceYears', 'serviceAreas', 'serviceArea', 'introduction', 
-                      'portfolioUrl', 'contactPhone', 'acceptsTerms', 'acceptsPrivacy',
+                      'portfolioUrl', 'contactPhone', 'agencyPhone', 'acceptsTerms', 'acceptsPrivacy',
                       'businessLicense', 'displayName', 'phone', 'birthDate', 'gender',
                       'occupation', 'region', 'preferredCaseTypes', 'budgetMin', 'budgetMax',
                       'urgencyLevel', 'securityQuestion', 'securityAnswer', 'marketingOptIn'];
@@ -141,6 +142,7 @@ export async function POST(req: NextRequest) {
         introduction,
         portfolioUrl,
         contactPhone,
+        agencyPhone,
         acceptsTerms,
         acceptsPrivacy,
       } = body as InvestigatorPayload;
@@ -192,6 +194,7 @@ export async function POST(req: NextRequest) {
             licenseNumber: licenseNumber ?? null,
             experienceYears: years,
             contactPhone: contactPhone?.trim() ?? null,
+            agencyPhone: agencyPhone?.trim() ?? null,
             serviceArea: normalizedServiceArea || null,
             introduction: introduction ?? null,
             portfolioUrl: portfolioUrl ?? null,

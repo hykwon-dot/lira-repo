@@ -24,6 +24,7 @@ export default function RegisterForm() {
   const [name, setName] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
+  const [agencyPhone, setAgencyPhone] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState('');
   const [occupation, setOccupation] = useState('');
@@ -69,6 +70,7 @@ export default function RegisterForm() {
     setIntro('');
     setPortfolioUrl('');
     setBusinessLicenseFile(null);
+    setAgencyPhone('');
   };
 
   const resetCustomerFields = () => {
@@ -220,6 +222,7 @@ export default function RegisterForm() {
         introduction: intro || null,
         portfolioUrl: portfolioUrl || null,
         contactPhone: phone || null,
+        agencyPhone: agencyPhone || null,
         acceptsTerms,
         acceptsPrivacy,
         // 실제 파일 전송 대신 파일명만 전송 (백엔드가 파일 저장을 지원하지 않음)
@@ -371,6 +374,18 @@ export default function RegisterForm() {
                 required={role === 'INVESTIGATOR'}
               />
             </label>
+            {role === 'INVESTIGATOR' && (
+              <label className="lira-field">
+                탐정사무소 번호
+                <input
+                  type="tel"
+                  value={agencyPhone}
+                  onChange={(e) => setAgencyPhone(e.target.value)}
+                  className="lira-input"
+                  placeholder="예: 02-1234-5678"
+                />
+              </label>
+            )}
           </div>
         </section>
 

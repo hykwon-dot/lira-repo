@@ -51,6 +51,7 @@ model InvestigatorProfile {
   reviewedAt        DateTime?
   reviewedById      Int?
   contactPhone      String?
+  agencyPhone       String?
   serviceArea       String?
   introduction      String?                @db.Text
   portfolioUrl      String?
