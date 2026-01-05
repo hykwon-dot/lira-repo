@@ -204,16 +204,6 @@ export default function RegisterPage() {
                   가입이 완료되면 <strong>AI 초기 상담 보드</strong>로 이동하며, 수집된 사건 정보는 탐정 매칭과 보고서 작성에 자동으로 연결됩니다.
                 </p>
               </div>
-              <div className="flex flex-col gap-2 text-[12px] text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:text-xs">
-                <span>가입 중 도움이 필요하신가요? 전담 적응 팀이 실시간으로 상담을 도와드립니다.</span>
-                <a
-                  href="mailto:support@lira.ai"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-[12px] font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-600 sm:text-xs"
-                >
-                  지원 채널 연결
-                  <FiArrowUpRight className="h-3 w-3" />
-                </a>
-              </div>
             </div>
           </div>
         </section>

@@ -767,9 +767,6 @@ export default function RegisterForm() {
             <Link href="/" className="lira-button lira-button--ghost justify-center md:w-auto">
               메인으로 돌아가기
             </Link>
-            <Link href="/simulation" className="lira-button lira-button--secondary justify-center md:w-auto">
-              제품 소개 살펴보기
-            </Link>
           </div>
         </div>
       </form>
