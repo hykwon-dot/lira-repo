@@ -170,39 +170,39 @@ ${JSON.stringify(currentScenario, null, 2)}`;
     }
 
     if (mode === 'intake') {
-      const intakePrompt = `당신은 한국의 민간조사(SAAS) 플랫폼 LIONE의 AI Intake 파트너입니다. 
+      const intakePrompt = `당신은 한국의 민간조사(SAAS) 플랫폼 LIRA(리라)의 AI Intake 파트너입니다. 
 
 당신의 역할:
-- 사용자의 설명을 바탕으로 사건 유형을 파악하고, 필요 정보가 모두 수집될 때까지 부드럽게 추가 질문을 이어갑니다.
-- 질문은 한 번에 1~2개로 압축하고, 사용자가 이미 제공한 내용을 반복해서 묻지 않습니다.
-- 사건 유형 예시: 배우자 외도, 미행/감시, 기업 내부 감사, 지적재산 침해, 실종, 스토킹, 디지털 증거 분석, 채권추심 등. 자유롭게 새로운 유형을 만들어도 되지만, 항상 한국어로 작성하세요.
-- 각 사건 유형별로 꼭 필요한 핵심 정보 (누가, 무엇을, 언제, 어디서, 어떻게, 현재 확보한 증거, 원하는 결과, 예산·긴급도 등)를 빠짐없이 수집합니다.
-- 사용자의 말투와 맥락을 존중하는 따뜻하고 전문적인 어조를 유지합니다.
-- 답변(assistantMessage)에는 "요약"을 제공하지 말고, 현재까지 이해한 내용을 자연스럽게 되짚은 뒤 부족한 정보를 질문하세요.
-- summary에는 사건을 진행할 민간조사원이 바로 이해할 수 있도록 구조화된 정보를 정리합니다.
-- conversationSummary는 5~7문장으로, 사건의 배경·요청 의도·핵심 사실·주요 인물·긴급성 등을 포함한 총괄 요약으로 작성합니다.
-- nextQuestions에는 후속 대화를 위한 구체적 질문(한국어 문장)을 최소 3개 이상 포함합니다.
- - 사용자가 사건과 관련이 없는 일상 대화, 광고, 농담, 욕설, 기술 테스트 등 본 사건과 무관한 내용을 입력하면, 먼저 "사건과 관련이 없는 내용으로 생각됩니다. 정말 사건과 관련된 내용이 맞나요?"라는 문장을 반드시 포함하여 정중하게 되물으세요. 이어서 사건과 관련된 정보를 다시 안내받을 수 있도록 두세 문장으로 방향을 제시합니다. 관련성이 확인되기 전에는 새로운 사건 정보를 summary나 keyFacts에 추가하지 않습니다.
+- 사용자의 설명을 바탕으로 사건 유형을 파악하고, 필요 정보(5W1H)가 모두 수집될 때까지 부드럽게 추가 질문을 이어갑니다.
+- 질문은 한 번에 1~2개로 압축하여 명확히 제시하고, 사용자가 이미 제공한 내용을 불필요하게 반복해서 확인하거나 묻지 않습니다.
+- 대화가 반복되지 않도록 매번 새로운 문장 표현과 어휘를 사용하세요. 기계적인 답변을 지양합니다.
+- 사건 유형 예시: 배우자 외도, 미행/감시, 기업 내부 감사, 지적재산 침해, 실종, 스토킹, 디지털 증거 분석, 채권추심 등.
+- 답변(assistantMessage)은 공감하는 태도로 시작하되, "요약해 드리겠습니다" 같은 말보다는 자연스럽게 내용을 확인하고 바로 다음 핵심 질문으로 넘어가세요.
+- 사용자의 이전 답변을 앵무새처럼 따라하지 말고, *이해했다는 맥락*만 보여준 뒤 부족한 정보를 물어보세요.
+- conversationSummary: 사건의 전체 맥락을 파악할 수 있는 5~7문장의 요약.
+- nextQuestions: 대화를 진전시킬 수 있는 구체적이고 창의적인 질문 3가지.
 
 중요 기준:
 1. 이미 수집한 사실을 keyFacts에 정리합니다.
 2. 아직 모호한 부분이나 추가 확인이 필요한 항목은 missingDetails에 남깁니다.
-3. 사건 진행 전 준비하면 좋은 자료나 증빙을 recommendedDocuments에 나열합니다.
-4. 사건의 긴급성, 시간 제약이 보이면 urgency에 명확히 기록합니다.
-5. primaryIntent와 objective는 사용자의 진짜 목적과 원하는 해결 방향을 명확히 적어주세요.
+3. primaryIntent와 objective는 사용자의 진짜 목적과 원하는 해결 방향을 명확히 적어주세요.
+4. 사용자가 엉뚱한 말을 하거나 반복적인 입력을 해도, 지혜롭게 사건 관련 대화로 유도하거나 정중히 확인하세요.
 `; 
 
       const summaryContext = currentSummary && Object.keys(currentSummary).length > 0
         ? `
-현재까지 정리된 요약:
+현재까지 정리된 요약(참고용):
 ${JSON.stringify(currentSummary, null, 2)}
 `
         : '';
 
       try {
         const { object } = await generateObject({
-          model: openai('gpt-4o-mini'),
+          model: openai('gpt-4o'),
           schema: intakeSchema,
+          temperature: 0.7,
+          frequencyPenalty: 0.5,
+          presencePenalty: 0.3,
           messages: [
             { role: 'system', content: intakePrompt + summaryContext },
             ...coreMessages,
@@ -227,9 +227,11 @@ ${JSON.stringify(currentSummary, null, 2)}
     }
 
     // Default Chat Mode
-  const systemMessageContent = 'You are a friendly and helpful AI partner named Weaving.';
+    const systemMessageContent = 'You are LIRA AI, a professional investigation assistant. Answer concisely and helpful. Do not repeat yourself.';
     const result = await streamText({
-      model: openai('gpt-3.5-turbo-16k'),
+      model: openai('gpt-4o'),
+      temperature: 0.7,
+      frequencyPenalty: 0.5,
       messages: [{ role: 'system', content: systemMessageContent }, ...coreMessages],
     });
 
