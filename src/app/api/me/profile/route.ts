@@ -389,7 +389,26 @@ export async function PATCH(req: NextRequest) {
         }
       }
 
-      if (!Object.keys(updateData).length) {
+      const hasChanges = Object.keys(updateData).length > 0;
+      const avatarUploadAttemptedButFailed = isFile && !uploadedAvatarUrl;
+
+      if (!hasChanges) {
+        if (avatarUploadAttemptedButFailed) {
+          // Case: User only tried to change avatar, but it failed due to system limits. 
+          // No text changes to save. Return success with warning so user knows what happened.
+          return NextResponse.json({
+            message: 'PROFILE_UPDATED',
+            profile: {
+              ...existingProfile,
+              termsAcceptedAt: serializeDate(existingProfile.termsAcceptedAt ?? null),
+              privacyAcceptedAt: serializeDate(existingProfile.privacyAcceptedAt ?? null),
+              updatedAt: serializeDate(existingProfile.updatedAt),
+              createdAt: serializeDate(existingProfile.createdAt),
+            },
+            warning: 'IMAGE_UPLOAD_SYSTEM_LIMIT',
+            investigatorStatus: existingProfile.status as InvestigatorStatus,
+          });
+        }
         return NextResponse.json({ error: 'NO_CHANGES' }, { status: 400 });
       }
 

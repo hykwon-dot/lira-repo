@@ -38,7 +38,7 @@ const TIMELINE_OPTIONS: Array<{ value: TimelineFormState["type"]; label: string 
   { value: "FINAL_REPORT", label: "최종 보고" },
 ];
 
-const AVATAR_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
+const AVATAR_SIZE_LIMIT = 4.5 * 1024 * 1024; // 4.5MB (Reduced from 5MB to avoid edge server limits)
 const SUPPORTED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
 
 const statusKeyFromString = (value: string): CaseStatusKey => {
