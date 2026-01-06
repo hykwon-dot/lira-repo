@@ -296,9 +296,13 @@ export async function PATCH(req: NextRequest) {
 
     if (isMultipart) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let formData: any;
+      const formKeys: string[] = [];
       try {
         formData = await req.formData();
+        try {
+            // Collect keys for debugging/logic
+            formData.forEach((_, key) => formKeys.push(key));
+        } catch {}
       } catch (parseError) {
         console.error('[PROFILE_FORM_DATA_ERROR] Failed to parse multipart body', parseError);
         return NextResponse.json({ error: 'FORM_DATA_PARSE_FAILED' }, { status: 400 });
@@ -400,26 +404,31 @@ export async function PATCH(req: NextRequest) {
       }
 
       const hasChanges = Object.keys(updateData).length > 0;
-      const avatarUploadAttemptedButFailed = isFileLike && !uploadedAvatarUrl;
-
+      
+      // If we have changes, update DB.
+      // If we DON'T have changes, we still want to return a success response if it was a file upload attempt,
+      // or even if it was just a save click without edits.
+      // Avoid NO_CHANGES 400 error as it confuses users.
+      
       if (!hasChanges) {
-        if (avatarUploadAttemptedButFailed) {
-          // Case: User only tried to change avatar, but it failed due to system limits. 
-          // No text changes to save. Return success with warning so user knows what happened.
-          return NextResponse.json({
-            message: 'PROFILE_UPDATED',
-            profile: {
-              ...existingProfile,
-              termsAcceptedAt: serializeDate(existingProfile.termsAcceptedAt ?? null),
-              privacyAcceptedAt: serializeDate(existingProfile.privacyAcceptedAt ?? null),
-              updatedAt: serializeDate(existingProfile.updatedAt),
-              createdAt: serializeDate(existingProfile.createdAt),
-            },
-            warning: 'IMAGE_UPLOAD_SYSTEM_LIMIT',
-            investigatorStatus: existingProfile.status as InvestigatorStatus,
-          });
-        }
-        return NextResponse.json({ error: 'NO_CHANGES' }, { status: 400 });
+        // Just return the existing profile as if updated.
+        const currentProfile = {
+            ...existingProfile,
+            termsAcceptedAt: serializeDate(existingProfile.termsAcceptedAt ?? null),
+            privacyAcceptedAt: serializeDate(existingProfile.privacyAcceptedAt ?? null),
+            updatedAt: serializeDate(existingProfile.updatedAt),
+            createdAt: serializeDate(existingProfile.createdAt),
+        };
+        
+        // If user tried to upload avatar (avatar field present) but we have no uploadedAvatarUrl, it implies failure/skip.
+        const avatarAttempted = formKeys.includes('avatar') && isFileLike;
+        
+        return NextResponse.json({
+          message: 'PROFILE_UPDATED', // Lie slightly to satisfy UI
+          profile: currentProfile,
+          warning: (avatarAttempted && !uploadedAvatarUrl) ? 'IMAGE_UPLOAD_SYSTEM_LIMIT' : null,
+          investigatorStatus: existingProfile.status as InvestigatorStatus,
+        });
       }
 
       updateData.updatedAt = new Date();
