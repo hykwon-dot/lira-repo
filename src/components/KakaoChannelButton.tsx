@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function KakaoChannelButton() {
   // Replace with your actual Kakao Channel URL
-  const KAKAO_CHANNEL_URL = "https://pf.kakao.com/_grQtn"; 
+  const KAKAO_CHANNEL_URL = "http://pf.kakao.com/_bxbSxgn"; 
 
   return (
     <Link

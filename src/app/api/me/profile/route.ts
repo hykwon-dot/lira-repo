@@ -5,7 +5,7 @@ import { InvestigatorStatus } from '@prisma/client';
 import type { Prisma, User, InvestigatorProfile } from '@prisma/client';
 import path from 'path';
 import { promises as fs } from 'fs';
-import { randomUUID } from 'crypto';
+// import { randomUUID } from 'crypto';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -22,15 +22,15 @@ const ALLOWED_IMAGE_TYPES = new Map<string, string>([
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-function getInvestigatorUploadsDir() {
-  return path.join(process.cwd(), 'public', 'uploads', 'investigators');
-}
+// function getInvestigatorUploadsDir() {
+//   return path.join(process.cwd(), 'public', 'uploads', 'investigators');
+// }
 
-async function ensureUploadsDir() {
-  const dir = getInvestigatorUploadsDir();
-  await fs.mkdir(dir, { recursive: true });
-  return dir;
-}
+// async function ensureUploadsDir() {
+//   const dir = getInvestigatorUploadsDir();
+//   await fs.mkdir(dir, { recursive: true });
+//   return dir;
+// }
 
 async function deleteLocalAvatar(avatarUrl: string | null | undefined) {
   if (!avatarUrl || !avatarUrl.startsWith('/uploads/investigators/')) {
@@ -331,14 +331,10 @@ async function handleProfileUpdate(req: NextRequest) {
           } else if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
              console.warn('[AVATAR_SKIP] Unsupported type', mimeType);
           } else {
-             const ext = ALLOWED_IMAGE_TYPES.get(mimeType) || '.jpg';
-             const dir = await ensureUploadsDir();
-             const filename = `investigator-${user.id}-${Date.now()}-${randomUUID()}${ext}`;
-             const filePath = path.join(dir, filename);
-             await fs.writeFile(filePath, buffer);
-             uploadedAvatarUrl = `/uploads/investigators/${filename}`;
-             
-             updateData.avatarUrl = uploadedAvatarUrl;
+             // 2025-XX-XX: Use DB Storage for Base64 (Serverless workaround)
+             // Instead of writing to file (volatile), save the full Base64 string to DB.
+             updateData.avatarUrl = avatarBase64;
+             uploadedAvatarUrl = avatarBase64; 
              requestedAvatarRemoval = false;
           }
         }
@@ -380,9 +376,9 @@ async function handleProfileUpdate(req: NextRequest) {
       return NextResponse.json({ error: 'DB_UPDATE_FAILED', details: (error as Error).message }, { status: 500 });
     }
 
-    if (uploadedAvatarUrl && existingProfile.avatarUrl && existingProfile.avatarUrl !== uploadedAvatarUrl) {
+    if (uploadedAvatarUrl && existingProfile.avatarUrl && existingProfile.avatarUrl !== uploadedAvatarUrl && !existingProfile.avatarUrl.startsWith('data:')) {
       await deleteLocalAvatar(existingProfile.avatarUrl);
-    } else if (requestedAvatarRemoval && !uploadedAvatarUrl && existingProfile.avatarUrl && !updatedProfile.avatarUrl) {
+    } else if (requestedAvatarRemoval && !uploadedAvatarUrl && existingProfile.avatarUrl && !updatedProfile.avatarUrl && !existingProfile.avatarUrl.startsWith('data:')) {
       await deleteLocalAvatar(existingProfile.avatarUrl);
     }
 
