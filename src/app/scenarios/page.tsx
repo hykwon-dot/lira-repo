@@ -120,22 +120,22 @@ export default async function ScenariosPage() {
   return (
     <div className="w-full bg-slate-50">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-b from-blue-50 to-slate-50 py-24 px-8 text-center">
+      <div className="relative bg-gradient-to-b from-blue-50 to-slate-50 py-12 px-4 md:py-24 md:px-8 text-center">
           <div 
               className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(to_bottom,white,transparent)]">
           </div>
           <div className="relative max-w-4xl mx-auto">
-              <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4">
+              <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-4">
                   유사한 사건 사례
               </h1>
-              <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto">
                   실제 민간조사원들이 해결한 다양한 사건들을 살펴보고, 당신의 상황과 유사한 사례를 찾아보세요. 전문가들의 조사 방법과 해결 과정을 참고하실 수 있습니다.
               </p>
           </div>
       </div>
 
       {/* Scenarios Section */}
-      <div className="py-16 px-4 md:px-8">
+      <div className="py-8 px-4 md:py-16 md:px-8">
         <ScenarioLibrary scenarios={scenarios} />
       </div>
 
