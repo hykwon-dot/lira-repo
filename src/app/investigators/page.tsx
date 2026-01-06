@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { InvestigatorStatus } from "@prisma/client";
-import { Star } from "lucide-react";
+import { Star, Shield, MapPin, Award, CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type InvestigatorRecord = {
@@ -37,11 +37,6 @@ type ApiResponse = {
   };
 };
 
-const statusLabel: Record<InvestigatorStatus, string> = {
-  PENDING: "승인 대기",
-  APPROVED: "승인 완료",
-  REJECTED: "승인 거절",
-};
 
 const SPECIALTY_MAPPING: Record<string, string> = {
   'INFIDELITY': '배우자/가정 이슈',
@@ -92,6 +87,16 @@ function formatSpecialties(specialties: unknown): string[] {
   return items.map(item => SPECIALTY_MAPPING[item] || item);
 }
 
+// Fisher-Yates shuffle
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
 export default function InvestigatorsPage() {
   const [investigators, setInvestigators] = useState<InvestigatorRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,7 +127,18 @@ export default function InvestigatorsPage() {
     fetchInvestigators();
   }, []);
 
+  // Shuffle every 10 seconds
+  useEffect(() => {
+    if (investigators.length > 0) {
+      const interval = setInterval(() => {
+        setInvestigators(prev => shuffleArray(prev));
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [investigators.length]); // Only reset if length changes (initial load)
+
   const totalInvestigators = investigators.length;
+  // Calculate average experience
   const totalExperience = investigators.reduce(
     (sum, inv) => sum + (typeof inv.experienceYears === "number" ? inv.experienceYears : 0),
     0,
@@ -131,6 +147,7 @@ export default function InvestigatorsPage() {
     ? (totalExperience / totalInvestigators).toFixed(1)
     : null;
 
+  // Calculate top specialties
   const specialtyFrequency = new Map<string, number>();
   investigators.forEach((inv) => {
     const specialties = formatSpecialties(inv.specialties);
@@ -149,7 +166,8 @@ export default function InvestigatorsPage() {
         <header className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl space-y-6">
             <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600">
-              Investigator Directory
+              <Shield className="w-3 h-3" />
+              LIRA Verified
             </span>
             <div className="space-y-4">
               <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
@@ -177,6 +195,7 @@ export default function InvestigatorsPage() {
           </div>
         </header>
 
+        {/* Stats Section */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
             <dt className="text-sm font-medium text-slate-500">등록된 전문가</dt>
@@ -207,8 +226,17 @@ export default function InvestigatorsPage() {
 
         <section id="investigator-list" className="space-y-6">
           <div className="flex items-center justify-between border-b border-slate-200 pb-5">
-            <h2 className="text-xl font-semibold text-slate-900">전문가 목록</h2>
-            <span className="text-sm text-slate-500">총 {investigators.length}명의 전문가가 활동 중입니다</span>
+            <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
+              <Award className="w-5 h-5 text-indigo-600" />
+              전문가 목록
+            </h2>
+            <div className="flex items-center gap-2 text-sm text-slate-500">
+               <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                실시간 업데이트 중
+            </div>
           </div>
 
           {loading ? (
@@ -231,14 +259,14 @@ export default function InvestigatorsPage() {
                 const initials = getInitials(inv.user?.name);
 
                 return (
-                  <article 
+                  <div 
                     key={inv.id} 
-                    className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-900/5 transition-all hover:shadow-md"
+                    className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-900/5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                   >
                     <div className="flex flex-1 flex-col p-6 sm:p-8">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-center gap-4">
-                          <div className="relative h-16 w-16 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-900/5">
+                          <Link href={`/investigators/${inv.id}`} className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-full bg-slate-100 ring-2 ring-white shadow-md transition-transform group-hover:scale-105">
                             {inv.avatarUrl ? (
                               <Image
                                 src={inv.avatarUrl}
@@ -247,85 +275,91 @@ export default function InvestigatorsPage() {
                                 className="object-cover"
                               />
                             ) : (
-                              <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${getAvatarGradient(inv.id)} text-lg font-bold text-white`}>
+                              <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${getAvatarGradient(inv.id)} text-xl font-bold text-white`}>
                                 {initials}
                               </div>
                             )}
-                          </div>
+                          </Link>
                           <div>
-                            <h3 className="text-lg font-semibold text-slate-900">
-                              {inv.user?.name ?? "이름 미상"}
-                            </h3>
-                            <p className="text-sm text-slate-500">{inv.serviceArea ?? "활동 지역 미정"}</p>
+                            <Link href={`/investigators/${inv.id}`}>
+                                <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                {inv.user?.name ?? "이름 미상"}
+                                </h3>
+                            </Link>
+                            <div className="flex items-center gap-1 text-sm text-slate-500 mt-1">
+                                <MapPin className="w-3.5 h-3.5" />
+                                {inv.serviceArea ?? "활동 지역 미정"}
+                            </div>
                           </div>
                         </div>
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          status === 'APPROVED' ? 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20' :
-                          status === 'PENDING' ? 'bg-yellow-50 text-yellow-800 ring-1 ring-inset ring-yellow-600/20' :
-                          'bg-slate-50 text-slate-600 ring-1 ring-inset ring-slate-500/10'
-                        }`}>
-                          {statusLabel[status]}
-                        </span>
+                        {status === 'APPROVED' && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                <CheckCircle2 className="w-3 h-3" />
+                                인증됨
+                            </span>
+                        )}
                       </div>
 
                       <div className="mt-6 flex items-center gap-6 border-y border-slate-100 py-4">
-                        <div>
+                        <div className="flex-1 text-center border-r border-slate-100 last:border-0">
                           <div className="text-xs text-slate-500">경력</div>
                           <div className="mt-1 text-sm font-semibold text-slate-900">
-                            {inv.experienceYears ? `${inv.experienceYears}년` : "-"}
+                            {inv.experienceYears ? `${inv.experienceYears}년` : "신입"}
                           </div>
                         </div>
-                        <div className="h-8 w-px bg-slate-100" />
-                        <div>
+                        <div className="flex-1 text-center border-r border-slate-100 last:border-0">
                           <div className="text-xs text-slate-500">평점</div>
-                          <div className="mt-1 flex items-center gap-1 text-sm font-semibold text-slate-900">
+                          <div className="mt-1 flex items-center justify-center gap-1 text-sm font-semibold text-slate-900">
                             <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                            {inv.ratingAverage ? Number(inv.ratingAverage).toFixed(1) : "-"}
+                            {inv.ratingAverage ? Number(inv.ratingAverage).toFixed(1) : "평가없음"}
                           </div>
                         </div>
-                        <div className="h-8 w-px bg-slate-100" />
-                        <div>
+                        <div className="flex-1 text-center">
                           <div className="text-xs text-slate-500">성공률</div>
                           <div className="mt-1 text-sm font-semibold text-slate-900">
-                            {inv.successRate ? `${Number(inv.successRate).toFixed(0)}%` : "-"}
+                            {inv.successRate ? `${Number(inv.successRate).toFixed(0)}%` : "자료없음"}
                           </div>
                         </div>
                       </div>
 
                       <div className="mt-6 space-y-4">
-                        {inv.introduction && (
-                          <p className="line-clamp-2 text-sm leading-relaxed text-slate-600">
-                            {inv.introduction}
-                          </p>
-                        )}
+                        <p className="line-clamp-2 text-sm leading-relaxed text-slate-600 min-h-[40px]">
+                            {inv.introduction || "소개가 없습니다."}
+                        </p>
                         
                         <div className="flex flex-wrap gap-2">
-                          {specialties.slice(0, 5).map((spec, i) => (
+                          {specialties.slice(0, 4).map((spec, i) => (
                             <span 
                               key={i}
-                              className="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10"
+                              className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"
                             >
                               {spec}
                             </span>
                           ))}
-                          {specialties.length > 5 && (
+                          {specialties.length > 4 && (
                             <span className="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-500">
-                              +{specialties.length - 5}
+                              +{specialties.length - 4}
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex border-t border-slate-100 bg-slate-50/50 px-6 py-4">
-                      <Link
-                        href={`/investigation-requests/new?investigatorId=${inv.id}`}
-                        className="flex w-full items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
-                      >
-                        의뢰하기
-                      </Link>
+                    <div className="grid grid-cols-2 border-t border-slate-100 bg-slate-50/50 divide-x divide-slate-100">
+                        <Link
+                            href={`/investigators/${inv.id}`}
+                            className="flex items-center justify-center px-4 py-4 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                        >
+                            상세보기
+                        </Link>
+                        <Link
+                            href={`/investigation-requests/new?investigatorId=${inv.id}`}
+                            className="flex items-center justify-center px-4 py-4 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
+                        >
+                            의뢰하기
+                        </Link>
                     </div>
-                  </article>
+                  </div>
                 );
               })}
             </div>
