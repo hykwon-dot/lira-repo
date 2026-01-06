@@ -77,6 +77,15 @@ const formatDate = (iso: string | undefined | null): string => {
   return date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
 };
 
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
 const InvestigatorDashboard = () => {
   const router = useRouter();
   const user = useUserStore((state) => state.user);
@@ -309,63 +318,45 @@ const InvestigatorDashboard = () => {
         }
       }
 
-      const useMultipart = Boolean(avatarFile) || removeAvatar;
+      const payload: Record<string, unknown> = {
+        contactPhone: profileForm.contactPhone || null,
+        serviceArea: profileForm.serviceArea || null,
+        introduction: profileForm.introduction || null,
+        portfolioUrl: profileForm.portfolioUrl || null,
+        specialties,
+      };
 
-      let res: Response;
-      if (useMultipart) {
-        const formData = new FormData();
-        formData.append("contactPhone", profileForm.contactPhone ?? "");
-        formData.append("serviceArea", profileForm.serviceArea ?? "");
-        formData.append("introduction", profileForm.introduction ?? "");
-        formData.append("portfolioUrl", profileForm.portfolioUrl ?? "");
-        if (trimmedExperience) {
-          formData.append("experienceYears", trimmedExperience);
-        } else if (profile?.experienceYears != null) {
-          formData.append("experienceYears", "");
-        }
-        if (specialties.length > 0) {
-          specialties.forEach((item) => formData.append("specialties", item));
-        } else {
-          formData.append("specialties", "");
-        }
-        if (avatarFile) {
-          formData.append("avatar", avatarFile);
-        }
-        if (removeAvatar) {
-          formData.append("removeAvatar", "true");
-        }
-
-        res = await fetch("/api/me/profile", {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        });
-      } else {
-        const payload: Record<string, unknown> = {
-          contactPhone: profileForm.contactPhone || null,
-          serviceArea: profileForm.serviceArea || null,
-          introduction: profileForm.introduction || null,
-          portfolioUrl: profileForm.portfolioUrl || null,
-          specialties,
-        };
-
-        if (trimmedExperience) {
-          payload.experienceYears = Number(trimmedExperience);
-        } else {
-          payload.experienceYears = null;
-        }
-
-        res = await fetch("/api/me/profile", {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        });
+      if (trimmedExperience) {
+        payload.experienceYears = Number(trimmedExperience);
+      } else if (profile?.experienceYears != null) {
+        payload.experienceYears = null;
       }
+
+      if (removeAvatar) {
+        payload.removeAvatar = true;
+      }
+
+      if (avatarFile) {
+        try {
+          const base64 = await fileToBase64(avatarFile);
+          payload.avatarBase64 = base64;
+        } catch (e) {
+          console.error("File read error", e);
+          pushToast("error", "이미지 파일을 읽는데 실패했습니다.");
+          setProfileSaving(false);
+          return;
+        }
+      }
+
+      // Use POST to avoid potential PATCH method blocks on some WAFs, and JSON to avoid Multipart blocks
+      const res = await fetch("/api/me/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
       const data = await res.json().catch(() => null);
       if (!res.ok) {
@@ -381,7 +372,7 @@ const InvestigatorDashboard = () => {
             ? "이미지 업로드 중 문제가 발생했습니다."
             : errorCode
             ? `업데이트 실패 (${errorCode})${errorMessage ? `: ${errorMessage}` : ""}`
-            : `서버 오류 (Status: ${res.status})`; // Capture generic HTTP errors
+            : `서버 오류 (Status: ${res.status})`;
 
         pushToast("error", message);
         setProfileSaving(false);
