@@ -38,7 +38,7 @@ const TIMELINE_OPTIONS: Array<{ value: TimelineFormState["type"]; label: string 
   { value: "FINAL_REPORT", label: "최종 보고" },
 ];
 
-const AVATAR_SIZE_LIMIT = 4.5 * 1024 * 1024; // 4.5MB (Reduced from 5MB to avoid edge server limits)
+const AVATAR_SIZE_LIMIT = 1 * 1024 * 1024; // 1MB (Safe limit for serverless/proxy envs)
 const SUPPORTED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
 
 const statusKeyFromString = (value: string): CaseStatusKey => {
@@ -369,15 +369,20 @@ const InvestigatorDashboard = () => {
 
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const errorCode: string | undefined = data?.error;
+        let errorCode: string | undefined = data?.error;
+        let errorMessage: string | undefined = data?.details;
+
         const message =
           errorCode === "IMAGE_TOO_LARGE"
-            ? "이미지 파일 용량은 5MB 이하로 업로드해주세요."
+            ? "이미지 파일 용량은 1MB 이하로 업로드해주세요."
             : errorCode === "UNSUPPORTED_IMAGE_TYPE"
-            ? "지원하지 않는 이미지 형식입니다. JPG, PNG, WEBP, GIF, AVIF 파일을 사용해주세요."
+            ? "지원하지 않는 이미지 형식입니다."
             : errorCode === "AVATAR_UPLOAD_FAILED"
-            ? "이미지 업로드 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
-            : errorCode ?? "프로필 업데이트에 실패했습니다.";
+            ? "이미지 업로드 중 문제가 발생했습니다."
+            : errorCode
+            ? `업데이트 실패 (${errorCode})`
+            : `서버 오류 (Status: ${res.status})`; // Capture generic HTTP errors
+
         pushToast("error", message);
         setProfileSaving(false);
         return;
