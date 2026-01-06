@@ -188,7 +188,7 @@ export default function Header() {
                 <div className="grid gap-2">
                   <Link
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-full border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:border-blue-300"
+                    className="inline-flex items-center justify-center rounded-full bg-blue-50 border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-100 hover:border-blue-300"
                   >
                     로그인
                   </Link>
@@ -218,7 +218,7 @@ export default function Header() {
                   href="http://pf.kakao.com/_grQtn"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between rounded-xl border border-[#FEE500] bg-[#FEE500]/10 px-3 py-3 text-sm font-medium text-[#3c1e1e] transition hover:bg-[#FEE500]/20"
+                  className="flex items-center justify-between rounded-xl border border-[#FEE500] bg-[#FEE500] px-3 py-3 text-sm font-medium text-[#3c1e1e] transition hover:bg-[#FDD835]"
                 >
                   <div className="flex items-center gap-2">
                     <RiKakaoTalkFill className="h-5 w-5 text-[#3c1e1e]" />
