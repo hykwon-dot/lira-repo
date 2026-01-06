@@ -296,7 +296,14 @@ export async function PATCH(req: NextRequest) {
 
     if (isMultipart) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const formData = await req.formData() as any;
+      let formData: any;
+      try {
+        formData = await req.formData();
+      } catch (parseError) {
+        console.error('[PROFILE_FORM_DATA_ERROR] Failed to parse multipart body', parseError);
+        return NextResponse.json({ error: 'FORM_DATA_PARSE_FAILED' }, { status: 400 });
+      }
+
   const updateData: Record<string, unknown> = {};
       let uploadedAvatarUrl: string | null = null;
       let requestedAvatarRemoval = false;
@@ -373,24 +380,27 @@ export async function PATCH(req: NextRequest) {
       }
 
       const avatarFile = formData.get('avatar');
-      // Safer check for File object
+      // Fix: Relaxed File check. If it has a name and size > 0, we try to use it.
+      // Next.js/Node environment File compatibility can be tricky.
+      // We assume if it's an object with size and name, it's file-like enough.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const isFile = avatarFile && typeof avatarFile === 'object' && 'size' in avatarFile && typeof (avatarFile as any).arrayBuffer === 'function';
+      const isFileLike = avatarFile && typeof avatarFile === 'object' && 'size' in avatarFile && (avatarFile as any).size > 0;
       
-      if (isFile && (avatarFile as File).size > 0) {
+      if (isFileLike) {
         try {
+          // If arrayBuffer is missing, this will throw, and we catch it below.
           uploadedAvatarUrl = await saveInvestigatorAvatar(avatarFile as File, user.id);
           updateData.avatarUrl = uploadedAvatarUrl;
           requestedAvatarRemoval = false;
         } catch (error: unknown) {
           // Log error but DO NOT fail the request. Serverless envs often forbid file writes.
-          console.warn('[AVATAR_UPLOAD_SKIPPED] File write failed (likely read-only FS). Proceeding with text update.', error);
+          console.warn('[AVATAR_UPLOAD_SKIPPED] File write failed (likely read-only FS or invalid File object). Proceeding with text update.', error);
           // We intentionally swallow the error so text fields can still be saved.
         }
       }
 
       const hasChanges = Object.keys(updateData).length > 0;
-      const avatarUploadAttemptedButFailed = isFile && !uploadedAvatarUrl;
+      const avatarUploadAttemptedButFailed = isFileLike && !uploadedAvatarUrl;
 
       if (!hasChanges) {
         if (avatarUploadAttemptedButFailed) {
