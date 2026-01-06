@@ -150,9 +150,9 @@ export default function Header() {
             type="button"
             aria-label="모바일 메뉴 닫기"
             onClick={() => setMobileMenuOpen(false)}
-            className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm md:hidden"
           />
-          <nav className="fixed top-0 right-0 z-50 flex h-full w-[78vw] max-w-xs flex-col gap-6 border-l border-slate-100 bg-white px-6 py-8 shadow-xl md:hidden">
+          <nav className="fixed top-0 right-0 z-[101] flex h-full w-[78vw] max-w-xs flex-col gap-6 border-l border-slate-100 bg-white px-6 py-8 shadow-xl md:hidden">
             <div className="flex items-center justify-between">
               <Image
                 src={LOGO_SRC}
