@@ -349,7 +349,8 @@ const InvestigatorDashboard = () => {
       }
 
       // Use POST to avoid potential PATCH method blocks on some WAFs, and JSON to avoid Multipart blocks
-      const res = await fetch("/api/me/profile", {
+      // Adding timestamp to URL to bypass simple caching
+      const res = await fetch(`/api/me/profile?_t=${Date.now()}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -858,7 +859,7 @@ const InvestigatorDashboard = () => {
                       value={profileForm.portfolioUrl}
                       onChange={(event) => handleProfileChange("portfolioUrl", event.target.value)}
                       className="lira-input"
-                      placeholder="https://"
+                      placeholder=""
                     />
                   </label>
                 </div>
