@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 export default function Footer() {
@@ -16,7 +17,15 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
           <div>
-            <h3 className="text-lg font-bold text-white mb-4">LIRA</h3>
+            <div className="mb-4">
+              <Image
+                src="/images/footer-logo.png"
+                alt="LIRA Logo"
+                width={120}
+                height={40}
+                className="h-auto w-auto"
+              />
+            </div>
             <p className="text-sm">전문적인 민간조사 서비스를 제공합니다.</p>
           </div>
           <div className="md:col-span-2">
