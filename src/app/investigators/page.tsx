@@ -87,7 +87,8 @@ function formatSpecialties(specialties: unknown): string[] {
   return items.map(item => SPECIALTY_MAPPING[item] || item);
 }
 
-// Fisher-Yates shuffle
+// Fisher-Yates shuffle (used if shuffle logic is enabled)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function shuffleArray<T>(array: T[]): T[] {
   const newArray = [...array];
   for (let i = newArray.length - 1; i > 0; i--) {
@@ -127,6 +128,9 @@ export default function InvestigatorsPage() {
     fetchInvestigators();
   }, []);
 
+
+  /* 
+  // Shuffle logic disabled by request (2026-01-06)
   // Shuffle every 10 seconds
   useEffect(() => {
     if (investigators.length > 0) {
@@ -135,7 +139,8 @@ export default function InvestigatorsPage() {
       }, 10000);
       return () => clearInterval(interval);
     }
-  }, [investigators.length]); // Only reset if length changes (initial load)
+  }, [investigators.length]); 
+  */
 
   const totalInvestigators = investigators.length;
   // Calculate average experience
