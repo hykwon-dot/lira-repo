@@ -450,7 +450,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({
         message: 'PROFILE_UPDATED',
         profile: updatedProfile,
-        warning: (isFile && !uploadedAvatarUrl) ? 'IMAGE_UPLOAD_SYSTEM_LIMIT' : null,
+        warning: (isFileLike && !uploadedAvatarUrl) ? 'IMAGE_UPLOAD_SYSTEM_LIMIT' : null,
         investigatorStatus: updatedProfile.status as InvestigatorStatus,
       });
     }
