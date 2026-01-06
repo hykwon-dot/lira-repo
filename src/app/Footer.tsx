@@ -26,7 +26,10 @@ export default function Footer() {
                 className="h-auto w-auto"
               />
             </div>
-            <p className="text-sm">전문적인 민간조사 서비스를 제공합니다.</p>
+            <p className="text-sm whitespace-pre-line">
+              이용자들의 검증이 완료된 전문적인{"\n"}
+              민간조사 서비스를 제공합니다.
+            </p>
           </div>
           <div className="md:col-span-2">
             <h3 className="text-lg font-bold text-white mb-4">회사 정보</h3>
