@@ -7,6 +7,9 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { randomUUID } from 'crypto';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 const AVATAR_MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = new Map<string, string>([
   ['image/jpeg', '.jpg'],
@@ -370,12 +373,17 @@ export async function PATCH(req: NextRequest) {
       }
 
       const avatarFile = formData.get('avatar');
-      if (avatarFile instanceof File && avatarFile.size > 0) {
+      // Safer check for File object
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const isFile = avatarFile && typeof avatarFile === 'object' && 'size' in avatarFile && typeof (avatarFile as any).arrayBuffer === 'function';
+      
+      if (isFile && (avatarFile as File).size > 0) {
         try {
-          uploadedAvatarUrl = await saveInvestigatorAvatar(avatarFile, user.id);
+          uploadedAvatarUrl = await saveInvestigatorAvatar(avatarFile as File, user.id);
           updateData.avatarUrl = uploadedAvatarUrl;
           requestedAvatarRemoval = false;
         } catch (error: unknown) {
+          console.error('[PROFILE_UPLOAD_ERROR]', error);
           const code = (error as Error).message;
           if (code === 'UNSUPPORTED_IMAGE_TYPE') {
             return NextResponse.json({ error: 'UNSUPPORTED_IMAGE_TYPE' }, { status: 415 });
@@ -383,7 +391,10 @@ export async function PATCH(req: NextRequest) {
           if (code === 'IMAGE_TOO_LARGE') {
             return NextResponse.json({ error: 'IMAGE_TOO_LARGE' }, { status: 413 });
           }
-          return NextResponse.json({ error: 'AVATAR_UPLOAD_FAILED' }, { status: 500 });
+          return NextResponse.json({ 
+            error: 'AVATAR_UPLOAD_FAILED', 
+            details: (error as Error).message 
+          }, { status: 500 });
         }
       }
 
@@ -393,17 +404,21 @@ export async function PATCH(req: NextRequest) {
 
       updateData.updatedAt = new Date();
 
-  let updatedProfile: InvestigatorProfile;
+      let updatedProfile: InvestigatorProfile;
       try {
         updatedProfile = await prisma.investigatorProfile.update({
           where: { userId: user.id },
           data: updateData as Prisma.InvestigatorProfileUpdateInput,
         });
       } catch (error) {
+        console.error('[PROFILE_UPDATE_DB_ERROR]', error);
         if (uploadedAvatarUrl) {
           await deleteLocalAvatar(uploadedAvatarUrl);
         }
-        throw error;
+        return NextResponse.json({ 
+            error: 'DB_UPDATE_FAILED', 
+            details: (error as Error).message 
+        }, { status: 500 });
       }
 
       if (uploadedAvatarUrl && existingProfile.avatarUrl && existingProfile.avatarUrl !== uploadedAvatarUrl) {
