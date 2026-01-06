@@ -296,12 +296,13 @@ export async function PATCH(req: NextRequest) {
 
     if (isMultipart) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let formData: any;
       const formKeys: string[] = [];
       try {
         formData = await req.formData();
         try {
             // Collect keys for debugging/logic
-            formData.forEach((_, key) => formKeys.push(key));
+            formData.forEach((_: unknown, key: string) => formKeys.push(key));
         } catch {}
       } catch (parseError) {
         console.error('[PROFILE_FORM_DATA_ERROR] Failed to parse multipart body', parseError);
