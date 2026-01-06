@@ -318,7 +318,8 @@ const InvestigatorDashboard = () => {
         }
       }
 
-      const payload: Record<string, unknown> = {
+      // Step 1: Text Data Update (PATCH)
+      const textPayload: Record<string, unknown> = {
         contactPhone: profileForm.contactPhone || null,
         serviceArea: profileForm.serviceArea || null,
         introduction: profileForm.introduction || null,
@@ -327,64 +328,66 @@ const InvestigatorDashboard = () => {
       };
 
       if (trimmedExperience) {
-        payload.experienceYears = Number(trimmedExperience);
+        textPayload.experienceYears = Number(trimmedExperience);
       } else if (profile?.experienceYears != null) {
-        payload.experienceYears = null;
+        textPayload.experienceYears = null;
       }
 
       if (removeAvatar) {
-        payload.removeAvatar = true;
+        textPayload.removeAvatar = true;
       }
 
-      if (avatarFile) {
-        try {
-          const base64 = await fileToBase64(avatarFile);
-          payload.avatarBase64 = base64;
-        } catch (e) {
-          console.error("File read error", e);
-          pushToast("error", "이미지 파일을 읽는데 실패했습니다.");
-          setProfileSaving(false);
-          return;
-        }
-      }
-
-      // Use POST to avoid potential PATCH method blocks on some WAFs, and JSON to avoid Multipart blocks
-      // Adding timestamp to URL to bypass simple caching
-      const res = await fetch(`/api/me/profile?_t=${Date.now()}`, {
-        method: "POST",
+      // Send text update first (Lightweight)
+      const textRes = await fetch(`/api/me/profile?_t=${Date.now()}`, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(textPayload),
       });
 
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        const errorCode: string | undefined = data?.error;
-        const errorMessage: string | undefined = data?.details;
-
-        const message =
-          errorCode === "IMAGE_TOO_LARGE"
-            ? "이미지 파일 용량은 1MB 이하로 업로드해주세요."
-            : errorCode === "UNSUPPORTED_IMAGE_TYPE"
-            ? "지원하지 않는 이미지 형식입니다."
-            : errorCode === "AVATAR_UPLOAD_FAILED"
-            ? "이미지 업로드 중 문제가 발생했습니다."
-            : errorCode
-            ? `업데이트 실패 (${errorCode})${errorMessage ? `: ${errorMessage}` : ""}`
-            : `서버 오류 (Status: ${res.status})`;
-
-        pushToast("error", message);
+      if (!textRes.ok) {
+        const data = await textRes.json().catch(() => null);
+        const err = data?.error ?? "프로필 저장 실패";
+        pushToast("error", err);
         setProfileSaving(false);
         return;
       }
 
-      if (data?.warning === 'IMAGE_UPLOAD_SYSTEM_LIMIT') {
-        pushToast("info", "프로필 텍스트는 저장되었으나, 서버 환경 제약으로 이미지 업로드는 생략되었습니다.");
+      // Step 2: Avatar Update (POST) - Only if file exists
+      if (avatarFile) {
+        try {
+          const base64 = await fileToBase64(avatarFile);
+          const avatarPayload = { avatarBase64: base64 };
+          
+          const avatarRes = await fetch(`/api/me/profile?_t=${Date.now()}_img`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(avatarPayload),
+          });
+
+          if (!avatarRes.ok) {
+             console.warn("Avatar upload failed", avatarRes.status);
+             if (avatarRes.status === 413 || avatarRes.status === 403) {
+                 pushToast("info", "텍스트 정보는 저장되었으나, 이미지 용량이 너무 커서 업로드가 제한되었습니다.");
+             } else {
+                 pushToast("info", "텍스트 정보는 저장되었으나, 이미지 저장 중 오류가 발생했습니다.");
+             }
+          } else {
+             pushToast("success", "프로필과 이미지가 모두 저장되었습니다.");
+          }
+        } catch (e) {
+          console.error("File read error", e);
+          pushToast("info", "텍스트는 저장되었으나 이미지 처리에 실패했습니다.");
+        }
       } else {
         pushToast("success", "프로필이 저장되었습니다.");
       }
+
       await loadDashboard();
     } catch (error) {
       console.error(error);
