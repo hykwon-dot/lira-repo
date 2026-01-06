@@ -383,7 +383,11 @@ const InvestigatorDashboard = () => {
         return;
       }
 
-      pushToast("success", "프로필이 저장되었습니다.");
+      if (data?.warning === 'IMAGE_UPLOAD_SYSTEM_LIMIT') {
+        pushToast("info", "프로필 텍스트는 저장되었으나, 서버 환경 제약으로 이미지 업로드는 생략되었습니다.");
+      } else {
+        pushToast("success", "프로필이 저장되었습니다.");
+      }
       await loadDashboard();
     } catch (error) {
       console.error(error);

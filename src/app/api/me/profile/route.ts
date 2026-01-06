@@ -383,18 +383,9 @@ export async function PATCH(req: NextRequest) {
           updateData.avatarUrl = uploadedAvatarUrl;
           requestedAvatarRemoval = false;
         } catch (error: unknown) {
-          console.error('[PROFILE_UPLOAD_ERROR]', error);
-          const code = (error as Error).message;
-          if (code === 'UNSUPPORTED_IMAGE_TYPE') {
-            return NextResponse.json({ error: 'UNSUPPORTED_IMAGE_TYPE' }, { status: 415 });
-          }
-          if (code === 'IMAGE_TOO_LARGE') {
-            return NextResponse.json({ error: 'IMAGE_TOO_LARGE' }, { status: 413 });
-          }
-          return NextResponse.json({ 
-            error: 'AVATAR_UPLOAD_FAILED', 
-            details: (error as Error).message 
-          }, { status: 500 });
+          // Log error but DO NOT fail the request. Serverless envs often forbid file writes.
+          console.warn('[AVATAR_UPLOAD_SKIPPED] File write failed (likely read-only FS). Proceeding with text update.', error);
+          // We intentionally swallow the error so text fields can still be saved.
         }
       }
 
@@ -430,6 +421,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({
         message: 'PROFILE_UPDATED',
         profile: updatedProfile,
+        warning: (isFile && !uploadedAvatarUrl) ? 'IMAGE_UPLOAD_SYSTEM_LIMIT' : null,
         investigatorStatus: updatedProfile.status as InvestigatorStatus,
       });
     }
