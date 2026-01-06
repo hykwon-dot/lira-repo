@@ -18,7 +18,6 @@ const ALLOWED_IMAGE_TYPES = new Map<string, string>([
   ['image/gif', '.gif'],
   ['image/avif', '.avif'],
 ]);
-const ALLOWED_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif']);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -46,8 +45,6 @@ async function deleteLocalAvatar(avatarUrl: string | null | undefined) {
     }
   }
 }
-
-
 
 function sanitizeUser(user: User | null): Omit<User, 'password'> | null {
   if (!user) return null;
@@ -246,7 +243,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ user: sanitizeUser(user), role: user.role, profile: null });
 }
 
-// Helper to handle both methods
+// Helper to handle both methods (POST/PATCH)
 async function handleProfileUpdate(req: NextRequest) {
   const auth = await requireAuth(req);
   if (auth instanceof NextResponse) {
@@ -256,7 +253,7 @@ async function handleProfileUpdate(req: NextRequest) {
   const { user } = auth;
   const prisma = await getPrismaClient();
 
-  // Try to parse JSON body (Client now sends Base64 for images to avoid WAF/Multipart issues)
+  // Try to parse JSON body
   let jsonPayload: unknown = null;
   try {
     jsonPayload = await req.json();
@@ -311,7 +308,6 @@ async function handleProfileUpdate(req: NextRequest) {
     }
 
     // 2. Handle Avatar
-    // Check for explicit removal
     if (payloadRecord.removeAvatar === true || payloadRecord.removeAvatar === 'true') {
       updateData.avatarUrl = null;
       requestedAvatarRemoval = true;
@@ -319,17 +315,14 @@ async function handleProfileUpdate(req: NextRequest) {
     
     // Check for Base64 upload
     const avatarBase64 = payloadRecord.avatarBase64; 
-    // Format: "data:image/png;base64,....."
     const isBase64Upload = typeof avatarBase64 === 'string' && avatarBase64.startsWith('data:image/');
     
     if (isBase64Upload) {
       try {
-        // Parse Base64
-        // data:image/png;base64,BUFFER...
         const matches = avatarBase64.match(/^data:(image\/([a-zA-Z+]+));base64,(.+)$/);
         
         if (matches && matches.length === 4) {
-          const mimeType = matches[1]; // e.g. image/png
+          const mimeType = matches[1];
           const base64Data = matches[3];
           const buffer = Buffer.from(base64Data, 'base64');
           
@@ -338,11 +331,6 @@ async function handleProfileUpdate(req: NextRequest) {
           } else if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
              console.warn('[AVATAR_SKIP] Unsupported type', mimeType);
           } else {
-             // Mock File object for saveInvestigatorAvatar which expects { type, arrayBuffer, ... } logic?
-             // Actually saveInvestigatorAvatar takes a File. We need to refactor or mock it.
-             // Refactoring saveInvestigatorAvatar to take Buffer + Extension is better.
-             // For now, let's implement direct save here to avoid changing helper signature too much.
-             
              const ext = ALLOWED_IMAGE_TYPES.get(mimeType) || '.jpg';
              const dir = await ensureUploadsDir();
              const filename = `investigator-${user.id}-${Date.now()}-${randomUUID()}${ext}`;
@@ -370,11 +358,10 @@ async function handleProfileUpdate(req: NextRequest) {
             updatedAt: serializeDate(existingProfile.updatedAt),
             createdAt: serializeDate(existingProfile.createdAt),
         };
-        const avatarAttempted = isBase64Upload;
         return NextResponse.json({
           message: 'PROFILE_UPDATED',
           profile: currentProfile,
-          warning: (avatarAttempted && !uploadedAvatarUrl) ? 'IMAGE_UPLOAD_SYSTEM_LIMIT' : null,
+          warning: (isBase64Upload && !uploadedAvatarUrl) ? 'IMAGE_UPLOAD_SYSTEM_LIMIT' : null,
           investigatorStatus: existingProfile.status as InvestigatorStatus,
         });
     }
@@ -389,12 +376,10 @@ async function handleProfileUpdate(req: NextRequest) {
       });
     } catch (error) {
       console.error('[PROFILE_UPDATE_DB_ERROR]', error);
-      // Clean up if DB failed
       if (uploadedAvatarUrl) await deleteLocalAvatar(uploadedAvatarUrl);
       return NextResponse.json({ error: 'DB_UPDATE_FAILED', details: (error as Error).message }, { status: 500 });
     }
 
-    // Cleanup old avatar if changed
     if (uploadedAvatarUrl && existingProfile.avatarUrl && existingProfile.avatarUrl !== uploadedAvatarUrl) {
       await deleteLocalAvatar(existingProfile.avatarUrl);
     } else if (requestedAvatarRemoval && !uploadedAvatarUrl && existingProfile.avatarUrl && !updatedProfile.avatarUrl) {
@@ -409,7 +394,6 @@ async function handleProfileUpdate(req: NextRequest) {
     });
   }
   
-  // Enterprise/User logic (omitted for brevity, they don't upload avatars here)
   return NextResponse.json({ user: sanitizeUser(user), role: user.role, profile: null });
 }
 
