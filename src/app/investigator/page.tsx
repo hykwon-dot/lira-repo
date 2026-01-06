@@ -369,8 +369,8 @@ const InvestigatorDashboard = () => {
 
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        let errorCode: string | undefined = data?.error;
-        let errorMessage: string | undefined = data?.details;
+        const errorCode: string | undefined = data?.error;
+        const errorMessage: string | undefined = data?.details;
 
         const message =
           errorCode === "IMAGE_TOO_LARGE"
@@ -380,7 +380,7 @@ const InvestigatorDashboard = () => {
             : errorCode === "AVATAR_UPLOAD_FAILED"
             ? "이미지 업로드 중 문제가 발생했습니다."
             : errorCode
-            ? `업데이트 실패 (${errorCode})`
+            ? `업데이트 실패 (${errorCode})${errorMessage ? `: ${errorMessage}` : ""}`
             : `서버 오류 (Status: ${res.status})`; // Capture generic HTTP errors
 
         pushToast("error", message);
