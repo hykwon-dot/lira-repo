@@ -76,14 +76,19 @@ export default function Home() {
             }}
           ></div>
           <div className="container mx-auto px-4 relative text-center">
-            <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight break-keep">
-              {mainBanner?.title || (
+            <h1 className="font-bold text-gray-900 mb-4 leading-tight break-keep">
+              {mainBanner?.title ? (
+                <span className="text-2xl md:text-4xl">{mainBanner.title}</span>
+              ) : (
                 <>
-                  AI를 통한 쉽고 간편한 민간조사 의뢰
-                  <br className="hidden md:block" />
-                  {' '}이제 24시간 언제든지 맞춤형 민간조사원을 매칭받고,
-                  <br className="hidden md:block" />
-                  {' '}믿을 수 있는 전문가와 일을 진행할 수 있습니다.
+                  <span className="block text-3xl md:text-5xl mb-6">
+                    AI를 통한 쉽고 간편한 민간조사 의뢰
+                  </span>
+                  <span className="block text-2xl md:text-4xl">
+                    이제 24시간 언제든지 맞춤형 민간조사원을 매칭받고,
+                    <br className="hidden md:block" />
+                    {' '}믿을 수 있는 전문가와 일을 진행할 수 있습니다.
+                  </span>
                 </>
               )}
             </h1>
