@@ -41,6 +41,7 @@ export default function RegisterForm() {
 
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [licenseNumber, setLicenseNumber] = useState('');
+  const [officeAddress, setOfficeAddress] = useState('');
   const [experienceYears, setExperienceYears] = useState('');
   const [serviceAreas, setServiceAreas] = useState<string[]>([]);
   const [intro, setIntro] = useState('');
@@ -66,6 +67,7 @@ export default function RegisterForm() {
   const resetInvestigatorFields = () => {
     setSpecialties([]);
     setLicenseNumber('');
+    setOfficeAddress('');
     setExperienceYears('');
     setServiceAreas([]);
     setIntro('');
@@ -222,6 +224,7 @@ export default function RegisterForm() {
         password,
         name,
         licenseNumber: licenseNumber || null,
+        officeAddress: officeAddress || null,
         specialties,
         experienceYears: expNumber,
         serviceAreas,
@@ -383,16 +386,28 @@ export default function RegisterForm() {
               />
             </label>
             {role === 'INVESTIGATOR' && (
-              <label className="lira-field">
-                탐정사무소 번호
-                <input
-                  type="tel"
-                  value={agencyPhone}
-                  onChange={(e) => setAgencyPhone(e.target.value)}
-                  className="lira-input"
-                  placeholder="예: 02-1234-5678"
-                />
-              </label>
+              <>
+                <label className="lira-field">
+                  탐정사무소 번호
+                  <input
+                    type="tel"
+                    value={agencyPhone}
+                    onChange={(e) => setAgencyPhone(e.target.value)}
+                    className="lira-input"
+                    placeholder="예: 02-1234-5678"
+                  />
+                </label>
+                <label className="lira-field md:col-span-2">
+                  탐정사무소 주소
+                  <input
+                    type="text"
+                    value={officeAddress}
+                    onChange={(e) => setOfficeAddress(e.target.value)}
+                    className="lira-input"
+                    placeholder="예: 서울특별시 서초구 서초대로"
+                  />
+                </label>
+              </>
             )}
           </div>
         </section>

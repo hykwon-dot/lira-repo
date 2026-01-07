@@ -53,6 +53,7 @@ model InvestigatorProfile {
   contactPhone      String?
   agencyPhone       String?
   serviceArea       String?
+  officeAddress     String?
   introduction      String?                @db.Text
   portfolioUrl      String?
   businessLicenseUrl String?                @db.VarChar(255)
