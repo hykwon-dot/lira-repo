@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from 'react';
+import { useUserStore } from "@/lib/userStore";
 
 type Banner = {
   id: number;
@@ -29,6 +30,7 @@ const CustomArrow = () => (
 );
 
 export default function Home() {
+  const user = useUserStore((state) => state.user);
   const [mainBanner, setMainBanner] = useState<Banner | null>(null);
   const [subBanners, setSubBanners] = useState<Banner[]>([]);
   const [awards, setAwards] = useState<Award[]>([]);
@@ -98,7 +100,7 @@ export default function Home() {
               </Link>
               {!mainBanner && (
                 <>
-                  <Link href="/scenario" className="bg-white hover:bg-gray-200 text-blue-600 font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105 border border-blue-600">
+                  <Link href={user ? "/scenario" : "/login"} className="bg-white hover:bg-gray-200 text-blue-600 font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105 border border-blue-600">
                     나와 유사한 사건 찾기
                   </Link>
                   <Link href="/investigators" className="bg-gray-900 hover:bg-black text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
