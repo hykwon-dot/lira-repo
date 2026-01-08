@@ -3,8 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { RiKakaoTalkFill } from "react-icons/ri";
-import { SiNaver, SiYoutube, SiThreads } from "react-icons/si";
+import { RiKakaoTalkFill, RiChatQuoteFill, RiCupFill } from "react-icons/ri";
+import { SiYoutube, SiThreads } from "react-icons/si";
 
 export default function Footer() {
   const pathname = usePathname();
@@ -51,7 +51,7 @@ export default function Footer() {
                 <RiKakaoTalkFill size={20} />
               </Link>
               <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#03C75A] hover:text-white transition-colors" title="네이버 블로그">
-                <SiNaver size={18} />
+                <RiChatQuoteFill size={18} />
               </Link>
               <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#FF0000] hover:text-white transition-colors" title="유튜브">
                 <SiYoutube size={18} />
@@ -60,7 +60,7 @@ export default function Footer() {
                 <SiThreads size={18} />
               </Link>
               <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#03C75A] hover:text-white transition-colors" title="네이버 카페">
-                <SiNaver size={18} />
+                <RiCupFill size={18} />
               </Link>
             </div>
             <p className="text-xs text-gray-500 mt-4">
