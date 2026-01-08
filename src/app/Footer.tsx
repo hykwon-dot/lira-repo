@@ -3,6 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { RiKakaoTalkFill } from "react-icons/ri";
+import { SiNaver, SiYoutube, SiThreads } from "react-icons/si";
+import { FiCoffee } from "react-icons/fi";
 
 export default function Footer() {
   const pathname = usePathname();
@@ -43,20 +46,27 @@ export default function Footer() {
             </div>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white mb-4">최신 소식 받기</h3>
-            <form className="flex flex-col">
-              <input 
-                type="email" 
-                placeholder="이메일을 입력하세요" 
-                className="bg-gray-800 text-white px-3 py-2 rounded-md focus:outline-none w-full mb-2" 
-              />
-              <button 
-                type="submit" 
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-md"
-              >
-                구독하기
-              </button>
-            </form>
+            <h3 className="text-lg font-bold text-white mb-4">공식 채널</h3>
+            <div className="flex gap-3">
+              <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#FEE500] hover:text-[#3C1E1E] transition-colors" title="카카오톡 채널">
+                <RiKakaoTalkFill size={20} />
+              </Link>
+              <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#03C75A] hover:text-white transition-colors" title="블로그">
+                <SiNaver size={18} />
+              </Link>
+              <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#FF0000] hover:text-white transition-colors" title="유튜브">
+                <SiYoutube size={18} />
+              </Link>
+              <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-black hover:text-white transition-colors" title="스레드">
+                <SiThreads size={18} />
+              </Link>
+              <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#03C75A] hover:text-white transition-colors" title="카페">
+                <FiCoffee size={20} />
+              </Link>
+            </div>
+            <p className="text-xs text-gray-500 mt-4">
+              아이콘을 클릭하여 LIRA의 최신 소식을 확인하세요.
+            </p>
           </div>
         </div>
         <div className="mt-8 pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-between items-center text-sm">
