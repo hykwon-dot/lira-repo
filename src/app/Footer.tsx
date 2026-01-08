@@ -5,7 +5,6 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { RiKakaoTalkFill } from "react-icons/ri";
 import { SiNaver, SiYoutube, SiThreads } from "react-icons/si";
-import { FiCoffee } from "react-icons/fi";
 
 export default function Footer() {
   const pathname = usePathname();
@@ -51,7 +50,7 @@ export default function Footer() {
               <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#FEE500] hover:text-[#3C1E1E] transition-colors" title="카카오톡 채널">
                 <RiKakaoTalkFill size={20} />
               </Link>
-              <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#03C75A] hover:text-white transition-colors" title="블로그">
+              <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#03C75A] hover:text-white transition-colors" title="네이버 블로그">
                 <SiNaver size={18} />
               </Link>
               <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#FF0000] hover:text-white transition-colors" title="유튜브">
@@ -60,8 +59,8 @@ export default function Footer() {
               <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-black hover:text-white transition-colors" title="스레드">
                 <SiThreads size={18} />
               </Link>
-              <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#03C75A] hover:text-white transition-colors" title="카페">
-                <FiCoffee size={20} />
+              <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#03C75A] hover:text-white transition-colors" title="네이버 카페">
+                <SiNaver size={18} />
               </Link>
             </div>
             <p className="text-xs text-gray-500 mt-4">
