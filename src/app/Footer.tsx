@@ -62,8 +62,8 @@ export default function Footer() {
         <div className="mt-8 pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-between items-center text-sm">
           <p className="mb-4 sm:mb-0">&copy; {new Date().getFullYear()} LIRA. All Rights Reserved.</p>
           <div className="flex gap-4">
-            <Link href="#" className="hover:text-white">개인정보처리방침</Link>
-            <Link href="#" className="hover:text-white">이용약관</Link>
+            <Link href="/privacy" className="hover:text-white">개인정보처리방침</Link>
+            <Link href="/terms" className="hover:text-white">이용약관</Link>
           </div>
         </div>
       </div>
