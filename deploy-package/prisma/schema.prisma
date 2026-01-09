@@ -56,7 +56,7 @@ model InvestigatorProfile {
   portfolioUrl      String?
   termsAcceptedAt   DateTime?
   privacyAcceptedAt DateTime?
-  avatarUrl         String?                @db.VarChar(255)
+  avatarUrl         String?                @db.LongText
   deletedAt         DateTime?
   assignedRequests  InvestigationRequest[]
   matches           InvestigatorMatch[]
