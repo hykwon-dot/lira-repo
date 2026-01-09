@@ -133,8 +133,8 @@ const compressImageToBlob = async (file: File): Promise<Blob> => {
         
         let width = img.width;
         let height = img.height;
-        const MAX_WIDTH = 600; 
-        const MAX_HEIGHT = 600;
+        const MAX_WIDTH = 1200; // Increased to 1200px for better quality
+        const MAX_HEIGHT = 1200;
 
         if (width > height) {
           if (width > MAX_WIDTH) {
@@ -158,7 +158,7 @@ const compressImageToBlob = async (file: File): Promise<Blob> => {
           } else {
             reject(new Error("Image compression failed"));
           }
-        }, "image/jpeg", 0.6);
+        }, "image/jpeg", 0.8); // 0.8 quality
       };
       img.onerror = reject;
     };
