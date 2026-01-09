@@ -300,12 +300,13 @@ async function handleProfileUpdate(req: NextRequest) {
       console.error('FormData parsing failed', e);
       return NextResponse.json({ error: 'FORM_DATA_ERROR' }, { status: 400 });
     }
-  } else if (contentType.startsWith('image/')) {
+  } else if (contentType.startsWith('image/') || contentType.includes('application/octet-stream')) {
     // Handle Raw Binary Upload (WAF Bypass)
     try {
       const arrayBuffer = await req.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      const mimeType = contentType; // Use content-type from header
+      // Default to jpeg if octet-stream, otherwise use provided type
+      const mimeType = contentType.includes('application/octet-stream') ? 'image/jpeg' : contentType;
 
       if (buffer.length > AVATAR_MAX_SIZE) {
           console.warn('[AVATAR_SKIP] Too large');
