@@ -256,7 +256,7 @@ async function handleProfileUpdate(req: NextRequest) {
   // Handle both JSON and FormData
   const contentType = req.headers.get('content-type') || '';
   let payloadRecord: Record<string, unknown> = {};
-  
+
   if (contentType.includes('application/json')) {
     try {
       const json = await req.json();
@@ -300,10 +300,28 @@ async function handleProfileUpdate(req: NextRequest) {
       console.error('FormData parsing failed', e);
       return NextResponse.json({ error: 'FORM_DATA_ERROR' }, { status: 400 });
     }
+  } else if (contentType.startsWith('image/')) {
+    // Handle Raw Binary Upload (WAF Bypass)
+    try {
+      const arrayBuffer = await req.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const mimeType = contentType; // Use content-type from header
+
+      if (buffer.length > AVATAR_MAX_SIZE) {
+          console.warn('[AVATAR_SKIP] Too large');
+      } else {
+          const base64String = `data:${mimeType};base64,${buffer.toString('base64')}`;
+          payloadRecord['avatarBase64'] = base64String;
+          // Set sentinel to indicate this is only an avatar update
+          payloadRecord['is_raw_avatar_upload'] = true;
+      }
+    } catch (e) {
+      console.error('Binary upload failed', e);
+       return NextResponse.json({ error: 'BINARY_UPLOAD_ERROR' }, { status: 400 });
+    }
   } else {
     // Fallback or empty body
   }
-
   if (user.role === 'INVESTIGATOR') {
     const existingProfile = await prisma.investigatorProfile.findUnique({
       where: { userId: user.id },

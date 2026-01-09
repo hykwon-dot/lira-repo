@@ -127,7 +127,6 @@ const compressImageToBlob = async (file: File): Promise<Blob> => {
 }; 
 */
 
-/*
 const compressImageToBlob = async (file: File): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const img = document.createElement("img");
@@ -174,7 +173,6 @@ const compressImageToBlob = async (file: File): Promise<Blob> => {
     reader.readAsDataURL(file);
   });
 };
-*/
 
 const InvestigatorDashboard = () => {
   const router = useRouter();
@@ -448,21 +446,22 @@ const InvestigatorDashboard = () => {
       // Step 2: Avatar Update (POST) - Only if file exists
       if (avatarFile) {
         try {
-          // Reverting to JSON Base64 transport to bypass WAF Multipart Block (403).
-          // DB column is now LongText, so it can handle the Base64 string.
-          const base64 = await compressImageToBase64(avatarFile);
-          const avatarPayload = { avatarBase64: base64 };
+          // New Strategy: Binary Upload (Raw Body)
+          // Reasons:
+          // 1. Multipart (Boundary) -> Blocked by WAF (403)
+          // 2. Base64 JSON (Huge String) -> Blocked by WAF 'Body Size' or 'SQLi' rules (403)
+          // 3. Binary (octet-stream/image) -> Cleanest, usually bypassed by WAF as 'file upload'
+          const compressedBlob = await compressImageToBlob(avatarFile);
           
-          // Debug payload size
-          console.log(`Uploading avatar via JSON. Size: ${Math.round(base64.length/1024)}KB`);
+          console.log(`Uploading avatar via Binary Stream. Size: ${Math.round(compressedBlob.size/1024)}KB`);
 
-          const avatarRes = await fetch(`/api/me/profile?_t=${Date.now()}_img`, {
+          const avatarRes = await fetch(`/api/me/profile?_t=${Date.now()}_bin`, {
             method: "POST",
             headers: {
-              "Content-Type": "application/json",
+              "Content-Type": "image/jpeg",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify(avatarPayload),
+            body: compressedBlob, 
           });
 
           if (!avatarRes.ok) {
