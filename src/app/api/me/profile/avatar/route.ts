@@ -45,14 +45,12 @@ export async function POST(req: NextRequest) {
         });
         return NextResponse.json({ message: 'AVATAR_UPDATED', avatarUrl: updated.avatarUrl });
     } else if (user.role === 'USER') {
-        const updated = await prisma.customerProfile.update({
+        /*
+        await prisma.customerProfile.update({
              where: { userId: user.id },
-             data: {
-                 // customer profile doesn't have avatarUrl in schema yet? 
-                 // Based on schema inspection earlier, it might not. 
-                 // But this file seems to be used by Investigator Page mainly.
-             }
+             data: {}
         });
+        */
         return NextResponse.json({ error: 'NOT_IMPLEMENTED_FOR_ROLE' }, { status: 501 });
     }
     

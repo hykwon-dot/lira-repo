@@ -127,6 +127,7 @@ const compressImageToBlob = async (file: File): Promise<Blob> => {
 }; 
 */
 
+/*
 const compressImageToBlob = async (file: File): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const img = document.createElement("img");
@@ -173,6 +174,7 @@ const compressImageToBlob = async (file: File): Promise<Blob> => {
     reader.readAsDataURL(file);
   });
 };
+*/
 
 const InvestigatorDashboard = () => {
   const router = useRouter();
