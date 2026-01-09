@@ -90,8 +90,8 @@ const compressImage = async (file: File): Promise<string> => {
         
         let width = img.width;
         let height = img.height;
-        const MAX_WIDTH = 800; // Resizing to max 800px width
-        const MAX_HEIGHT = 800; // Resizing to max 800px height
+        const MAX_WIDTH = 600; // Resizing to max 600px width (Safe limit)
+        const MAX_HEIGHT = 600; // Resizing to max 600px height
 
         if (width > height) {
           if (width > MAX_WIDTH) {
@@ -109,8 +109,8 @@ const compressImage = async (file: File): Promise<string> => {
         canvas.height = height;
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // Compress to JPEG with 0.7 quality to reduce file size significantly
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        // Compress to JPEG with 0.6 quality for safe payload size (< 1MB)
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
         resolve(dataUrl);
       };
       img.onerror = reject;
