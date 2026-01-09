@@ -460,7 +460,8 @@ const InvestigatorDashboard = () => {
              if (avatarRes.status === 413) {
                  pushToast("info", "이미지 용량이 서버 허용 한도(413)를 초과했습니다.");
              } else if (avatarRes.status === 403) {
-                 pushToast("info", "이미지 업로드 권한이 없습니다(403).");
+                 const errMsg = await avatarRes.text().catch(() => "Access Denied");
+                 pushToast("info", `403 Forbidden: ${errMsg.substring(0, 100)}`);
              } else {
                  const errMsg = await avatarRes.text().catch(() => "Unknown error");
                  pushToast("info", `이미지 저장 중 오류 발생 (${avatarRes.status}): ${errMsg.substring(0, 50)}`);
