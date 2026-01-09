@@ -77,12 +77,46 @@ const formatDate = (iso: string | undefined | null): string => {
   return date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
 };
 
-const fileToBase64 = (file: File): Promise<string> => {
+const compressImage = async (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
+    const img = document.createElement("img");
     const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        
+        let width = img.width;
+        let height = img.height;
+        const MAX_WIDTH = 800; // Resizing to max 800px width
+        const MAX_HEIGHT = 800; // Resizing to max 800px height
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Compress to JPEG with 0.7 quality to reduce file size significantly
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        resolve(dataUrl);
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
     reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
   });
 };
 
@@ -358,7 +392,9 @@ const InvestigatorDashboard = () => {
       // Step 2: Avatar Update (POST) - Only if file exists
       if (avatarFile) {
         try {
-          const base64 = await fileToBase64(avatarFile);
+          // Compress image before upload to avoid payload size limit issues
+          // const base64 = await fileToBase64(avatarFile);
+          const base64 = await compressImage(avatarFile);
           const avatarPayload = { avatarBase64: base64 };
           
           const avatarRes = await fetch(`/api/me/profile?_t=${Date.now()}_img`, {
