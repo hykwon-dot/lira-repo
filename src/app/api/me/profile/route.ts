@@ -253,12 +253,55 @@ async function handleProfileUpdate(req: NextRequest) {
   const { user } = auth;
   const prisma = await getPrismaClient();
 
-  // Try to parse JSON body
-  let jsonPayload: unknown = null;
-  try {
-    jsonPayload = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'INVALID_JSON' }, { status: 400 });
+  // Handle both JSON and FormData
+  const contentType = req.headers.get('content-type') || '';
+  let payloadRecord: Record<string, unknown> = {};
+  
+  if (contentType.includes('application/json')) {
+    try {
+      const json = await req.json();
+      payloadRecord = isRecord(json) ? json : {};
+    } catch {
+      return NextResponse.json({ error: 'INVALID_JSON' }, { status: 400 });
+    }
+  } else if (contentType.includes('multipart/form-data')) {
+    try {
+      const formData = await req.formData();
+      // Convert FormData to object for text fields
+      formData.forEach((value, key) => {
+        // Handle specialties as array from comma string if needed, but usually individual handling is better
+        // For simplicity, we just copy strings. Arrays (like specialties) might need JSON parsing if sent as string.
+        if (key === 'specialties' && typeof value === 'string') {
+             try {
+                 payloadRecord[key] = JSON.parse(value);
+             } catch {
+                 payloadRecord[key] = value.split(',').map(s => s.trim()).filter(Boolean);
+             }
+        } else {
+             payloadRecord[key] = value;
+        }
+      });
+      
+      // Handle file separately
+      const file = formData.get('avatarFile');
+      if (file && file instanceof Blob) {
+           const buffer = Buffer.from(await file.arrayBuffer());
+           const mimeType = file.type;
+           
+           if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
+                // Try to infer from validation or accept it if it's typical image
+           }
+           
+           // Convert to Base64 for DB storage
+           const base64String = `data:${mimeType};base64,${buffer.toString('base64')}`;
+           payloadRecord['avatarBase64'] = base64String;
+      }
+    } catch (e) {
+      console.error('FormData parsing failed', e);
+      return NextResponse.json({ error: 'FORM_DATA_ERROR' }, { status: 400 });
+    }
+  } else {
+    // Fallback or empty body
   }
 
   if (user.role === 'INVESTIGATOR') {
@@ -269,10 +312,10 @@ async function handleProfileUpdate(req: NextRequest) {
       return NextResponse.json({ error: 'PROFILE_NOT_FOUND' }, { status: 404 });
     }
 
-    const payloadRecord: Record<string, unknown> = isRecord(jsonPayload) ? jsonPayload : {};
     const updateData: Record<string, unknown> = {};
     let uploadedAvatarUrl: string | null = null;
     let requestedAvatarRemoval = false;
+
 
     // 1. Handle Text Fields
     const setNullableString = (field: string) => {

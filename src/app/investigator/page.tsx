@@ -77,7 +77,50 @@ const formatDate = (iso: string | undefined | null): string => {
   return date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
 };
 
-const compressImage = async (file: File): Promise<string> => {
+// const compressImage = async (file: File): Promise<string> => {
+//   return new Promise((resolve, reject) => {
+//     const img = document.createElement("img");
+//     const reader = new FileReader();
+
+//     reader.onload = (e) => {
+//       img.src = e.target?.result as string;
+//       img.onload = () => {
+//         const canvas = document.createElement("canvas");
+//         const ctx = canvas.getContext("2d");
+        
+//         let width = img.width;
+//         let height = img.height;
+//         const MAX_WIDTH = 600; // Resizing to max 600px width (Safe limit)
+//         const MAX_HEIGHT = 600; // Resizing to max 600px height
+
+//         if (width > height) {
+//           if (width > MAX_WIDTH) {
+//             height *= MAX_WIDTH / width;
+//             width = MAX_WIDTH;
+//           }
+//         } else {
+//           if (height > MAX_HEIGHT) {
+//             width *= MAX_HEIGHT / height;
+//             height = MAX_HEIGHT;
+//           }
+//         }
+
+//         canvas.width = width;
+//         canvas.height = height;
+//         ctx?.drawImage(img, 0, 0, width, height);
+
+//         // Compress to JPEG with 0.6 quality for safe payload size (< 1MB)
+//         const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
+//         resolve(dataUrl);
+//       };
+//       img.onerror = reject;
+//     };
+//     reader.onerror = reject;
+//     reader.readAsDataURL(file);
+//   });
+// };
+
+const compressImageToBlob = async (file: File): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const img = document.createElement("img");
     const reader = new FileReader();
@@ -90,8 +133,8 @@ const compressImage = async (file: File): Promise<string> => {
         
         let width = img.width;
         let height = img.height;
-        const MAX_WIDTH = 600; // Resizing to max 600px width (Safe limit)
-        const MAX_HEIGHT = 600; // Resizing to max 600px height
+        const MAX_WIDTH = 600; 
+        const MAX_HEIGHT = 600;
 
         if (width > height) {
           if (width > MAX_WIDTH) {
@@ -109,9 +152,13 @@ const compressImage = async (file: File): Promise<string> => {
         canvas.height = height;
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // Compress to JPEG with 0.6 quality for safe payload size (< 1MB)
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
-        resolve(dataUrl);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("Image compression failed"));
+          }
+        }, "image/jpeg", 0.6);
       };
       img.onerror = reject;
     };
@@ -393,17 +440,19 @@ const InvestigatorDashboard = () => {
       if (avatarFile) {
         try {
           // Compress image before upload to avoid payload size limit issues
-          // const base64 = await fileToBase64(avatarFile);
-          const base64 = await compressImage(avatarFile);
-          const avatarPayload = { avatarBase64: base64 };
+          // Use Blob + FormData to avoid Base64 overhead (33%) and JSON limits
+          const compressedBlob = await compressImageToBlob(avatarFile);
+          
+          const formData = new FormData();
+          formData.append("avatarFile", compressedBlob, "avatar.jpg");
           
           const avatarRes = await fetch(`/api/me/profile?_t=${Date.now()}_img`, {
             method: "POST",
             headers: {
-              "Content-Type": "application/json",
+              // Content-Type must be undefined so browser sets boundary
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify(avatarPayload),
+            body: formData,
           });
 
           if (!avatarRes.ok) {
