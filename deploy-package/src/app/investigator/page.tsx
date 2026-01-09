@@ -77,6 +77,7 @@ const formatDate = (iso: string | undefined | null): string => {
   return date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
 };
 
+/*
 const compressImageToBase64 = async (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = document.createElement("img");
@@ -120,6 +121,7 @@ const compressImageToBase64 = async (file: File): Promise<string> => {
     reader.readAsDataURL(file);
   });
 };
+*/
 
 /* 
 const compressImageToBlob = async (file: File): Promise<Blob> => {
