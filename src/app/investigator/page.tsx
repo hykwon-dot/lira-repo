@@ -468,10 +468,17 @@ const InvestigatorDashboard = () => {
              const status = avatarRes.status;
              let errMsg = "Unknown error";
              try {
-                 const errJson = await avatarRes.json();
-                 errMsg = errJson.error || errJson.message || await avatarRes.text();
+                 // Safely read body once
+                 const textBody = await avatarRes.text();
+                 try {
+                    const errJson = JSON.parse(textBody);
+                    errMsg = errJson.error || errJson.message || textBody;
+                 } catch {
+                    errMsg = textBody;
+                 }
+                 if (!errMsg) errMsg = `HTTP Error ${status}`;
              } catch {
-                 errMsg = await avatarRes.text();
+                 errMsg = "응답 내용을 읽을 수 없습니다.";
              }
 
              console.warn("Avatar upload failed", status, errMsg);
