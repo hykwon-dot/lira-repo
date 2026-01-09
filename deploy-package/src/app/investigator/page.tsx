@@ -486,9 +486,9 @@ const InvestigatorDashboard = () => {
           } else {
              pushToast("success", "프로필과 이미지가 모두 저장되었습니다.");
           }
-        } catch (e) {
+        } catch (e: any) {
           console.error("File processing error", e);
-          pushToast("info", "텍스트는 저장되었으나 이미지 처리에 실패했습니다.");
+          pushToast("info", `이미지 처리 오류: ${e?.message ?? "알 수 없는 에러"}`);
         }
       } else {
         pushToast("success", "프로필이 저장되었습니다.");
