@@ -38,7 +38,7 @@ const TIMELINE_OPTIONS: Array<{ value: TimelineFormState["type"]; label: string 
   { value: "FINAL_REPORT", label: "최종 보고" },
 ];
 
-const AVATAR_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
+const AVATAR_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB (Synced with backend limit)
 const SUPPORTED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
 
 const statusKeyFromString = (value: string): CaseStatusKey => {
@@ -75,6 +75,96 @@ const formatDate = (iso: string | undefined | null): string => {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
+};
+
+// const compressImage = async (file: File): Promise<string> => {
+//   return new Promise((resolve, reject) => {
+//     const img = document.createElement("img");
+//     const reader = new FileReader();
+
+//     reader.onload = (e) => {
+//       img.src = e.target?.result as string;
+//       img.onload = () => {
+//         const canvas = document.createElement("canvas");
+//         const ctx = canvas.getContext("2d");
+        
+//         let width = img.width;
+//         let height = img.height;
+//         const MAX_WIDTH = 600; // Resizing to max 600px width (Safe limit)
+//         const MAX_HEIGHT = 600; // Resizing to max 600px height
+
+//         if (width > height) {
+//           if (width > MAX_WIDTH) {
+//             height *= MAX_WIDTH / width;
+//             width = MAX_WIDTH;
+//           }
+//         } else {
+//           if (height > MAX_HEIGHT) {
+//             width *= MAX_HEIGHT / height;
+//             height = MAX_HEIGHT;
+//           }
+//         }
+
+//         canvas.width = width;
+//         canvas.height = height;
+//         ctx?.drawImage(img, 0, 0, width, height);
+
+//         // Compress to JPEG with 0.6 quality for safe payload size (< 1MB)
+//         const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
+//         resolve(dataUrl);
+//       };
+//       img.onerror = reject;
+//     };
+//     reader.onerror = reject;
+//     reader.readAsDataURL(file);
+//   });
+// };
+
+const compressImageToBlob = async (file: File): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const img = document.createElement("img");
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        
+        let width = img.width;
+        let height = img.height;
+        const MAX_WIDTH = 1200; // Increased to 1200px for better quality
+        const MAX_HEIGHT = 1200;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("Image compression failed"));
+          }
+        }, "image/jpeg", 0.8); // 0.8 quality
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 };
 
 const InvestigatorDashboard = () => {
@@ -309,81 +399,80 @@ const InvestigatorDashboard = () => {
         }
       }
 
-      const useMultipart = Boolean(avatarFile) || removeAvatar;
+      // Step 1: Text Data Update (PATCH)
+      const textPayload: Record<string, unknown> = {
+        contactPhone: profileForm.contactPhone || null,
+        serviceArea: profileForm.serviceArea || null,
+        introduction: profileForm.introduction || null,
+        portfolioUrl: profileForm.portfolioUrl || null,
+        specialties,
+      };
 
-      let res: Response;
-      if (useMultipart) {
-        const formData = new FormData();
-        formData.append("contactPhone", profileForm.contactPhone ?? "");
-        formData.append("serviceArea", profileForm.serviceArea ?? "");
-        formData.append("introduction", profileForm.introduction ?? "");
-        formData.append("portfolioUrl", profileForm.portfolioUrl ?? "");
-        if (trimmedExperience) {
-          formData.append("experienceYears", trimmedExperience);
-        } else if (profile?.experienceYears != null) {
-          formData.append("experienceYears", "");
-        }
-        if (specialties.length > 0) {
-          specialties.forEach((item) => formData.append("specialties", item));
-        } else {
-          formData.append("specialties", "");
-        }
-        if (avatarFile) {
-          formData.append("avatar", avatarFile);
-        }
-        if (removeAvatar) {
-          formData.append("removeAvatar", "true");
-        }
-
-        res = await fetch("/api/me/profile", {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        });
-      } else {
-        const payload: Record<string, unknown> = {
-          contactPhone: profileForm.contactPhone || null,
-          serviceArea: profileForm.serviceArea || null,
-          introduction: profileForm.introduction || null,
-          portfolioUrl: profileForm.portfolioUrl || null,
-          specialties,
-        };
-
-        if (trimmedExperience) {
-          payload.experienceYears = Number(trimmedExperience);
-        } else {
-          payload.experienceYears = null;
-        }
-
-        res = await fetch("/api/me/profile", {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        });
+      if (trimmedExperience) {
+        textPayload.experienceYears = Number(trimmedExperience);
+      } else if (profile?.experienceYears != null) {
+        textPayload.experienceYears = null;
       }
 
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        const errorCode: string | undefined = data?.error;
-        const message =
-          errorCode === "IMAGE_TOO_LARGE"
-            ? "이미지 파일 용량은 5MB 이하로 업로드해주세요."
-            : errorCode === "UNSUPPORTED_IMAGE_TYPE"
-            ? "지원하지 않는 이미지 형식입니다. JPG, PNG, WEBP, GIF, AVIF 파일을 사용해주세요."
-            : errorCode === "AVATAR_UPLOAD_FAILED"
-            ? "이미지 업로드 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
-            : errorCode ?? "프로필 업데이트에 실패했습니다.";
-        pushToast("error", message);
+      if (removeAvatar) {
+        textPayload.removeAvatar = true;
+      }
+
+      // Send text update first (Lightweight)
+      const textRes = await fetch(`/api/me/profile?_t=${Date.now()}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(textPayload),
+      });
+
+      if (!textRes.ok) {
+        const data = await textRes.json().catch(() => null);
+        const err = data?.error ?? "프로필 저장 실패";
+        pushToast("error", err);
         setProfileSaving(false);
         return;
       }
 
-      pushToast("success", "프로필이 저장되었습니다.");
+      // Step 2: Avatar Update (POST) - Only if file exists
+      if (avatarFile) {
+        try {
+          // Compress image before upload to avoid payload size limit issues
+          // Use Blob + FormData to avoid Base64 overhead (33%) and JSON limits
+          const compressedBlob = await compressImageToBlob(avatarFile);
+          
+          const formData = new FormData();
+          formData.append("avatarFile", compressedBlob, "avatar.jpg");
+          
+          const avatarRes = await fetch(`/api/me/profile?_t=${Date.now()}_img`, {
+            method: "POST",
+            headers: {
+              // Content-Type must be undefined so browser sets boundary
+              Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+          });
+
+          if (!avatarRes.ok) {
+             console.warn("Avatar upload failed", avatarRes.status);
+             if (avatarRes.status === 413 || avatarRes.status === 403) {
+                 pushToast("info", "텍스트 정보는 저장되었으나, 이미지 용량이 너무 커서 업로드가 제한되었습니다.");
+             } else {
+                 pushToast("info", "텍스트 정보는 저장되었으나, 이미지 저장 중 오류가 발생했습니다.");
+             }
+          } else {
+             pushToast("success", "프로필과 이미지가 모두 저장되었습니다.");
+          }
+        } catch (e) {
+          console.error("File read error", e);
+          pushToast("info", "텍스트는 저장되었으나 이미지 처리에 실패했습니다.");
+        }
+      } else {
+        pushToast("success", "프로필이 저장되었습니다.");
+      }
+
       await loadDashboard();
     } catch (error) {
       console.error(error);
@@ -858,7 +947,7 @@ const InvestigatorDashboard = () => {
                       value={profileForm.portfolioUrl}
                       onChange={(event) => handleProfileChange("portfolioUrl", event.target.value)}
                       className="lira-input"
-                      placeholder="https://"
+                      placeholder=""
                     />
                   </label>
                 </div>
