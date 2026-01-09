@@ -457,13 +457,21 @@ const InvestigatorDashboard = () => {
 
           if (!avatarRes.ok) {
              console.warn("Avatar upload failed", avatarRes.status);
-             if (avatarRes.status === 413 || avatarRes.status === 403) {
-                 pushToast("info", "텍스트 정보는 저장되었으나, 이미지 용량이 너무 커서 업로드가 제한되었습니다.");
+             if (avatarRes.status === 413) {
+                 pushToast("info", "이미지 용량이 서버 허용 한도(413)를 초과했습니다.");
+             } else if (avatarRes.status === 403) {
+                 pushToast("info", "이미지 업로드 권한이 없습니다(403).");
              } else {
-                 pushToast("info", "텍스트 정보는 저장되었으나, 이미지 저장 중 오류가 발생했습니다.");
+                 const errMsg = await avatarRes.text().catch(() => "Unknown error");
+                 pushToast("info", `이미지 저장 중 오류 발생 (${avatarRes.status}): ${errMsg.substring(0, 50)}`);
              }
           } else {
-             pushToast("success", "프로필과 이미지가 모두 저장되었습니다.");
+             const resJson = await avatarRes.json();
+             if (resJson.warning === 'IMAGE_UPLOAD_SYSTEM_LIMIT') {
+                 pushToast("info", "프로필은 저장되었으나, 이미지가 시스템 용량 제한(5MB)을 초과하여 저장되지 않았습니다.");
+             } else {
+                 pushToast("success", "프로필과 이미지가 모두 저장되었습니다.");
+             }
           }
         } catch (e) {
           console.error("File read error", e);

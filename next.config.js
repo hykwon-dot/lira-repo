@@ -16,8 +16,12 @@ const nextConfig = {
       },
     ],
   },
+  serverComponentsExternalPackages: ['@node-rs/bcrypt'],
+  },
   experimental: {
-    serverComponentsExternalPackages: ['@node-rs/bcrypt'],
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
   },
   async headers() {
     return [

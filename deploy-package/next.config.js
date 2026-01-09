@@ -1,4 +1,9 @@
 const nextConfig = {
+  // 빌드 시 자동으로 타임스탬프 설정 (2주 만료 체크용)
+  env: {
+    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  },
   images: {
     remotePatterns: [
       {
@@ -11,8 +16,25 @@ const nextConfig = {
       },
     ],
   },
+  serverComponentsExternalPackages: ['@node-rs/bcrypt'],
+  },
   experimental: {
-    serverComponentsExternalPackages: ['@node-rs/bcrypt'],
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
+  },
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Credentials', value: 'true' },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET,DELETE,PATCH,POST,PUT' },
+          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version' },
+        ],
+      },
+    ];
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
