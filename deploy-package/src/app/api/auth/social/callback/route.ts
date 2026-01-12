@@ -111,11 +111,18 @@ export async function GET(request: NextRequest) {
     const token = signToken(jwtPayload);
 
     // 5. Redirect to frontend with token
-    return NextResponse.redirect(new URL(`/login?token=${token}`, request.url));
+    // Use the robust origin detected earlier instead of request.url which might be internal/localhost
+    return NextResponse.redirect(`${origin}/login?token=${token}`);
 
   } catch (err) {
     console.error("Social login error:", err);
     const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(message)}`, request.url));
+    // Also use robust origin for error redirect
+    const host = request.headers.get('host');
+    const protocol = request.headers.get('x-forwarded-proto') || 'https';
+    const errorOrigin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || 
+                   (host && !host.includes('localhost') ? `${protocol}://${host}` : request.nextUrl.origin);
+    
+    return NextResponse.redirect(`${errorOrigin}/login?error=${encodeURIComponent(message)}`);
   }
 }
