@@ -106,8 +106,9 @@ export async function GET(request: NextRequest) {
     // 5. Redirect to frontend with token
     return NextResponse.redirect(new URL(`/login?token=${token}`, request.url));
 
-  } catch (err: any) {
+  } catch (err) {
     console.error("Social login error:", err);
-    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(err.message)}`, request.url));
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(message)}`, request.url));
   }
 }

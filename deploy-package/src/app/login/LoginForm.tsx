@@ -27,7 +27,8 @@ export default function LoginForm({ onLogin }: { onLogin?: () => void }) {
              if (res.ok) {
                  const data = await res.json();
                  const user = data.user;
-                 const normalizedRole = (user.role?.toLowerCase?.() as any) ?? 'user';
+                 const rawRole = user.role?.toLowerCase?.() ?? 'user';
+                 const normalizedRole = (['user', 'investigator', 'enterprise', 'admin', 'super_admin'].includes(rawRole) ? rawRole : 'user') as UserRole;
                  
                  setUser(
                    {
