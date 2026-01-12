@@ -93,6 +93,8 @@ export async function GET(request: NextRequest) {
           customerProfile: {
              create: {
                  displayName: socialName,
+                 termsAcceptedAt: new Date(),
+                 privacyAcceptedAt: new Date(),
              }
           }
         }
