@@ -7,6 +7,7 @@ const nextConfig = {
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     KAKAO_CLIENT_ID: process.env.KAKAO_CLIENT_ID,
     NAVER_CLIENT_ID: process.env.NAVER_CLIENT_ID,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
   images: {
     remotePatterns: [

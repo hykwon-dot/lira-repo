@@ -3,8 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const provider = searchParams.get('provider');
-  // Use explicit app URL if configured, otherwise fallback to request origin
-  const origin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || request.nextUrl.origin;
+  
+  // Robust origin detection: Env Var -> Host Header -> nextUrl.origin
+  // This prevents 'localhost' being used in production environments like Amplify
+  const host = request.headers.get('host');
+  const protocol = request.headers.get('x-forwarded-proto') || 'https';
+  const origin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || 
+                 (host && !host.includes('localhost') ? `${protocol}://${host}` : request.nextUrl.origin);
+
   const redirectUri = `${origin}/api/auth/social/callback`;
 
   if (!provider) {
