@@ -107,7 +107,31 @@ export async function GET(request: NextRequest) {
        if (!socialEmail) throw new Error("Email permission is required for Kakao login. Please allowed email provision in Kakao Developers.");
 
     } else if (state === 'naver') {
-       throw new Error("Naver login not fully implemented yet");
+       const clientId = process.env.NAVER_CLIENT_ID;
+       const clientSecret = process.env.NAVER_CLIENT_SECRET;
+
+       if (!clientId || !clientSecret) throw new Error("Naver credentials (NAVER_CLIENT_ID, NAVER_CLIENT_SECRET) missing");
+
+       // 1. Exchange Code
+       const tokenUrl = `https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=${clientId}&client_secret=${clientSecret}&code=${code}&state=${state}`;
+       
+       const tokenRes = await fetch(tokenUrl);
+       const tokenData = await tokenRes.json();
+       
+       if (tokenData.error) throw new Error(tokenData.error_description || 'Naver Token exchange failed');
+
+       // 2. Get User Profile
+       const userRes = await fetch('https://openapi.naver.com/v1/nid/me', {
+         headers: { Authorization: `Bearer ${tokenData.access_token}` }
+       });
+       
+       const userJson = await userRes.json();
+       if (userJson.resultcode !== '00') throw new Error(userJson.message || 'Failed to fetch Naver user profile');
+       
+       const userData = userJson.response;
+       socialEmail = userData.email;
+       socialName = userData.name || userData.nickname || `NaverUser_${userData.id}`;
+
     } else {
        // Ideally fallback or check session if state is missing, but for now we enforce state
        // throw new Error("Unknown provider type (state missing)");
