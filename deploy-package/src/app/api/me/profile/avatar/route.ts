@@ -16,7 +16,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    let { avatarBase64, d, mode } = body;
+    let { avatarBase64 } = body;
+    const { d, mode } = body;
 
     // Handle Chunked Upload (WAF Bypass)
     if (mode === 'chunked' && Array.isArray(d)) {
