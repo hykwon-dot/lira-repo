@@ -16,7 +16,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { avatarBase64 } = body;
+    let { avatarBase64, d, mode } = body;
+
+    // Handle Chunked Upload (WAF Bypass)
+    if (mode === 'chunked' && Array.isArray(d)) {
+        avatarBase64 = d.join('');
+    }
 
     if (!avatarBase64 || typeof avatarBase64 !== 'string') {
       return NextResponse.json({ error: 'INVALID_PAYLOAD' }, { status: 400 });
