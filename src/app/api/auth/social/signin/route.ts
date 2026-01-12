@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const provider = searchParams.get('provider');
-  const origin = request.nextUrl.origin;
+  // Use explicit app URL if configured, otherwise fallback to request origin
+  const origin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || request.nextUrl.origin;
   const redirectUri = `${origin}/api/auth/social/callback`;
 
   if (!provider) {

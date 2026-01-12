@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=No code received', request.url));
   }
 
-  const origin = request.nextUrl.origin;
+  // Use explicit app URL if configured, otherwise fallback to request origin
+  const origin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || request.nextUrl.origin;
   const redirectUri = `${origin}/api/auth/social/callback`;
   
   let socialEmail = '';
