@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useUserStore, UserRole } from '@/lib/userStore';
@@ -14,6 +14,50 @@ export default function LoginForm({ onLogin }: { onLogin?: () => void }) {
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get('redirect') ?? '/';
   const { setUser } = useUserStore();
+
+  useEffect(() => {
+    const token = searchParams?.get('token');
+    if (token) {
+      (async () => {
+         try {
+             sessionStorage.setItem('lira.authToken', token);
+             const res = await fetch('/api/me', {
+                 headers: { Authorization: `Bearer ${token}` }
+             });
+             if (res.ok) {
+                 const data = await res.json();
+                 const user = data.user;
+                 const normalizedRole = (user.role?.toLowerCase?.() as any) ?? 'user';
+                 
+                 setUser(
+                   {
+                     id: String(user.id ?? ''),
+                     email: user.email,
+                     name: user.name ?? '',
+                     role: normalizedRole,
+                     monthlyUsage: user.monthlyUsage ?? 0,
+                     remainingTokens: user.remainingTokens ?? 0,
+                     investigatorStatus: user.investigatorStatus ?? undefined,
+                   },
+                   token
+                 );
+                 if (onLogin) onLogin();
+                 router.push(redirectTo);
+             } else {
+                 setError("Social login failed: Failed to fetch profile");
+             }
+         } catch (e) {
+             console.error(e);
+             setError("Social login processing failed");
+         }
+      })();
+    }
+    
+    const errorParam = searchParams?.get('error');
+    if (errorParam) {
+        setError(decodeURIComponent(errorParam));
+    }
+  }, [searchParams, setUser, router, onLogin, redirectTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
