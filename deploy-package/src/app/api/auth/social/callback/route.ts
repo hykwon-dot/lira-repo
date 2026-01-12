@@ -64,7 +64,48 @@ export async function GET(request: NextRequest) {
        socialName = userData.name || userData.email.split('@')[0];
 
     } else if (state === 'kakao') {
-       throw new Error("Kakao login not fully implemented yet");
+       const clientId = process.env.KAKAO_CLIENT_ID;
+       const clientSecret = process.env.KAKAO_CLIENT_SECRET; // Optional, for Secure Mode
+
+       if (!clientId) throw new Error("Kakao credentials (KAKAO_CLIENT_ID) missing");
+
+       // 1. Exchange Code
+       const params = new URLSearchParams({
+           grant_type: 'authorization_code',
+           client_id: clientId,
+           redirect_uri: redirectUri,
+           code: code
+       });
+       if (clientSecret) {
+           params.append('client_secret', clientSecret);
+       }
+
+       const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+         body: params
+       });
+
+       const tokenData = await tokenRes.json();
+       if (!tokenRes.ok) throw new Error(JSON.stringify(tokenData) || 'Kakao Token exchange failed');
+
+       // 2. Get User Profile
+       const userRes = await fetch('https://kapi.kakao.com/v2/user/me', {
+         headers: { 
+             Authorization: `Bearer ${tokenData.access_token}`,
+             'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' 
+         }
+       });
+       
+       const userData = await userRes.json();
+       if (!userRes.ok) throw new Error('Failed to fetch Kakao user profile');
+       
+       // Kakao structure: userData.kakao_account.email, userData.kakao_account.profile.nickname
+       socialEmail = userData.kakao_account?.email;
+       socialName = userData.kakao_account?.profile?.nickname || `KakaoUser_${userData.id}`;
+       
+       if (!socialEmail) throw new Error("Email permission is required for Kakao login. Please allowed email provision in Kakao Developers.");
+
     } else if (state === 'naver') {
        throw new Error("Naver login not fully implemented yet");
     } else {
