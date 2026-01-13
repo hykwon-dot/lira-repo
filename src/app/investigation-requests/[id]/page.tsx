@@ -413,7 +413,7 @@ export default function InvestigationRequestDetailPage() {
   const isOwner = request?.user && currentUser ? String(request.user.id) === String(currentUser.id) : false;
   const review = request?.review ?? null;
   const hasReview = Boolean(review);
-  const canManageReview = isOwner && statusKey === "COMPLETED";
+  const canManageReview = (isOwner || isAdminUser) && statusKey === "COMPLETED";
 
   return (
     <div className="min-h-screen bg-slate-50 pb-16 pt-12">
