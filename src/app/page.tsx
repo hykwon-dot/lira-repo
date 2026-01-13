@@ -29,6 +29,44 @@ const CustomArrow = () => (
   </svg>
 );
 
+const testimonials = [
+  {
+    id: 1,
+    name: "이서연",
+    role: "개인 의뢰인",
+    content: "LIRA의 AI 상담을 통해 복잡한 사건을 명확히 정리할 수 있었고, 매칭된 전문가의 도움으로 만족스러운 결과를 얻었습니다.",
+    avatar: "https://i.pravatar.cc/150?u=sarah"
+  },
+  {
+    id: 2,
+    name: "김민수",
+    role: "기업 담당자",
+    content: "24시간 언제든지 상담받을 수 있어서 편리했고, 전문가의 체계적인 조사로 문제를 해결할 수 있었습니다.",
+    avatar: "https://i.pravatar.cc/150?u=david"
+  },
+  {
+    id: 3,
+    name: "박지영",
+    role: "법무팀 팀장",
+    content: "유사한 사건 사례를 참고할 수 있어서 도움이 되었고, 전문가의 경험과 노하우가 문제 해결에 큰 도움이 되었습니다.",
+    avatar: "https://i.pravatar.cc/150?u=emily"
+  },
+  {
+    id: 4,
+    name: "최준호",
+    role: "스타트업 CEO",
+    content: "기업 리스크 관리를 위해 의뢰했는데, 보안 유지와 신속한 일처리에 매우 감명받았습니다. 앞으로도 계속 이용할 예정입니다.",
+    avatar: "https://i.pravatar.cc/150?u=junho"
+  },
+  {
+    id: 5,
+    name: "정하은",
+    role: "프리랜서",
+    content: "처음 이용해보는 서비스라 걱정이 많았는데, 매니저님의 친절한 안내 덕분에 안심하고 진행할 수 있었습니다.",
+    avatar: "https://i.pravatar.cc/150?u=haeun"
+  }
+];
+
 export default function Home() {
   const user = useUserStore((state) => state.user);
   const [mainBanner, setMainBanner] = useState<Banner | null>(null);
@@ -226,41 +264,40 @@ export default function Home() {
           </div>
         </section>
 
-        {/* What Our Users Say */}
-        <section className="py-20 bg-white">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-12">이용자 후기</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-gray-50 p-8 rounded-lg border border-gray-200">
-                <p className="text-gray-600 mb-4">&ldquo;LIRA의 AI 상담을 통해 복잡한 사건을 명확히 정리할 수 있었고, 매칭된 전문가의 도움으로 만족스러운 결과를 얻었습니다.&rdquo;</p>
-                <div className="flex items-center">
-                  <Image src="https://i.pravatar.cc/150?u=sarah" alt="Sarah Chen" width={40} height={40} className="rounded-full mr-4" />
-                  <div>
-                    <p className="font-bold">이서연</p>
-                    <p className="text-sm text-gray-500">개인 의뢰인</p>
+        {/* What Our Users Say - Scrolling Marquee */}
+        <section className="py-20 bg-white overflow-hidden">
+          <div className="container mx-auto px-4 mb-12">
+            <h2 className="text-3xl font-bold text-center">이용자 후기</h2>
+          </div>
+          
+          <div className="w-full">
+            <div className="flex animate-scroll gap-6 w-max hover:[animation-play-state:paused] px-4">
+              {/* First Set */}
+              {testimonials.map((testimonial) => (
+                <div key={`t-original-${testimonial.id}`} className="w-[350px] md:w-[400px] bg-gray-50 p-8 rounded-lg border border-gray-200 flex-shrink-0 shadow-sm hover:shadow-md transition-shadow">
+                  <p className="text-gray-600 mb-6 leading-relaxed line-clamp-3">&ldquo;{testimonial.content}&rdquo;</p>
+                  <div className="flex items-center">
+                    <Image src={testimonial.avatar} alt={testimonial.name} width={48} height={48} className="rounded-full mr-4 border border-gray-200" />
+                    <div>
+                      <p className="font-bold text-gray-900">{testimonial.name}</p>
+                      <p className="text-sm text-gray-500">{testimonial.role}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-gray-50 p-8 rounded-lg border border-gray-200">
-                <p className="text-gray-600 mb-4">&ldquo;24시간 언제든지 상담받을 수 있어서 편리했고, 전문가의 체계적인 조사로 문제를 해결할 수 있었습니다.&rdquo;</p>
-                <div className="flex items-center">
-                  <Image src="https://i.pravatar.cc/150?u=david" alt="David Lee" width={40} height={40} className="rounded-full mr-4" />
-                  <div>
-                    <p className="font-bold">김민수</p>
-                    <p className="text-sm text-gray-500">기업 담당자</p>
+              ))}
+              {/* Second Set (Duplicate) */}
+              {testimonials.map((testimonial) => (
+                <div key={`t-duplicate-${testimonial.id}`} className="w-[350px] md:w-[400px] bg-gray-50 p-8 rounded-lg border border-gray-200 flex-shrink-0 shadow-sm hover:shadow-md transition-shadow">
+                  <p className="text-gray-600 mb-6 leading-relaxed line-clamp-3">&ldquo;{testimonial.content}&rdquo;</p>
+                  <div className="flex items-center">
+                    <Image src={testimonial.avatar} alt={testimonial.name} width={48} height={48} className="rounded-full mr-4 border border-gray-200" />
+                    <div>
+                      <p className="font-bold text-gray-900">{testimonial.name}</p>
+                      <p className="text-sm text-gray-500">{testimonial.role}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-gray-50 p-8 rounded-lg border border-gray-200">
-                <p className="text-gray-600 mb-4">&ldquo;유사한 사건 사례를 참고할 수 있어서 도움이 되었고, 전문가의 경험과 노하우가 문제 해결에 큰 도움이 되었습니다.&rdquo;</p>
-                <div className="flex items-center">
-                  <Image src="https://i.pravatar.cc/150?u=emily" alt="Emily White" width={40} height={40} className="rounded-full mr-4" />
-                  <div>
-                    <p className="font-bold">박지영</p>
-                    <p className="text-sm text-gray-500">법무팀 팀장</p>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
