@@ -124,6 +124,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       userId: true,
       status: true,
       investigatorId: true,
+      investigator: {
+        select: {
+          userId: true
+        }
+      }
     },
   });
 
@@ -144,7 +149,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   const role = auth.user.role as Role;
-  if (!isAdmin(role) && record.userId !== auth.user.id) {
+  const isInvestigator = record.investigator?.userId === auth.user.id;
+  
+  if (!isAdmin(role) && record.userId !== auth.user.id && !isInvestigator) {
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
 
@@ -216,6 +223,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       id: true,
       userId: true,
       investigatorId: true,
+      investigator: {
+        select: {
+          userId: true
+        }
+      }
     },
   });
 
@@ -236,7 +248,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const role = auth.user.role as Role;
-  if (!isAdmin(role) && record.userId !== auth.user.id) {
+  const isInvestigator = record.investigator?.userId === auth.user.id;
+
+  if (!isAdmin(role) && record.userId !== auth.user.id && !isInvestigator) {
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
 
