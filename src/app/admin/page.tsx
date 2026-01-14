@@ -718,7 +718,11 @@ export default function AdminPage() {
                         <div className="flex gap-2">
                           {inv.businessLicenseUrl ? (
                             <Link
-                              href={inv.businessLicenseUrl}
+                              href={
+                                inv.businessLicenseUrl.startsWith('/api/') && token
+                                  ? `${inv.businessLicenseUrl}&token=${token}`
+                                  : inv.businessLicenseUrl
+                              }
                               target="_blank"
                               className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
                             >
@@ -731,7 +735,11 @@ export default function AdminPage() {
                           )}
                           {inv.pledgeUrl ? (
                             <Link
-                              href={inv.pledgeUrl}
+                              href={
+                                inv.pledgeUrl.startsWith('/api/') && token
+                                  ? `${inv.pledgeUrl}&token=${token}`
+                                  : inv.pledgeUrl
+                              }
                               target="_blank"
                               className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
                             >

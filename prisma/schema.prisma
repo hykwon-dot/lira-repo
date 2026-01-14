@@ -56,8 +56,10 @@ model InvestigatorProfile {
   officeAddress     String?
   introduction      String?                @db.Text
   portfolioUrl      String?
-  businessLicenseUrl String?                @db.LongText
-  pledgeUrl         String?                @db.LongText
+  businessLicenseUrl String?
+  businessLicenseData String?               @db.LongText
+  pledgeUrl         String?
+  pledgeData        String?                 @db.LongText
   termsAcceptedAt   DateTime?
   privacyAcceptedAt DateTime?
   avatarUrl         String?                @db.LongText

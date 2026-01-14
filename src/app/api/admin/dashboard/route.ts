@@ -50,7 +50,20 @@ export async function GET() {
       },
       orderBy: { createdAt: 'desc' },
       take: 6,
-      include: {
+      select: {
+        id: true,
+        licenseNumber: true,
+        experienceYears: true,
+        specialties: true,
+        status: true,
+        reviewNote: true,
+        createdAt: true,
+        contactPhone: true,
+        businessLicenseUrl: true,
+        pledgeUrl: true,
+        // Exclude huge data fields
+        // businessLicenseData: false, 
+        // pledgeData: false,
         user: {
           select: {
             id: true,
@@ -104,7 +117,18 @@ export async function GET() {
       },
       orderBy: { updatedAt: 'desc' },
       take: 8,
-      include: {
+      select: {
+        id: true,
+        licenseNumber: true,
+        experienceYears: true,
+        specialties: true,
+        status: true,
+        reviewNote: true,
+        createdAt: true,
+        contactPhone: true,
+        businessLicenseUrl: true,
+        pledgeUrl: true,
+        // Exclude data fields
         user: {
           select: {
             id: true,

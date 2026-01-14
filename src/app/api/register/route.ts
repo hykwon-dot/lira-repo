@@ -95,19 +95,23 @@ export async function POST(req: NextRequest) {
         if (file && typeof file === 'object' && 'name' in file) {
           const fileObj = file as File;
           const buffer = Buffer.from(await fileObj.arrayBuffer());
-          const filename = `${Date.now()}-${fileObj.name}`;
-          const filepath = path.join(process.cwd(), 'public/uploads', filename);
-          await writeFile(filepath, buffer);
-          body.businessLicenseUrl = `/uploads/${filename}`;
+          const base64Data = buffer.toString('base64');
+          const mimeType = fileObj.type || 'application/octet-stream';
+          // Store Data URI in a separate property to be used during creation
+          // @ts-ignore
+          body.businessLicenseData = `data:${mimeType};base64,${base64Data}`;
+          // Set URL to a placeholder, will be updated or used as a flag
+          body.businessLicenseUrl = `/api/files/download?type=license`; 
         }
         const pledgeFile = body.pledgeFile;
         if (pledgeFile && typeof pledgeFile === 'object' && 'name' in pledgeFile) {
           const fileObj = pledgeFile as File;
           const buffer = Buffer.from(await fileObj.arrayBuffer());
-          const filename = `${Date.now()}-${fileObj.name}`;
-          const filepath = path.join(process.cwd(), 'public/uploads', filename);
-          await writeFile(filepath, buffer);
-          body.pledgeUrl = `/uploads/${filename}`;
+          const base64Data = buffer.toString('base64');
+          const mimeType = fileObj.type || 'application/octet-stream';
+          // @ts-ignore
+          body.pledgeData = `data:${mimeType};base64,${base64Data}`;
+          body.pledgeUrl = `/api/files/download?type=pledge`;
         }
         // Parse JSON strings back to objects
         if (body.specialties && typeof body.specialties === 'string') {
@@ -207,6 +211,15 @@ export async function POST(req: NextRequest) {
         const user = await tx.user.create({
           data: { email, name, password: hashedPassword, role: 'INVESTIGATOR' },
         });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const businessLicenseData = (body as any).businessLicenseData as string | undefined;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pledgeData = (body as any).pledgeData as string | undefined;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const businessLicenseUrlBase = (body as any).businessLicenseUrl;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pledgeUrlBase = (body as any).pledgeUrl;
+
         const profile = await tx.investigatorProfile.create({
           data: {
             userId: user.id,
@@ -219,8 +232,11 @@ export async function POST(req: NextRequest) {
             officeAddress: officeAddress?.trim() ?? null,
             introduction: introduction ?? null,
             portfolioUrl: portfolioUrl ?? null,
-            businessLicenseUrl: businessLicenseUrl ?? null,
-            pledgeUrl: pledgeUrl ?? null,
+            // 파일 URL에는 userId를 쿼리 파라미터로 추가하여 다운로드 API에서 식별하도록 함
+            businessLicenseUrl: businessLicenseUrlBase ? `${businessLicenseUrlBase}&userId=${user.id}` : null,
+            pledgeUrl: pledgeUrlBase ? `${pledgeUrlBase}&userId=${user.id}` : null,
+            businessLicenseData: businessLicenseData ?? null,
+            pledgeData: pledgeData ?? null,
             termsAcceptedAt: now,
             privacyAcceptedAt: now,
           },
