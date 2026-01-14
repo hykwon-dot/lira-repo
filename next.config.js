@@ -22,7 +22,7 @@ const nextConfig = {
     ],
   },
   experimental: {
-    serverComponentsExternalPackages: ['@node-rs/bcrypt'],
+    serverComponentsExternalPackages: ['@node-rs/bcrypt', '@prisma/client', 'prisma'],
     serverActions: {
       bodySizeLimit: '10mb',
     },
