@@ -295,6 +295,7 @@ export default function RegisterForm() {
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       try {
+        console.log(`[Version: v20260114-FixTimeout] Sending registration request...`);
         const res = await fetch('/api/register', {
           method: 'POST',
           headers: {
