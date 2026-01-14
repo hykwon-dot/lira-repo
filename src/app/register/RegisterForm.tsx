@@ -248,30 +248,61 @@ export default function RegisterForm() {
         formData.append('businessLicense', businessLicenseFile);
       }
 
-      const res = await fetch('/api/register', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      console.log('Registration response status:', res.status);
-      const data = await res.json();
-      console.log('Registration response data:', data);
-      
-      if (!res.ok) {
-        setError(data.error || '민간조사원 등록에 실패했습니다.');
-        return;
-      }
+      // 30초 타임아웃 설정
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      setSuccess('등록 신청이 완료되었습니다. 관리자 승인 후 안내 메일을 드릴게요.');
-      
-      // Store user data if token is provided
-      if (data.token) {
-        setUser(data);
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+        });
+        
+        console.log('Registration response status:', res.status);
+        
+        let data;
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          // JSON이 아닌 응답(예: 413 Payload Too Large HTML) 처리
+          const text = await res.text();
+          console.error('Non-JSON response:', text);
+          if (res.status === 413) {
+            setError('파일 크기가 너무 큽니다. (서버 제한 초과)');
+            return;
+          }
+          throw new Error(`서버 응답 형식이 올바르지 않습니다. (Status: ${res.status})`);
+        }
+        
+        console.log('Registration response data:', data);
+        
+        if (!res.ok) {
+          setError(data.error || '민간조사원 등록에 실패했습니다.');
+          return;
+        }
+
+        setSuccess('등록 신청이 완료되었습니다. 관리자 승인 후 안내 메일을 드릴게요.');
+        
+        // Store user data if token is provided
+        if (data.token) {
+          setUser(data, data.token);
+        }
+        
+        setTimeout(() => {
+          router.push('/login?pending=investigator');
+        }, 2000);
+      } catch (err: unknown) {
+        const errorMessage = String(err);
+        if (errorMessage.includes('AbortError') || (err instanceof Error && err.name === 'AbortError')) {
+          setError('서버 응답 시간이 초과되었습니다. 네트워크 상태를 확인하거나 잠시 후 다시 시도해주세요.');
+        } else {
+          throw err;
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
-      
-      setTimeout(() => {
-        router.push('/login?pending=investigator');
-      }, 2000);
     } catch (err) {
       console.error('Registration error:', err);
       if (err instanceof TypeError && err.message.includes('fetch')) {
@@ -684,11 +715,20 @@ export default function RegisterForm() {
                 <input
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => setBusinessLicenseFile(e.target.files?.[0] || null)}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (file && file.size > 2 * 1024 * 1024) {
+                      alert('파일 용량은 2MB를 초과할 수 없습니다.');
+                      e.target.value = '';
+                      setBusinessLicenseFile(null);
+                      return;
+                    }
+                    setBusinessLicenseFile(file);
+                  }}
                   className="lira-input"
                   required
                 />
-                <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 5MB)</span>
+                <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 2MB)</span>
               </label>
 
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
@@ -717,11 +757,20 @@ export default function RegisterForm() {
                     <input
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => setPledgeFile(e.target.files?.[0] || null)}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        if (file && file.size > 2 * 1024 * 1024) {
+                          alert('파일 용량은 2MB를 초과할 수 없습니다.');
+                          e.target.value = '';
+                          setPledgeFile(null);
+                          return;
+                        }
+                        setPledgeFile(file);
+                      }}
                       className="lira-input"
                       required
                     />
-                    <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 5MB)</span>
+                    <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 2MB)</span>
                   </label>
                 </div>
               </div>

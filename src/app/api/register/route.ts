@@ -3,6 +3,7 @@ import { getPrismaClient } from '@/lib/prisma';
 import { signToken } from '@/lib/jwt';
 import { hash as hashPassword } from '@node-rs/bcrypt';
 import type { Prisma } from '@prisma/client';
+import { Buffer } from 'buffer';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,16 +63,19 @@ interface CustomerPayload extends BasePayload {
 
 
 export async function POST(req: NextRequest) {
+  const requestId = Math.random().toString(36).substring(7);
+  console.log(`[API:${requestId}] POST /api/register - Started`);
+  
   try {
     // 모든 예외 상황에서 JSON만 반환하도록 보장
     try {
-      console.log('[API] POST /api/register - Request received');
-      console.log('[API] Parsing request body...');
+      console.log(`[API:${requestId}] Parsing request body...`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let body: any;
       const contentType = req.headers.get('content-type') || '';
 
       if (contentType.includes('multipart/form-data')) {
+        console.log(`[API:${requestId}] Handling multipart data...`);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const formData = await req.formData() as any;
         body = {};
@@ -82,16 +86,21 @@ export async function POST(req: NextRequest) {
                       'businessLicense', 'pledgeFile', 'displayName', 'phone', 'birthDate', 'gender',
                       'occupation', 'region', 'preferredCaseTypes', 'budgetMin', 'budgetMax',
                       'urgencyLevel', 'securityQuestion', 'securityAnswer', 'marketingOptIn'];
+        
         for (const key of keys) {
           const value = formData.get(key);
           if (value !== null) {
             body[key] = value;
           }
         }
+        
+        console.log(`[API:${requestId}] FormData extracted. Processing files...`);
+        
         // Handle file upload
         const file = body.businessLicense;
         if (file && typeof file === 'object' && 'name' in file) {
           const fileObj = file as File;
+          console.log(`[API:${requestId}] Processing businessLicense: ${fileObj.name} (${fileObj.size} bytes)`);
           const buffer = Buffer.from(await fileObj.arrayBuffer());
           const base64Data = buffer.toString('base64');
           const mimeType = fileObj.type || 'application/octet-stream';
@@ -100,15 +109,18 @@ export async function POST(req: NextRequest) {
           // Set URL to a placeholder, will be updated or used as a flag
           body.businessLicenseUrl = `/api/files/download?type=license`; 
         }
+        
         const pledgeFile = body.pledgeFile;
         if (pledgeFile && typeof pledgeFile === 'object' && 'name' in pledgeFile) {
           const fileObj = pledgeFile as File;
+          console.log(`[API:${requestId}] Processing pledgeFile: ${fileObj.name} (${fileObj.size} bytes)`);
           const buffer = Buffer.from(await fileObj.arrayBuffer());
           const base64Data = buffer.toString('base64');
           const mimeType = fileObj.type || 'application/octet-stream';
           body.pledgeData = `data:${mimeType};base64,${base64Data}`;
           body.pledgeUrl = `/api/files/download?type=pledge`;
         }
+        
         // Parse JSON strings back to objects
         if (body.specialties && typeof body.specialties === 'string') {
           body.specialties = JSON.parse(body.specialties);
@@ -122,10 +134,13 @@ export async function POST(req: NextRequest) {
         if (body.experienceYears) body.experienceYears = Number(body.experienceYears);
         if (body.budgetMin) body.budgetMin = Number(body.budgetMin);
         if (body.budgetMax) body.budgetMax = Number(body.budgetMax);
+        
+        console.log(`[API:${requestId}] Body preparation complete.`);
       } else {
         body = await req.json();
       }
-      console.log('[API] Request body parsed successfully');
+      
+      console.log(`[API:${requestId}] Request body parsed successfully`);
       const { email, password, name } = body as BasePayload;
       let { role } = body as BasePayload;
       if (!email || !password || !name) {
@@ -138,15 +153,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '허용되지 않은 역할입니다.' }, { status: 400 });
     }
 
-  console.log('[API] Getting Prisma client...');
+  console.log(`[API:${requestId}] Getting Prisma client...`);
   const prisma = await getPrismaClient();
-  console.log('[API] Prisma client obtained successfully');
+  console.log(`[API:${requestId}] Prisma client obtained.`);
 
+  // Check connectivity with a quick query
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    console.log(`[API:${requestId}] DB Connection OK.`);
+  } catch (dbErr) {
+    console.error(`[API:${requestId}] DB Connection Failed:`, dbErr);
+    throw new Error('Database connection failed');
+  }
+
+  console.log(`[API:${requestId}] Checking for existing user...`);
   const existingUser = await prisma.user.findFirst({ where: { email, deletedAt: null } });
     if (existingUser) {
+      console.log(`[API:${requestId}] User already exists.`);
       return NextResponse.json({ error: '이미 사용중인 이메일입니다.' }, { status: 409 });
     }
 
+  console.log(`[API:${requestId}] Hashing password...`);
   const hashedPassword = await hashPassword(password, 10);
 
     // 역할별 검증 & 데이터 구성
@@ -198,46 +225,55 @@ export async function POST(req: NextRequest) {
           : sanitizedServiceAreas.join(', ');
 
       const now = new Date();
+      console.log(`[API:${requestId}] Starting Transaction for INVESTIGATOR...`);
+      
+      // Transaction with timeout
       // Prisma 타입 캐싱 지연으로 delegate 접근 인식 문제 발생 시 ts-ignore 처리
-      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const user = await tx.user.create({
-          data: { email, name, password: hashedPassword, role: 'INVESTIGATOR' },
-        });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const businessLicenseData = (body as any).businessLicenseData as string | undefined;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pledgeData = (body as any).pledgeData as string | undefined;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const businessLicenseUrlBase = (body as any).businessLicenseUrl;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pledgeUrlBase = (body as any).pledgeUrl;
-
-        void businessLicenseUrlBase;
-        void pledgeUrlBase;
-
-        const profile = await tx.investigatorProfile.create({
-          data: {
-            userId: user.id,
-            specialties: sanitizedSpecialties,
-            licenseNumber: licenseNumber ?? null,
-            experienceYears: years,
-            contactPhone: contactPhone?.trim() ?? null,
-            agencyPhone: agencyPhone?.trim() ?? null,
-            serviceArea: normalizedServiceArea || null,
-            officeAddress: officeAddress?.trim() ?? null,
-            introduction: introduction ?? null,
-            portfolioUrl: portfolioUrl ?? null,
-            // 파일 URL에는 userId를 쿼리 파라미터로 추가하여 다운로드 API에서 식별하도록 함
-            businessLicenseUrl: businessLicenseUrlBase ? `${businessLicenseUrlBase}&userId=${user.id}` : null,
-            pledgeUrl: pledgeUrlBase ? `${pledgeUrlBase}&userId=${user.id}` : null,
-            businessLicenseData: businessLicenseData ?? null,
-            pledgeData: pledgeData ?? null,
-            termsAcceptedAt: now,
-            privacyAcceptedAt: now,
-          },
-        });
-        return { user, profile };
-      });
+      const result = await Promise.race([
+        prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+          const user = await tx.user.create({
+            data: { email, name, password: hashedPassword, role: 'INVESTIGATOR' },
+          });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const businessLicenseData = (body as any).businessLicenseData as string | undefined;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pledgeData = (body as any).pledgeData as string | undefined;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const businessLicenseUrlBase = (body as any).businessLicenseUrl;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pledgeUrlBase = (body as any).pledgeUrl;
+  
+          void businessLicenseUrlBase;
+          void pledgeUrlBase;
+  
+          const profile = await tx.investigatorProfile.create({
+            data: {
+              userId: user.id,
+              specialties: sanitizedSpecialties,
+              licenseNumber: licenseNumber ?? null,
+              experienceYears: years,
+              contactPhone: contactPhone?.trim() ?? null,
+              agencyPhone: agencyPhone?.trim() ?? null,
+              serviceArea: normalizedServiceArea || null,
+              officeAddress: officeAddress?.trim() ?? null,
+              introduction: introduction ?? null,
+              portfolioUrl: portfolioUrl ?? null,
+              // 파일 URL에는 userId를 쿼리 파라미터로 추가하여 다운로드 API에서 식별하도록 함
+              businessLicenseUrl: businessLicenseUrlBase ? `${businessLicenseUrlBase}&userId=${user.id}` : null,
+              pledgeUrl: pledgeUrlBase ? `${pledgeUrlBase}&userId=${user.id}` : null,
+              businessLicenseData: businessLicenseData ?? null,
+              pledgeData: pledgeData ?? null,
+              termsAcceptedAt: now,
+              privacyAcceptedAt: now,
+            },
+          });
+          return { user, profile };
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DB_TRANSACTION_TIMEOUT')), 20000))
+      ]) as any;
+      
+      console.log(`[API:${requestId}] Transaction Complete.`);
+      
       const { password: removedPassword, ...userSanitized } = result.user;
       void removedPassword;
       const token = signToken({ userId: Number(result.user.id), role: result.user.role });

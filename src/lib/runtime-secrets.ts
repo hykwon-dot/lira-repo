@@ -37,7 +37,13 @@ export async function ensureRuntimeDatabaseUrl(): Promise<void> {
       const client = new SSMClient({
         region: process.env.AWS_REGION ?? "ap-northeast-2",
         maxAttempts: 2,
+        // @ts-expect-error - requestHandler types mismatch in some sdk versions
+        requestHandler: {
+          requestTimeout: 3000,
+          connectionTimeout: 3000,
+        },
       });
+      console.log(`[runtime-secrets] Fetching SSM parameter: ${parameterName}`);
       try {
         const { Parameter } = await client.send(
           new GetParameterCommand({

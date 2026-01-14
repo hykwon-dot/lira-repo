@@ -8,21 +8,15 @@ declare global {
   var prismaClientPromise: Promise<PrismaClient> | undefined;
 }
 
-// 폴백 DATABASE_URL
-const FALLBACK_DATABASE_URL = 'mysql://lira_user:asdasd11@lira-db.cluster-ctkse40gyfit.ap-northeast-2.rds.amazonaws.com:3306/lira?ssl={"rejectUnauthorized":false}';
-
-let prisma: PrismaClient | undefined;
+// Singleton pattern for Prisma Client in development
+const globalForPrisma = global as unknown as { prisma: PrismaClient | undefined };
 
 export async function getPrismaClient(): Promise<PrismaClient> {
-  if (!prisma) {
+  if (!globalForPrisma.prisma) {
     await ensureRuntimeDatabaseUrl();
-    const databaseUrl = process.env.DATABASE_URL ?? FALLBACK_DATABASE_URL;
-    if (!process.env.DATABASE_URL) {
-      process.env.DATABASE_URL = databaseUrl;
-    }
-    prisma = new PrismaClient({
+    globalForPrisma.prisma = new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     });
   }
-  return prisma;
+  return globalForPrisma.prisma;
 }
