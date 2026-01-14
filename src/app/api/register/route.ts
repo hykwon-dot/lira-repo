@@ -157,13 +157,29 @@ export async function POST(req: NextRequest) {
   const prisma = await getPrismaClient();
   console.log(`[API:${requestId}] Prisma client obtained.`);
 
-  // Check connectivity with a quick query
+  // Check connectivity with a quick query and STRICT timeout
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    const connectionPromise = prisma.$queryRaw`SELECT 1`;
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('DB_CONNECTION_TIMEOUT')), 5000)
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await Promise.race([connectionPromise, timeoutPromise]) as any;
+    
     console.log(`[API:${requestId}] DB Connection OK.`);
   } catch (dbErr) {
     console.error(`[API:${requestId}] DB Connection Failed:`, dbErr);
-    throw new Error('Database connection failed');
+    const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+    if (msg.includes('DB_CONNECTION_TIMEOUT')) {
+      return NextResponse.json({ 
+        error: '데이터베이스 연결 시간이 초과되었습니다. (DB Connection Timeout)',
+        details: '서버가 데이터베이스에 접근할 수 없습니다. 잠시 후 다시 시도하거나 관리자에게 문의하세요.'
+      }, { status: 503 });
+    }
+    return NextResponse.json({ 
+      error: '데이터베이스 연결에 실패했습니다.',
+      details: msg
+    }, { status: 500 });
   }
 
   console.log(`[API:${requestId}] Checking for existing user...`);
