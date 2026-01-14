@@ -154,8 +154,31 @@ export async function POST(req: NextRequest) {
     }
 
   console.log(`[API:${requestId}] Getting Prisma client...`);
-  const prisma = await getPrismaClient();
-  console.log(`[API:${requestId}] Prisma client obtained.`);
+  
+  // Initialize Prisma Client with Timeout (Check for SSM Hangs)
+  let prisma;
+  try {
+    const initPromise = getPrismaClient();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('PRISMA_INIT_TIMEOUT')), 4000)
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    prisma = await Promise.race([initPromise, timeoutPromise]) as any;
+    console.log(`[API:${requestId}] Prisma client obtained.`);
+  } catch (initErr) {
+    console.error(`[API:${requestId}] Prisma Init Failed:`, initErr);
+    const msg = initErr instanceof Error ? initErr.message : String(initErr);
+    if (msg.includes('PRISMA_INIT_TIMEOUT')) {
+      return NextResponse.json({ 
+        error: '서버 초기화 시간이 초과되었습니다. (Prisma Init Timeout)',
+        details: 'AWS SSM 파라미터 가져오기 및 DB 클라이언트 생성 단계에서 응답이 없습니다. (네트워크/VPC 설정 확인 필요)'
+      }, { status: 504 });
+    }
+    return NextResponse.json({
+      error: '서버 내부 오류가 발생했습니다. (Prisma Init Failed)',
+      details: msg
+    }, { status: 500 });
+  }
 
   // Check connectivity with a quick query and STRICT timeout
   try {
