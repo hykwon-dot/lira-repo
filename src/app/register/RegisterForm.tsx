@@ -217,35 +217,77 @@ export default function RegisterForm() {
         return;
       }
 
-      // FormData 생성 및 파일 실제 전송
-      const formData = new FormData();
-      formData.append('role', 'INVESTIGATOR');
-      formData.append('email', email);
-      formData.append('password', password);
-      formData.append('name', name);
-      if (licenseNumber) formData.append('licenseNumber', licenseNumber);
-      if (officeAddress) formData.append('officeAddress', officeAddress);
-      
-      // 배열 데이터는 JSON 문자열로 변환하여 전송
-      formData.append('specialties', JSON.stringify(specialties));
-      formData.append('serviceAreas', JSON.stringify(serviceAreas));
-      formData.append('serviceArea', serviceAreas.join(', '));
-      
-      formData.append('experienceYears', String(expNumber));
-      if (intro) formData.append('introduction', intro);
-      if (portfolioUrl) formData.append('portfolioUrl', portfolioUrl);
-      if (phone) formData.append('contactPhone', phone);
-      if (agencyPhone) formData.append('agencyPhone', agencyPhone);
-      
-      formData.append('acceptsTerms', String(acceptsTerms));
-      formData.append('acceptsPrivacy', String(acceptsPrivacy));
-
-      // 파일 추가
-      if (pledgeFile) {
-        formData.append('pledgeFile', pledgeFile);
+      // 파일 크기 체크 (1.5MB 제한 - JSON 전송을 위해 안전 마진 확보)
+      const MAX_SIZE = 1.5 * 1024 * 1024; // 1.5MB
+      if (businessLicenseFile && businessLicenseFile.size > MAX_SIZE) {
+        setError(`사업자등록증 파일 크기는 1.5MB 이하여야 합니다. (현재: ${(businessLicenseFile.size / 1024 / 1024).toFixed(2)}MB)`);
+        return;
       }
-      if (businessLicenseFile) {
-        formData.append('businessLicense', businessLicenseFile);
+      if (pledgeFile && pledgeFile.size > MAX_SIZE) {
+        setError(`서약서 파일 크기는 1.5MB 이하여야 합니다. (현재: ${(pledgeFile.size / 1024 / 1024).toFixed(2)}MB)`);
+        return;
+      }
+
+      setError(null);
+
+      // Helper to convert file to Base64
+      const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => {
+             // remove data:image/...;base64, prefix if desired, but code usually expects it or handles it.
+             // Currently backend expects "data:..." URL or raw base64?
+             // route.ts: const businessLicenseData = (body as any).businessLicenseData...
+             // and later uses it. The previous logic constructed `data:${mimeType};base64,${base64Data}`.
+             // FileReader.readAsDataURL returns exactly that format.
+             resolve(reader.result as string);
+          };
+          reader.onerror = (error) => reject(error);
+        });
+      };
+
+      // JSON Payload 생성
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const payload: any = {
+        role: 'INVESTIGATOR',
+        email,
+        password,
+        name,
+        licenseNumber: licenseNumber || '',
+        officeAddress: officeAddress || '',
+        specialties, // Array
+        serviceAreas, // Array
+        serviceArea: serviceAreas.join(', '),
+        experienceYears: Number(expNumber),
+        introduction: intro || '',
+        portfolioUrl: portfolioUrl || '',
+        contactPhone: phone || '',
+        agencyPhone: agencyPhone || '',
+        acceptsTerms,
+        acceptsPrivacy,
+      };
+
+      try {
+        // 파일 변환 (Client Side Base64 Encoding)
+        if (businessLicenseFile) {
+          const b64 = await fileToBase64(businessLicenseFile);
+          payload.businessLicenseData = b64;
+          payload.businessLicenseName = businessLicenseFile.name;
+          // 가상 URL 설정 (Backend 호환용)
+          payload.businessLicenseUrl = '/api/files/download?type=license';
+        }
+
+        if (pledgeFile) {
+          const b64 = await fileToBase64(pledgeFile);
+          payload.pledgeData = b64;
+          payload.pledgeName = pledgeFile.name;
+          payload.pledgeUrl = '/api/files/download?type=pledge';
+        }
+      } catch (e) {
+        console.error('File conversion error:', e);
+        setError('파일 처리 중 오류가 발생했습니다.');
+        return;
       }
 
       // 30초 타임아웃 설정
@@ -255,7 +297,10 @@ export default function RegisterForm() {
       try {
         const res = await fetch('/api/register', {
           method: 'POST',
-          body: formData,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
           signal: controller.signal,
         });
         
