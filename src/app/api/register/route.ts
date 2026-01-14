@@ -164,13 +164,9 @@ export async function POST(req: NextRequest) {
         portfolioUrl,
         contactPhone,
         agencyPhone,
-        pledgeUrl,
         acceptsTerms,
         acceptsPrivacy,
       } = body as InvestigatorPayload;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const businessLicenseUrl = (body as any).businessLicenseUrl;
 
       if (!acceptsTerms || !acceptsPrivacy) {
         return NextResponse.json({ error: '약관 및 개인정보 동의는 필수입니다.' }, { status: 400 });
