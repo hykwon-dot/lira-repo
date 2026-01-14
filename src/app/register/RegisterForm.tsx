@@ -290,12 +290,34 @@ export default function RegisterForm() {
         return;
       }
 
-      // 30초 타임아웃 설정
+      // 60초 타임아웃 설정 (Cold Start 고려)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
 
       try {
-        console.log(`[Version: v20260114-FixTimeout] Sending registration request...`);
+        console.log(`[Version: v20260114-FixTimeout-Retry3] Sending registration request...`);
+        
+        // 1. Connectivity Check (Fast Fail)
+        try {
+           const healthCheck = await fetch('/api/health/deployment', { 
+             method: 'GET', 
+             signal: AbortSignal.timeout(5000) // 5s timeout for health
+           });
+           if (!healthCheck.ok) {
+             console.warn('Health check failed:', healthCheck.status);
+             // We continue anyway, hoping it's just a health endpoint issue, 
+             // but this log helps diagnosis.
+           } else {
+             console.log('Health check passed. Server is reachable.');
+           }
+        } catch (hErr) {
+           console.error('Health check unreachable:', hErr);
+           setError('서버에 연결할 수 없습니다. (Health Check Timeout) - 인터넷 연결이나 방화벽 설정을 확인해주세요.');
+           clearTimeout(timeoutId);
+           return;
+        }
+
+        // 2. Main Registration Request
         const res = await fetch('/api/register', {
           method: 'POST',
           headers: {
