@@ -3,6 +3,8 @@ import { getPrismaClient } from '@/lib/prisma';
 import { signToken } from '@/lib/jwt';
 import { hash as hashPassword } from '@node-rs/bcrypt';
 import type { Prisma } from '@prisma/client';
+import { writeFile } from 'fs/promises';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,7 +81,7 @@ export async function POST(req: NextRequest) {
         const keys = ['role', 'email', 'password', 'name', 'licenseNumber', 'specialties', 
                       'experienceYears', 'serviceAreas', 'serviceArea', 'officeAddress', 'introduction', 
                       'portfolioUrl', 'contactPhone', 'agencyPhone', 'pledgeUrl', 'acceptsTerms', 'acceptsPrivacy',
-                      'businessLicense', 'displayName', 'phone', 'birthDate', 'gender',
+                      'businessLicense', 'pledgeFile', 'displayName', 'phone', 'birthDate', 'gender',
                       'occupation', 'region', 'preferredCaseTypes', 'budgetMin', 'budgetMax',
                       'urgencyLevel', 'securityQuestion', 'securityAnswer', 'marketingOptIn'];
         for (const key of keys) {
@@ -91,11 +93,21 @@ export async function POST(req: NextRequest) {
         // Handle file upload
         const file = body.businessLicense;
         if (file && typeof file === 'object' && 'name' in file) {
-          body.businessLicenseUrl = `/uploads/${(file as File).name}`;
+          const fileObj = file as File;
+          const buffer = Buffer.from(await fileObj.arrayBuffer());
+          const filename = `${Date.now()}-${fileObj.name}`;
+          const filepath = path.join(process.cwd(), 'public/uploads', filename);
+          await writeFile(filepath, buffer);
+          body.businessLicenseUrl = `/uploads/${filename}`;
         }
         const pledgeFile = body.pledgeFile;
         if (pledgeFile && typeof pledgeFile === 'object' && 'name' in pledgeFile) {
-          body.pledgeUrl = `/uploads/${(pledgeFile as File).name}`;
+          const fileObj = pledgeFile as File;
+          const buffer = Buffer.from(await fileObj.arrayBuffer());
+          const filename = `${Date.now()}-${fileObj.name}`;
+          const filepath = path.join(process.cwd(), 'public/uploads', filename);
+          await writeFile(filepath, buffer);
+          body.pledgeUrl = `/uploads/${filename}`;
         }
         // Parse JSON strings back to objects
         if (body.specialties && typeof body.specialties === 'string') {

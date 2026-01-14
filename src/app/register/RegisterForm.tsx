@@ -217,33 +217,40 @@ export default function RegisterForm() {
         return;
       }
 
-      // FormData 대신 JSON으로 전송 (파일 업로드 이슈 우회 및 백엔드 로직 일치)
-      const payload = {
-        role: 'INVESTIGATOR',
-        email,
-        password,
-        name,
-        licenseNumber: licenseNumber || null,
-        officeAddress: officeAddress || null,
-        specialties,
-        experienceYears: expNumber,
-        serviceAreas,
-        serviceArea: serviceAreas.join(', '),
-        introduction: intro || null,
-        portfolioUrl: portfolioUrl || null,
-        contactPhone: phone || null,
-        agencyPhone: agencyPhone || null,
-        pledgeUrl: pledgeFile ? `/uploads/${pledgeFile.name}` : null,
-        acceptsTerms,
-        acceptsPrivacy,
-        // 실제 파일 전송 대신 파일명만 전송 (백엔드가 파일 저장을 지원하지 않음)
-        businessLicenseUrl: businessLicenseFile ? `/uploads/${businessLicenseFile.name}` : null,
-      };
+      // FormData 생성 및 파일 실제 전송
+      const formData = new FormData();
+      formData.append('role', 'INVESTIGATOR');
+      formData.append('email', email);
+      formData.append('password', password);
+      formData.append('name', name);
+      if (licenseNumber) formData.append('licenseNumber', licenseNumber);
+      if (officeAddress) formData.append('officeAddress', officeAddress);
+      
+      // 배열 데이터는 JSON 문자열로 변환하여 전송
+      formData.append('specialties', JSON.stringify(specialties));
+      formData.append('serviceAreas', JSON.stringify(serviceAreas));
+      formData.append('serviceArea', serviceAreas.join(', '));
+      
+      formData.append('experienceYears', String(expNumber));
+      if (intro) formData.append('introduction', intro);
+      if (portfolioUrl) formData.append('portfolioUrl', portfolioUrl);
+      if (phone) formData.append('contactPhone', phone);
+      if (agencyPhone) formData.append('agencyPhone', agencyPhone);
+      
+      formData.append('acceptsTerms', String(acceptsTerms));
+      formData.append('acceptsPrivacy', String(acceptsPrivacy));
+
+      // 파일 추가
+      if (pledgeFile) {
+        formData.append('pledgeFile', pledgeFile);
+      }
+      if (businessLicenseFile) {
+        formData.append('businessLicense', businessLicenseFile);
+      }
 
       const res = await fetch('/api/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: formData,
       });
       
       console.log('Registration response status:', res.status);
