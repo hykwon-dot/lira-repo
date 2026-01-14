@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
   if (token) {
     try {
       const payload = verifyToken(token);
+      void payload; // Mark as used to satisfy linter
       // Allow if admin or same user
       // if (payload.role !== 'ADMIN' && payload.userId !== Number(userId)) { ... }
     } catch (e) {

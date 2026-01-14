@@ -3,8 +3,6 @@ import { getPrismaClient } from '@/lib/prisma';
 import { signToken } from '@/lib/jwt';
 import { hash as hashPassword } from '@node-rs/bcrypt';
 import type { Prisma } from '@prisma/client';
-import { writeFile } from 'fs/promises';
-import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,7 +96,7 @@ export async function POST(req: NextRequest) {
           const base64Data = buffer.toString('base64');
           const mimeType = fileObj.type || 'application/octet-stream';
           // Store Data URI in a separate property to be used during creation
-          // @ts-ignore
+          // @ts-expect-error - businessLicenseData is added dynamically via Prisma, types might lag
           body.businessLicenseData = `data:${mimeType};base64,${base64Data}`;
           // Set URL to a placeholder, will be updated or used as a flag
           body.businessLicenseUrl = `/api/files/download?type=license`; 
@@ -109,7 +107,7 @@ export async function POST(req: NextRequest) {
           const buffer = Buffer.from(await fileObj.arrayBuffer());
           const base64Data = buffer.toString('base64');
           const mimeType = fileObj.type || 'application/octet-stream';
-          // @ts-ignore
+          // @ts-expect-error - pledgeData is added dynamically via Prisma, types might lag
           body.pledgeData = `data:${mimeType};base64,${base64Data}`;
           body.pledgeUrl = `/api/files/download?type=pledge`;
         }
@@ -219,6 +217,9 @@ export async function POST(req: NextRequest) {
         const businessLicenseUrlBase = (body as any).businessLicenseUrl;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const pledgeUrlBase = (body as any).pledgeUrl;
+
+        void businessLicenseUrlBase;
+        void pledgeUrlBase;
 
         const profile = await tx.investigatorProfile.create({
           data: {
