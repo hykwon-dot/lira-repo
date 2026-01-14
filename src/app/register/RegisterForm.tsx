@@ -228,7 +228,7 @@ export default function RegisterForm() {
         return;
       }
 
-      setError(null);
+      setError('');
 
       // Helper to convert file to Base64
       const fileToBase64 = (file: File): Promise<string> => {
