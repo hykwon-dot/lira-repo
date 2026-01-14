@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useUserStore } from '@/lib/userStore';
 import ScenarioAdmin from './ScenarioAdmin';
 import AdminFeedback from './AdminFeedback';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type RequestStatus =
   | 'OPEN'
@@ -23,6 +24,8 @@ type Investigator = {
   reviewNote: string | null;
   createdAt: string;
   contactPhone: string | null;
+  businessLicenseUrl: string | null;
+  pledgeUrl: string | null;
   user: {
     id: number;
     name: string | null;
@@ -160,13 +163,24 @@ export default function AdminPage() {
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [removingInvestigatorId, setRemovingInvestigatorId] = useState<number | null>(null);
   const [removingCustomerId, setRemovingCustomerId] = useState<number | null>(null);
-  const { user, setUser, logout } = useUserStore();
+  const { user, token, setUser, logout } = useUserStore();
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
 
   const isAuthorized = user && (user.role === 'admin' || user.role === 'super_admin');
+
+  const resolveAuthToken = useCallback(() => {
+    if (token) return token;
+    if (typeof window === 'undefined') return null;
+    try {
+      return sessionStorage.getItem('lira.authToken');
+    } catch (storageError) {
+      console.warn('Failed to read auth token', storageError);
+      return null;
+    }
+  }, [token]);
 
   const handleAdminLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -226,7 +240,20 @@ export default function AdminPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('/api/admin/dashboard');
+        const authToken = resolveAuthToken();
+        const headers: HeadersInit = authToken
+          ? { Authorization: `Bearer ${authToken}` }
+          : {};
+        const res = await fetch('/api/admin/dashboard', {
+          headers,
+          cache: 'no-store',
+        });
+        if (res.status === 401 || res.status === 403) {
+          setError('관리자 인증이 만료되었습니다. 다시 로그인해주세요.');
+          setDashboard(null);
+          logout();
+          return;
+        }
         if (!res.ok) {
           throw new Error('대시보드 데이터를 불러오지 못했습니다.');
         }
@@ -242,15 +269,24 @@ export default function AdminPage() {
     if (isAuthorized) {
       load();
     }
-  }, [isAuthorized]);
+  }, [isAuthorized, logout, resolveAuthToken]);
 
   const handleApproveInvestigator = async (id: number) => {
     if (!dashboard) return;
     setApprovingId(id);
     try {
+      const authToken = resolveAuthToken();
+      if (!authToken) {
+        setError('관리자 인증이 만료되었습니다. 다시 로그인해주세요.');
+        logout();
+        return;
+      }
       const res = await fetch(`/api/admin/investigators/${id}/approve`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -289,9 +325,18 @@ export default function AdminPage() {
     if (!dashboard) return;
     setUpdatingId(id);
     try {
+      const authToken = resolveAuthToken();
+      if (!authToken) {
+        setError('관리자 인증이 만료되었습니다. 다시 로그인해주세요.');
+        logout();
+        return;
+      }
       const res = await fetch(`/api/admin/investigation-requests/${id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
         body: JSON.stringify({ status }),
       });
       if (!res.ok) {
@@ -333,8 +378,17 @@ export default function AdminPage() {
     if (!dashboard) return;
     setRemovingInvestigatorId(profileId);
     try {
+      const authToken = resolveAuthToken();
+      if (!authToken) {
+        setError('관리자 인증이 만료되었습니다. 다시 로그인해주세요.');
+        logout();
+        return;
+      }
       const res = await fetch(`/api/admin/investigators/${profileId}`, {
         method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
@@ -374,8 +428,17 @@ export default function AdminPage() {
     if (!dashboard) return;
     setRemovingCustomerId(customerProfileId);
     try {
+      const authToken = resolveAuthToken();
+      if (!authToken) {
+        setError('관리자 인증이 만료되었습니다. 다시 로그인해주세요.');
+        logout();
+        return;
+      }
       const res = await fetch(`/api/admin/customers/${customerProfileId}`, {
         method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
@@ -554,6 +617,35 @@ export default function AdminPage() {
               ))}
         </section>
 
+        <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <Link href="/admin/banners" className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">배너 관리</h3>
+                <p className="text-sm text-slate-500">메인 페이지 배너 및 프로모션 관리</p>
+              </div>
+              <div className="rounded-full bg-blue-50 p-3 text-blue-600 group-hover:bg-blue-100">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                </svg>
+              </div>
+            </div>
+          </Link>
+          <Link href="/admin/awards" className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-md">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">수상 내역 관리</h3>
+                <p className="text-sm text-slate-500">수상 실적 및 인증 내역 관리</p>
+              </div>
+              <div className="rounded-full bg-amber-50 p-3 text-amber-600 group-hover:bg-amber-100">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0V5.625a2.25 2.25 0 11-4.5 0v9.75m0-9.75a2.25 2.25 0 012.25-2.25h.008c.621 0 1.125.504 1.125 1.125m0 0v1.125m-2.25 0h2.25" />
+                </svg>
+              </div>
+            </div>
+          </Link>
+        </section>
+
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
           <section className="col-span-1 space-y-5">
             <div className="rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm backdrop-blur">
@@ -622,6 +714,36 @@ export default function AdminPage() {
                             </p>
                           </div>
                         </div>
+
+                        <div className="flex gap-2">
+                          {inv.businessLicenseUrl ? (
+                            <Link
+                              href={inv.businessLicenseUrl}
+                              target="_blank"
+                              className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
+                            >
+                              📄 사업자등록증
+                            </Link>
+                          ) : (
+                            <span className="flex-1 cursor-not-allowed rounded-xl bg-slate-50 py-2 text-center text-xs text-slate-300">
+                              사업자등록증 미첨부
+                            </span>
+                          )}
+                          {inv.pledgeUrl ? (
+                            <Link
+                              href={inv.pledgeUrl}
+                              target="_blank"
+                              className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
+                            >
+                              📝 서약서
+                            </Link>
+                          ) : (
+                            <span className="flex-1 cursor-not-allowed rounded-xl bg-slate-50 py-2 text-center text-xs text-slate-300">
+                              서약서 미첨부
+                            </span>
+                          )}
+                        </div>
+
                         {specialties.length > 0 && (
                           <div className="flex flex-wrap gap-2">
                             {specialties.map((spec) => (
