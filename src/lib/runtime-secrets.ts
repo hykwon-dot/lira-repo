@@ -61,6 +61,7 @@ export async function ensureRuntimeDatabaseUrl(): Promise<void> {
           "[runtime-secrets] Failed to hydrate DATABASE_URL from SSM",
           error,
         );
+        // Explicitly throw so that Promise.race in route.ts catches it
         throw error;
       }
     })());
