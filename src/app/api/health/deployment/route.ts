@@ -24,11 +24,13 @@ export async function GET() {
   const target = extractDatabaseTarget(process.env.DATABASE_URL);
   const envValid = validateEnvironment();
   const envInfo = getEnvironmentInfo();
+  const deploymentTime = new Date().toISOString();
 
   if (!envValid) {
     return NextResponse.json(
       {
         status: "error",
+        deploymentTime,
         elapsedMs: Date.now() - startedAt,
         environment: envInfo,
         checks: {
@@ -57,6 +59,7 @@ export async function GET() {
     return NextResponse.json(
       {
         status: "ok",
+        deploymentTime,
         elapsedMs: Date.now() - startedAt,
         environment: {
           nodeEnv: process.env.NODE_ENV ?? "unknown",

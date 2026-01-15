@@ -7,7 +7,7 @@ type SecretsGlobal = typeof globalThis & {
 
 const runtime = globalThis as SecretsGlobal;
 
-const FALLBACK_DB_URL = "mysql://lira_user:asdasd11@lira-db.cluster-ctkse40gyfit.ap-northeast-2.rds.amazonaws.com:3306/lira?ssl={\"rejectUnauthorized\":false}";
+const FALLBACK_DB_URL = "mysql://lira_user:asdasd11@lira-db.cluster-ctkse40gyfit.ap-northeast-2.rds.amazonaws.com:3306/lira?ssl={\"rejectUnauthorized\":false}&connection_limit=5&pool_timeout=10";
 
 const resolveParameterName = () => {
   if (process.env.DATABASE_URL) {
