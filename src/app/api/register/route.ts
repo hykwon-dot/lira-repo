@@ -6,6 +6,7 @@ import type { Prisma } from '@prisma/client';
 import { Buffer } from 'buffer';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Increase serverless function timeout to 60 seconds (Amplify/Vercel)
 
 
 // 허용된 공개 가입 역할 (SUPER_ADMIN 은 seed 또는 내부 승격 전용)
@@ -285,6 +286,7 @@ export async function POST(req: NextRequest) {
           void businessLicenseUrlBase;
           void pledgeUrlBase;
   
+          // Create profile WITHOUT large data first to be fast
           const profile = await tx.investigatorProfile.create({
             data: {
               userId: user.id,
@@ -300,17 +302,39 @@ export async function POST(req: NextRequest) {
               // 파일 URL에는 userId를 쿼리 파라미터로 추가하여 다운로드 API에서 식별하도록 함
               businessLicenseUrl: businessLicenseUrlBase ? `${businessLicenseUrlBase}&userId=${user.id}` : null,
               pledgeUrl: pledgeUrlBase ? `${pledgeUrlBase}&userId=${user.id}` : null,
-              businessLicenseData: businessLicenseData ?? null,
-              pledgeData: pledgeData ?? null,
+              // Skip large blobs in initial create
               termsAcceptedAt: now,
               privacyAcceptedAt: now,
             },
           });
-          return { user, profile };
+          
+          return { user, profile, businessLicenseData, pledgeData };
+        }, {
+           maxWait: 10000, 
+           timeout: 20000 
         }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('DB_TRANSACTION_TIMEOUT')), 50000))
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ]) as any;
+
+      // Update large data separately if present (to avoid transaction lock/timeout issues)
+      if (result.businessLicenseData || result.pledgeData) {
+        console.log(`[API:${requestId}] Updating LOB data...`);
+        try {
+          await prisma.investigatorProfile.update({
+            where: { id: result.profile.id },
+            data: {
+                businessLicenseData: result.businessLicenseData ?? undefined,
+                pledgeData: result.pledgeData ?? undefined
+            }
+          });
+          console.log(`[API:${requestId}] LOB data updated.`);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (lobErr) {
+           console.error(`[API:${requestId}] Failed to save file data (non-fatal):`, lobErr);
+           // We do NOT rollback user creation here, but user might need to re-upload documents later.
+        }
+      }
       
       console.log(`[API:${requestId}] Transaction Complete.`);
       
