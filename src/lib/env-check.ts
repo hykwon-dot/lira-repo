@@ -11,7 +11,7 @@ export function validateEnvironment() {
   
   if (missing.length > 0) {
     console.error('❌ Missing required environment variables:', missing);
-    return false;
+    return { valid: false, missing, error: `Missing required environment variables: ${missing.join(', ')}` };
   }
 
   // Check JWT_SECRET loosely
@@ -23,11 +23,11 @@ export function validateEnvironment() {
   const dbUrl = process.env.DATABASE_URL;
   if (dbUrl && !dbUrl.startsWith('mysql://')) {
     console.error('❌ DATABASE_URL must start with mysql://');
-    return false;
+    return { valid: false, missing: [], error: `DATABASE_URL must start with mysql://. Got: ${dbUrl?.substring(0, 8)}...` };
   }
 
   console.log('✅ All required environment variables are present');
-  return true;
+  return { valid: true, missing: [] };
 }
 
 export function getEnvironmentInfo() {

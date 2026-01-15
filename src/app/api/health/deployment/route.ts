@@ -27,11 +27,11 @@ export async function GET() {
   await ensureRuntimeDatabaseUrl();
 
   const target = extractDatabaseTarget(process.env.DATABASE_URL);
-  const envValid = validateEnvironment();
+  const envCheck = validateEnvironment();
   const envInfo = getEnvironmentInfo();
   const deploymentTime = new Date().toISOString();
 
-  if (!envValid) {
+  if (!envCheck.valid) {
     return NextResponse.json(
       {
         status: "error",
@@ -41,7 +41,7 @@ export async function GET() {
         checks: {
           environment: {
             valid: false,
-            error: "Missing required environment variables"
+            error: envCheck.error || "Environment validation failed"
           }
         },
       },
