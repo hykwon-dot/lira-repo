@@ -6,7 +6,7 @@ import type { Prisma } from '@prisma/client';
 import { Buffer } from 'buffer';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // Increase serverless function timeout to 60 seconds (Amplify/Vercel)
+// export const maxDuration = 60; // Reverted as it might cause CloudFront/Amplify 403 issues on some plans
 
 
 // 허용된 공개 가입 역할 (SUPER_ADMIN 은 seed 또는 내부 승격 전용)
