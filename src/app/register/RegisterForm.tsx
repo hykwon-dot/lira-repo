@@ -290,12 +290,13 @@ export default function RegisterForm() {
         return;
       }
 
-      // 60초 타임아웃 설정 (Cold Start 고려)
+      // 120초 타임아웃 설정 (대용량 파일 업로드 고려)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
 
       try {
-        console.log(`[Version: v20260114-FixTimeout-Retry3] Sending registration request...`);
+        const payloadSize = JSON.stringify(payload).length;
+        console.log(`[Version: v20260114-FixTimeout-Retry4] Sending registration request... Payload size: ${(payloadSize/1024/1024).toFixed(2)} MB`);
         
         // 1. Connectivity Check (Fast Fail)
         try {

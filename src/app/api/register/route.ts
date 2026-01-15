@@ -308,7 +308,7 @@ export async function POST(req: NextRequest) {
           });
           return { user, profile };
         }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('DB_TRANSACTION_TIMEOUT')), 20000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DB_TRANSACTION_TIMEOUT')), 50000))
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ]) as any;
       
