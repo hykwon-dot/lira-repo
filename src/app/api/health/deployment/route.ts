@@ -121,12 +121,3 @@ export async function GET() {
     );
   }
 }
-            error: message,
-            stack: process.env.NODE_ENV === "development" ? stack : undefined,
-          },
-        },
-      },
-      { status: 500 }
-    );
-  }
-}
