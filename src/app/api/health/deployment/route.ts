@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPrismaClient } from "@/lib/prisma";
 import { validateEnvironment, getEnvironmentInfo } from "@/lib/env-check";
+import { ensureRuntimeDatabaseUrl } from "@/lib/runtime-secrets";
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,10 @@ function extractDatabaseTarget(url: string | undefined) {
 
 export async function GET() {
   const startedAt = Date.now();
+  
+  // Ensure DB URL is set (fallback if needed) BEFORE verifying environment
+  await ensureRuntimeDatabaseUrl();
+
   const target = extractDatabaseTarget(process.env.DATABASE_URL);
   const envValid = validateEnvironment();
   const envInfo = getEnvironmentInfo();
