@@ -2,9 +2,7 @@
 
 export function validateEnvironment() {
   const required = [
-    'DATABASE_URL',
-    // 'JWT_SECRET', // Managed with fallback in jwt.ts
-    'OPENAI_API_KEY'
+    'DATABASE_URL'
   ];
 
   const missing = required.filter(key => !process.env[key]);
@@ -14,9 +12,12 @@ export function validateEnvironment() {
     return { valid: false, missing, error: `Missing required environment variables: ${missing.join(', ')}` };
   }
 
-  // Check JWT_SECRET loosely
+  // Check others loosely
   if (!process.env.JWT_SECRET) {
-    console.warn('⚠️  JWT_SECRET is missing. Using fallback from jwt.ts. This is not recommended for production.');
+    console.warn('⚠️  JWT_SECRET is missing. Using fallback.');
+  }
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn('⚠️  OPENAI_API_KEY is missing.');
   }
 
   // DATABASE_URL 형식 검증
