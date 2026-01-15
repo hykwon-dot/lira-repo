@@ -141,7 +141,12 @@ export async function POST(req: NextRequest) {
         body = await req.json();
       }
       
-      console.log(`[API:${requestId}] Request body parsed successfully`);
+    try {
+      console.log(`[API:${requestId}] Body parsed. Size check...`);
+      // Just log body size roughly
+      const bodySize = JSON.stringify(body).length;
+      console.log(`[API:${requestId}] Approx Body Size: ${bodySize} bytes`);
+      
       const { email, password, name } = body as BasePayload;
       let { role } = body as BasePayload;
       if (!email || !password || !name) {
