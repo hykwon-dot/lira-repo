@@ -506,4 +506,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '서버 내부 오류', details: process.env.NODE_ENV === 'development' ? (fatal instanceof Error ? fatal.message : String(fatal)) : undefined }, { status: 500 });
   }
 }
-}
