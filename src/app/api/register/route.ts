@@ -94,31 +94,19 @@ export async function POST(req: NextRequest) {
           }
         }
         
-        console.log(`[API:${requestId}] FormData extracted. Processing files...`);
+        console.log(`[API:${requestId}] FormData extracted. Files detected.`);
         
-        // Handle file upload
-        const file = body.businessLicense;
-        if (file && typeof file === 'object' && 'name' in file) {
-          const fileObj = file as File;
-          console.log(`[API:${requestId}] Processing businessLicense: ${fileObj.name} (${fileObj.size} bytes)`);
-          const buffer = Buffer.from(await fileObj.arrayBuffer());
-          const base64Data = buffer.toString('base64');
-          const mimeType = fileObj.type || 'application/octet-stream';
-          // Store Data URI in a separate property to be used during creation
-          body.businessLicenseData = `data:${mimeType};base64,${base64Data}`;
-          // Set URL to a placeholder, will be updated or used as a flag
-          body.businessLicenseUrl = `/api/files/download?type=license`; 
+        // Handle file upload objects (Just save the File reference for later processing)
+        // We will defer the heavy arrayBuffer() and base64 conversion until AFTER user creation
+        const pendingBusinessLicense = body.businessLicense instanceof File ? body.businessLicense : null;
+        const pendingPledgeFile = body.pledgeFile instanceof File ? body.pledgeFile : null;
+        
+        // Pre-set empty data placeholders
+        if (pendingBusinessLicense) {
+            body.businessLicenseUrl = `/api/files/download?type=license`; 
         }
-        
-        const pledgeFile = body.pledgeFile;
-        if (pledgeFile && typeof pledgeFile === 'object' && 'name' in pledgeFile) {
-          const fileObj = pledgeFile as File;
-          console.log(`[API:${requestId}] Processing pledgeFile: ${fileObj.name} (${fileObj.size} bytes)`);
-          const buffer = Buffer.from(await fileObj.arrayBuffer());
-          const base64Data = buffer.toString('base64');
-          const mimeType = fileObj.type || 'application/octet-stream';
-          body.pledgeData = `data:${mimeType};base64,${base64Data}`;
-          body.pledgeUrl = `/api/files/download?type=pledge`;
+        if (pendingPledgeFile) {
+            body.pledgeUrl = `/api/files/download?type=pledge`;
         }
         
         // Parse JSON strings back to objects
@@ -140,10 +128,8 @@ export async function POST(req: NextRequest) {
         body = await req.json();
       }
       
-      console.log(`[API:${requestId}] Body parsed. Size check...`);
-      // Just log body size roughly
-      const bodySize = JSON.stringify(body).length;
-      console.log(`[API:${requestId}] Approx Body Size: ${bodySize} bytes`);
+      console.log(`[API:${requestId}] Body parsed. Processing core logic...`);
+      // REMOVED heavy JSON.stringify logging to save memory/cpu with large files
       
       const { email, password, name } = body as BasePayload;
       let { role } = body as BasePayload;
@@ -327,17 +313,36 @@ export async function POST(req: NextRequest) {
       const result = { user, profile, businessLicenseData, pledgeData };
 
       // Update large data separately if present (to avoid transaction lock/timeout issues)
-      if (result.businessLicenseData || result.pledgeData) {
-        console.log(`[API:${requestId}] Updating LOB data...`);
+      // Retrieve pending files from local scope or body
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pendingBusinessLicense = (body as any).businessLicense instanceof File ? (body as any).businessLicense as File : null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pendingPledgeFile = (body as any).pledgeFile instanceof File ? (body as any).pledgeFile as File : null;
+
+      if (pendingBusinessLicense || pendingPledgeFile) {
+        console.log(`[API:${requestId}] Updating LOB data (Deferred Processing)...`);
         try {
+          // Process files to Base64 NOW
+          let businessLicenseData: string | undefined;
+          let pledgeData: string | undefined;
+          
+          if (pendingBusinessLicense) {
+             const buf = Buffer.from(await pendingBusinessLicense.arrayBuffer());
+             businessLicenseData = `data:${pendingBusinessLicense.type || 'application/octet-stream'};base64,${buf.toString('base64')}`;
+          }
+           if (pendingPledgeFile) {
+             const buf = Buffer.from(await pendingPledgeFile.arrayBuffer());
+             pledgeData = `data:${pendingPledgeFile.type || 'application/octet-stream'};base64,${buf.toString('base64')}`;
+          }
+
           // Force timeout for LOB update (5 seconds)
           // If this times out, we proceed without failing the whole request
           await Promise.race([
             prisma.investigatorProfile.update({
               where: { id: result.profile.id },
               data: {
-                  businessLicenseData: result.businessLicenseData ?? undefined,
-                  pledgeData: result.pledgeData ?? undefined
+                  businessLicenseData: businessLicenseData ?? undefined,
+                  pledgeData: pledgeData ?? undefined
               }
             }),
             new Promise((_, reject) => setTimeout(() => reject(new Error('LOB_UPDATE_TIMEOUT')), 5000))
