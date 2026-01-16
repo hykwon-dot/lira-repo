@@ -491,15 +491,6 @@ export async function POST(req: NextRequest) {
     void removedPassword;
     const token = signToken({ userId: Number(result.user.id), role: result.user.role });
     return NextResponse.json({ ...userWithoutPassword, customerProfile: result.profile, token }, { status: 201 });
-    } catch (error) {
-      // 예상치 못한 예외도 항상 JSON으로 반환
-      console.error('[API] Registration error:', error);
-      console.error('[API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-      return NextResponse.json({
-        error: '서버 오류가 발생했습니다.',
-        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
-      }, { status: 500 });
-    }
   } catch (fatal) {
     // 정말로 빠져나가는 예외도 JSON으로 반환
     console.error('[API] FATAL error in /api/register:', fatal);
