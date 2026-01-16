@@ -324,13 +324,18 @@ export async function POST(req: NextRequest) {
       if (result.businessLicenseData || result.pledgeData) {
         console.log(`[API:${requestId}] Updating LOB data...`);
         try {
-          await prisma.investigatorProfile.update({
-            where: { id: result.profile.id },
-            data: {
-                businessLicenseData: result.businessLicenseData ?? undefined,
-                pledgeData: result.pledgeData ?? undefined
-            }
-          });
+          // Force timeout for LOB update (5 seconds)
+          // If this times out, we proceed without failing the whole request
+          await Promise.race([
+            prisma.investigatorProfile.update({
+              where: { id: result.profile.id },
+              data: {
+                  businessLicenseData: result.businessLicenseData ?? undefined,
+                  pledgeData: result.pledgeData ?? undefined
+              }
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('LOB_UPDATE_TIMEOUT')), 5000))
+          ]);
           console.log(`[API:${requestId}] LOB data updated.`);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (lobErr) {
