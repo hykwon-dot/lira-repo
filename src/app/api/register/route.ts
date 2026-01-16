@@ -77,7 +77,23 @@ export async function POST(req: NextRequest) {
       if (contentType.includes('multipart/form-data')) {
         console.log(`[API:${requestId}] Handling multipart data...`);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const formData = await req.formData() as any;
+        let formData: any;
+        
+        try {
+            // Enforce 30s timeout for Upload/Parsing
+            formData = await Promise.race([
+                req.formData(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('UPLOAD_TIMEOUT')), 30000))
+            ]);
+        } catch (parseErr) {
+             console.error(`[API:${requestId}] FormData parse failed:`, parseErr);
+             const msg = String(parseErr);
+             if (msg.includes('UPLOAD_TIMEOUT')) {
+                 return NextResponse.json({ error: '파일 업로드 시간이 초과되었습니다. (네트워크/파일크기 확인)' }, { status: 408 });
+             }
+             throw parseErr;
+        }
+
         body = {};
         // Extract all form fields
         const keys = ['role', 'email', 'password', 'name', 'licenseNumber', 'specialties', 
@@ -260,12 +276,20 @@ export async function POST(req: NextRequest) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let user: any;
       try {
-        user = await prisma.user.create({
-          data: { email, name, password: hashedPassword, role: 'INVESTIGATOR' },
-        });
+        // Enforce 10s timeout for User Creation
+        user = await Promise.race([
+             prisma.user.create({
+                data: { email, name, password: hashedPassword, role: 'INVESTIGATOR' },
+             }),
+             new Promise((_, reject) => setTimeout(() => reject(new Error('USER_CREATE_TIMEOUT')), 10000))
+        ]);
         console.log(`[API:${requestId}] User created: ${user.id}`);
       } catch (userErr) {
         console.error(`[API:${requestId}] User creation failed:`, userErr);
+        const msg = String(userErr);
+        if (msg.includes('USER_CREATE_TIMEOUT')) {
+            return NextResponse.json({ error: '사용자 정보 저장 시간이 초과되었습니다. (DB Write Timeout)' }, { status: 504 });
+        }
         throw userErr;
       }
 

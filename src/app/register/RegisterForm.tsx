@@ -273,12 +273,12 @@ export default function RegisterForm() {
         formData.append('pledgeFile', pledgeFile);
       }
 
-      // 120초 타임아웃 설정 (대용량 파일 업로드 고려)
+      // 180초 타임아웃 설정 (대용량 파일 업로드 및 콜드스타트 고려)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000);
+      const timeoutId = setTimeout(() => controller.abort(), 180000);
 
       try {
-        console.log(`[Version: v20260114-FormData-Fix] Sending registration request via FormData...`);
+        console.log(`[Version: v20260114-Timeout-Debug] Sending registration request via FormData...`);
         
         // 1. Connectivity Check (Fast Fail)
         try {
