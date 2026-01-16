@@ -247,47 +247,30 @@ export default function RegisterForm() {
         });
       };
 
-      // JSON Payload 생성
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const payload: any = {
-        role: 'INVESTIGATOR',
-        email,
-        password,
-        name,
-        licenseNumber: licenseNumber || '',
-        officeAddress: officeAddress || '',
-        specialties, // Array
-        serviceAreas, // Array
-        serviceArea: serviceAreas.join(', '),
-        experienceYears: Number(expNumber),
-        introduction: intro || '',
-        portfolioUrl: portfolioUrl || '',
-        contactPhone: phone || '',
-        agencyPhone: agencyPhone || '',
-        acceptsTerms,
-        acceptsPrivacy,
-      };
+      // 2026-01-16: Use FormData instead of JSON to avoid WAF 403 blocks and improve upload stability
+      const formData = new FormData();
+      formData.append('role', 'INVESTIGATOR');
+      formData.append('email', email);
+      formData.append('password', password);
+      formData.append('name', name);
+      formData.append('licenseNumber', licenseNumber || '');
+      formData.append('officeAddress', officeAddress || '');
+      formData.append('specialties', JSON.stringify(specialties)); // Backend parses this
+      formData.append('serviceAreas', JSON.stringify(serviceAreas)); // Backend parses this
+      formData.append('serviceArea', serviceAreas.join(', '));
+      formData.append('experienceYears', String(expNumber));
+      formData.append('introduction', intro || '');
+      formData.append('portfolioUrl', portfolioUrl || '');
+      formData.append('contactPhone', phone || '');
+      formData.append('agencyPhone', agencyPhone || '');
+      formData.append('acceptsTerms', String(acceptsTerms));
+      formData.append('acceptsPrivacy', String(acceptsPrivacy));
 
-      try {
-        // 파일 변환 (Client Side Base64 Encoding)
-        if (businessLicenseFile) {
-          const b64 = await fileToBase64(businessLicenseFile);
-          payload.businessLicenseData = b64;
-          payload.businessLicenseName = businessLicenseFile.name;
-          // 가상 URL 설정 (Backend 호환용)
-          payload.businessLicenseUrl = '/api/files/download?type=license';
-        }
-
-        if (pledgeFile) {
-          const b64 = await fileToBase64(pledgeFile);
-          payload.pledgeData = b64;
-          payload.pledgeName = pledgeFile.name;
-          payload.pledgeUrl = '/api/files/download?type=pledge';
-        }
-      } catch (e) {
-        console.error('File conversion error:', e);
-        setError('파일 처리 중 오류가 발생했습니다.');
-        return;
+      if (businessLicenseFile) {
+        formData.append('businessLicense', businessLicenseFile);
+      }
+      if (pledgeFile) {
+        formData.append('pledgeFile', pledgeFile);
       }
 
       // 120초 타임아웃 설정 (대용량 파일 업로드 고려)
@@ -295,8 +278,7 @@ export default function RegisterForm() {
       const timeoutId = setTimeout(() => controller.abort(), 120000);
 
       try {
-        const payloadSize = JSON.stringify(payload).length;
-        console.log(`[Version: v20260114-FixTimeout-Retry4] Sending registration request... Payload size: ${(payloadSize/1024/1024).toFixed(2)} MB`);
+        console.log(`[Version: v20260114-FormData-Fix] Sending registration request via FormData...`);
         
         // 1. Connectivity Check (Fast Fail)
         try {
@@ -306,8 +288,6 @@ export default function RegisterForm() {
            });
            if (!healthCheck.ok) {
              console.warn('Health check failed:', healthCheck.status);
-             // We continue anyway, hoping it's just a health endpoint issue, 
-             // but this log helps diagnosis.
            } else {
              console.log('Health check passed. Server is reachable.');
            }
@@ -321,10 +301,8 @@ export default function RegisterForm() {
         // 2. Main Registration Request
         const res = await fetch('/api/register', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
+          // Header 'Content-Type': 'multipart/form-data' is set automatically by browser with boundary
+          body: formData,
           signal: controller.signal,
         });
         
