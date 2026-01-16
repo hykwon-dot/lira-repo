@@ -69,7 +69,6 @@ export async function POST(req: NextRequest) {
   
   try {
     // 모든 예외 상황에서 JSON만 반환하도록 보장
-    try {
       console.log(`[API:${requestId}] Parsing request body...`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let body: any;
@@ -141,7 +140,6 @@ export async function POST(req: NextRequest) {
         body = await req.json();
       }
       
-    try {
       console.log(`[API:${requestId}] Body parsed. Size check...`);
       // Just log body size roughly
       const bodySize = JSON.stringify(body).length;
