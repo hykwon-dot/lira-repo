@@ -268,57 +268,63 @@ export async function POST(req: NextRequest) {
           : sanitizedServiceAreas.join(', ');
 
       const now = new Date();
-      console.log(`[API:${requestId}] Starting Transaction for INVESTIGATOR...`);
+      console.log(`[API:${requestId}] Starting Sequential Creation for INVESTIGATOR (No Transaction)...`);
       
-      // Transaction with timeout
-      // Prisma 타입 캐싱 지연으로 delegate 접근 인식 문제 발생 시 ts-ignore 처리
-      const result = await Promise.race([
-        prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-          const user = await tx.user.create({
-            data: { email, name, password: hashedPassword, role: 'INVESTIGATOR' },
-          });
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const businessLicenseData = (body as any).businessLicenseData as string | undefined;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const pledgeData = (body as any).pledgeData as string | undefined;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const businessLicenseUrlBase = (body as any).businessLicenseUrl;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const pledgeUrlBase = (body as any).pledgeUrl;
-  
-          void businessLicenseUrlBase;
-          void pledgeUrlBase;
-  
-          // Create profile WITHOUT large data first to be fast
-          const profile = await tx.investigatorProfile.create({
-            data: {
-              userId: user.id,
-              specialties: sanitizedSpecialties,
-              licenseNumber: licenseNumber ?? null,
-              experienceYears: years,
-              contactPhone: contactPhone?.trim() ?? null,
-              agencyPhone: agencyPhone?.trim() ?? null,
-              serviceArea: normalizedServiceArea || null,
-              officeAddress: officeAddress?.trim() ?? null,
-              introduction: introduction ?? null,
-              portfolioUrl: portfolioUrl ?? null,
-              // 파일 URL에는 userId를 쿼리 파라미터로 추가하여 다운로드 API에서 식별하도록 함
-              businessLicenseUrl: businessLicenseUrlBase ? `${businessLicenseUrlBase}&userId=${user.id}` : null,
-              pledgeUrl: pledgeUrlBase ? `${pledgeUrlBase}&userId=${user.id}` : null,
-              // Skip large blobs in initial create
-              termsAcceptedAt: now,
-              privacyAcceptedAt: now,
-            },
-          });
-          
-          return { user, profile, businessLicenseData, pledgeData };
-        }, {
-           maxWait: 10000, 
-           timeout: 20000 
-        }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('DB_TRANSACTION_TIMEOUT')), 50000))
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ]) as any;
+      // 1. Create User
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let user: any;
+      try {
+        user = await prisma.user.create({
+          data: { email, name, password: hashedPassword, role: 'INVESTIGATOR' },
+        });
+        console.log(`[API:${requestId}] User created: ${user.id}`);
+      } catch (userErr) {
+        console.error(`[API:${requestId}] User creation failed:`, userErr);
+        throw userErr;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const businessLicenseData = (body as any).businessLicenseData as string | undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pledgeData = (body as any).pledgeData as string | undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const businessLicenseUrlBase = (body as any).businessLicenseUrl;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pledgeUrlBase = (body as any).pledgeUrl;
+
+      // 2. Create Profile
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let profile: any;
+      try {
+        profile = await prisma.investigatorProfile.create({
+          data: {
+            userId: user.id,
+            specialties: sanitizedSpecialties,
+            licenseNumber: licenseNumber ?? null,
+            experienceYears: years,
+            contactPhone: contactPhone?.trim() ?? null,
+            agencyPhone: agencyPhone?.trim() ?? null,
+            serviceArea: normalizedServiceArea || null,
+            officeAddress: officeAddress?.trim() ?? null,
+            introduction: introduction ?? null,
+            portfolioUrl: portfolioUrl ?? null,
+            // 파일 URL에는 userId를 쿼리 파라미터로 추가하여 다운로드 API에서 식별하도록 함
+            businessLicenseUrl: businessLicenseUrlBase ? `${businessLicenseUrlBase}&userId=${user.id}` : null,
+            pledgeUrl: pledgeUrlBase ? `${pledgeUrlBase}&userId=${user.id}` : null,
+            // Skip large blobs in initial create
+            termsAcceptedAt: now,
+            privacyAcceptedAt: now,
+          },
+        });
+        console.log(`[API:${requestId}] Profile created: ${profile.id}`);
+      } catch (profileErr) {
+        console.error(`[API:${requestId}] Profile creation failed. Rolling back user...`, profileErr);
+        // Compensation: Delete the orphan user
+        await prisma.user.delete({ where: { id: user.id } }).catch(e => console.error('Rollback failed:', e));
+        throw profileErr; // Re-throw to be handled by the outer catch
+      }
+
+      const result = { user, profile, businessLicenseData, pledgeData };
 
       // Update large data separately if present (to avoid transaction lock/timeout issues)
       if (result.businessLicenseData || result.pledgeData) {
