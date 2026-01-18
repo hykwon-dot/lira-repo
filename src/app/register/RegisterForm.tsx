@@ -327,6 +327,7 @@ export default function RegisterForm() {
         
         if (!res.ok) {
           setError(data.error || '민간조사원 등록에 실패했습니다.');
+          setIsSubmitting(false); // Ensure button state is reset immediately
           return;
         }
 

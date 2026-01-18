@@ -918,18 +918,18 @@ export const ChatSimulation = () => {
       } catch (error) {
         console.error("[SIMULATION_INTAKE_ERROR]", error);
         const errorMessage = error instanceof Error ? error.message : "대화 요약을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.";
-        setSummaryError(errorMessage);
-        const fallbackAssistant: ChatMessage = {
-          id: cuid(),
-          role: "assistant",
-          content: errorMessage.includes("API 키") || errorMessage.includes("API Key") 
-            ? "시스템 설정 오류(API Key)가 발생했습니다. 관리자에게 문의해주세요." 
-            : "죄송합니다. 잠시 후 다시 시도해 주세요.",
-          createdAt: Date.now(),
-        };
-        setMessages((prev) => [...prev, fallbackAssistant]);
-      } finally {
+        
+        let displayError = errorMessage;
+        if (errorMessage.includes("API 키") || errorMessage.includes("API Key")) {
+           displayError = "시스템 설정 오류(API Key)가 발생했습니다. 관리자에게 문의해주세요.";
+        } else if (displayError.includes("JSON")) {
+           displayError = "AI 응답을 처리하는 중 오류가 발생했습니다. 다시 시도해 주세요.";
+        }
+
+        setSummaryError(displayError);
+        // Do NOT append the error as a chat message to prevent context poisoning loop
         setIsAssistantThinking(false);
+      } finally {
         setIsSummaryLoading(false);
       }
     },
@@ -1993,19 +1993,19 @@ export const ChatSimulation = () => {
 
             <div
               ref={chatContainerRef}
-              className="custom-scrollbar flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-white via-white to-slate-50/60 px-4 py-5 sm:px-6"
+              className="custom-scrollbar flex flex-1 flex-col overflow-y-auto bg-slate-50/50 p-4"
             >
               <AnimatePresence initial={false}>
                 {messages.map((message) => (
                   <motion.div
                     key={message.id}
-                    layout
-                    initial={{ opacity: 0, y: 12 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
                     className={cn(
-                      "flex w-full",
-                      message.role === "user" ? "justify-end" : "justify-start"
+                      "mb-6 flex w-full",
+                      message.role === "user" ? "justify-end" : "justify-start",
                     )}
                   >
                     <div
@@ -2068,6 +2068,27 @@ export const ChatSimulation = () => {
                 ))}
               </AnimatePresence>
 
+              {/* Error Banner in Chat */}
+              {summaryError && (
+                 <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-6 flex w-full justify-center"
+                 >
+                    <div className="flex max-w-[80%] items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm text-rose-600 shadow-sm">
+                      <FiAlertCircle className="h-4 w-4 shrink-0" />
+                      <span>{summaryError}</span>
+                      <button 
+                        onClick={() => setSummaryError(null)}
+                        className="ml-2 rounded-full p-1 hover:bg-rose-50"
+                      >
+                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                 </motion.div>
+              )}
+
+              {/* Loading Indicator */}
               {isAssistantThinking ? (
                 <div className="flex w-full justify-start">
                   <div className="flex items-start gap-3">

@@ -112,10 +112,11 @@ export async function POST(req: NextRequest) {
         
         console.log(`[API:${requestId}] FormData extracted. Files detected.`);
         
-        // Handle file upload objects (Just save the File reference for later processing)
-        // We will defer the heavy arrayBuffer() and base64 conversion until AFTER user creation
-        const pendingBusinessLicense = body.businessLicense instanceof File ? body.businessLicense : null;
-        const pendingPledgeFile = body.pledgeFile instanceof File ? body.pledgeFile : null;
+        // Check for File via duck-typing (since instanceof File might fail in some runtimes)
+        const isFile = (obj: any) => obj && typeof obj === 'object' && typeof obj.arrayBuffer === 'function';
+
+        const pendingBusinessLicense = isFile(body.businessLicense) ? body.businessLicense : null;
+        const pendingPledgeFile = isFile(body.pledgeFile) ? body.pledgeFile : null;
         
         // Pre-set empty data placeholders
         if (pendingBusinessLicense) {
@@ -360,7 +361,7 @@ export async function POST(req: NextRequest) {
           }
 
           // Force timeout for LOB update (5 seconds)
-          // If this times out, we proceed without failing the whole request
+          // If this times out, we continue without error
           await Promise.race([
             prisma.investigatorProfile.update({
               where: { id: result.profile.id },
@@ -372,8 +373,8 @@ export async function POST(req: NextRequest) {
             new Promise((_, reject) => setTimeout(() => reject(new Error('LOB_UPDATE_TIMEOUT')), 5000))
           ]);
           console.log(`[API:${requestId}] LOB data updated.`);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (lobErr) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (lobErr: any) {
            console.error(`[API:${requestId}] Failed to save file data (non-fatal):`, lobErr);
            // We do NOT rollback user creation here, but user might need to re-upload documents later.
         }
