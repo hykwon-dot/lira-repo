@@ -10,8 +10,6 @@ import {
 import RegisterForm from "./RegisterForm";
 import HelpDeskWidget from "./HelpDeskWidget";
 
-export const dynamic = "force-dynamic";
-
 const stats = [
   {
     value: "7분",

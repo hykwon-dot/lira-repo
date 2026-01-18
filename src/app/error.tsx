@@ -2,8 +2,6 @@
 
 import { useEffect } from "react";
 
-export const dynamic = "force-dynamic";
-
 export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
     console.error("App Error: ", error);
