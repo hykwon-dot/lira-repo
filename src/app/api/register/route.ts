@@ -191,7 +191,8 @@ export async function POST(req: NextRequest) {
   try {
     const connectionPromise = prisma.$queryRaw`SELECT 1`;
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('DB_CONNECTION_TIMEOUT')), 5000)
+      // Increased DB timeout to 10s for initial handshake in cold start scenarios
+      setTimeout(() => reject(new Error('DB_CONNECTION_TIMEOUT')), 10000)
     );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await Promise.race([connectionPromise, timeoutPromise]) as any;
@@ -331,7 +332,8 @@ export async function POST(req: NextRequest) {
       } catch (profileErr) {
         console.error(`[API:${requestId}] Profile creation failed. Rolling back user...`, profileErr);
         // Compensation: Delete the orphan user
-        await prisma.user.delete({ where: { id: user.id } }).catch(e => console.error('Rollback failed:', e));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await prisma.user.delete({ where: { id: user.id } }).catch((e: any) => console.error('Rollback failed:', e));
         throw profileErr; // Re-throw to be handled by the outer catch
       }
 

@@ -301,9 +301,14 @@ export default function RegisterForm() {
         // 2. Main Registration Request
         const res = await fetch('/api/register', {
           method: 'POST',
-          // Header 'Content-Type': 'multipart/form-data' is set automatically by browser with boundary
+          // Header 'Content-Type': 'multipart/form-data' is set automatically
           body: formData,
           signal: controller.signal,
+          // prevent caching
+          cache: 'no-store', 
+          headers: {
+             'x-lira-client-timeout': '180000'
+          }
         });
         
         console.log('Registration response status:', res.status);
