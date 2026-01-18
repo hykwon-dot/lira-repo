@@ -27,8 +27,8 @@ const compressImage = async (file: File): Promise<File> => {
         let width = img.width;
         let height = img.height;
 
-        // Max dimension: 1024px (Enough for verification)
-        const MAX_DIMENSION = 1024;
+        // Max dimension: 800px (Aggressive reduction for WAF bypass)
+        const MAX_DIMENSION = 800;
         if (width > height) {
           if (width > MAX_DIMENSION) {
             height *= MAX_DIMENSION / width;
@@ -826,8 +826,8 @@ export default function RegisterForm() {
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(e) => {
                     const file = e.target.files?.[0] || null;
-                    if (file && file.size > 5 * 1024 * 1024) {
-                      alert('파일 용량은 5MB를 초과할 수 없습니다.');
+                    if (file && file.size > 3 * 1024 * 1024) {
+                      alert('파일 용량은 3MB를 초과할 수 없습니다. (압축 또는 이미지 변환 후 업로드해주세요)');
                       e.target.value = '';
                       setBusinessLicenseFile(null);
                       return;
@@ -837,7 +837,7 @@ export default function RegisterForm() {
                   className="lira-input"
                   required
                 />
-                <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 5MB)</span>
+                <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 3MB)</span>
               </label>
 
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
@@ -868,8 +868,8 @@ export default function RegisterForm() {
                       accept=".pdf,.jpg,.jpeg,.png"
                       onChange={(e) => {
                         const file = e.target.files?.[0] || null;
-                        if (file && file.size > 2 * 1024 * 1024) {
-                          alert('파일 용량은 5MB를 초과할 수 없습니다.');
+                        if (file && file.size > 3 * 1024 * 1024) {
+                          alert('파일 용량은 3MB를 초과할 수 없습니다. (압축 또는 이미지 변환 후 업로드해주세요)');
                           e.target.value = '';
                           setPledgeFile(null);
                           return;
@@ -879,7 +879,7 @@ export default function RegisterForm() {
                       className="lira-input"
                       required
                     />
-                    <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 5MB)</span>
+                    <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 3MB)</span>
                   </label>
                 </div>
               </div>
