@@ -217,14 +217,14 @@ export default function RegisterForm() {
         return;
       }
 
-      // 파일 크기 체크 (1.5MB 제한 - JSON 전송을 위해 안전 마진 확보)
-      const MAX_SIZE = 1.5 * 1024 * 1024; // 1.5MB
+      // 파일 크기 체크 (5MB 제한 - FormData 전송 및 서버 설정 10MB 대응)
+      const MAX_SIZE = 5 * 1024 * 1024; // 5MB
       if (businessLicenseFile && businessLicenseFile.size > MAX_SIZE) {
-        setError(`사업자등록증 파일 크기는 1.5MB 이하여야 합니다. (현재: ${(businessLicenseFile.size / 1024 / 1024).toFixed(2)}MB)`);
+        setError(`사업자등록증 파일 크기는 5MB 이하여야 합니다. (현재: ${(businessLicenseFile.size / 1024 / 1024).toFixed(2)}MB)`);
         return;
       }
       if (pledgeFile && pledgeFile.size > MAX_SIZE) {
-        setError(`서약서 파일 크기는 1.5MB 이하여야 합니다. (현재: ${(pledgeFile.size / 1024 / 1024).toFixed(2)}MB)`);
+        setError(`서약서 파일 크기는 5MB 이하여야 합니다. (현재: ${(pledgeFile.size / 1024 / 1024).toFixed(2)}MB)`);
         return;
       }
 
