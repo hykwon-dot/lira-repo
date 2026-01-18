@@ -27,8 +27,8 @@ const compressImage = async (file: File): Promise<File> => {
         let width = img.width;
         let height = img.height;
 
-        // Max dimension: 1280px (Reasonable for viewing docs)
-        const MAX_DIMENSION = 1280;
+        // Max dimension: 1024px (Enough for verification)
+        const MAX_DIMENSION = 1024;
         if (width > height) {
           if (width > MAX_DIMENSION) {
             height *= MAX_DIMENSION / width;
@@ -45,25 +45,24 @@ const compressImage = async (file: File): Promise<File> => {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-           resolve(file); // Fallback: return original
+           resolve(file); 
            return;
         }
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Convert to blob (JPEG, quality 0.6)
+        // Convert to blob (JPEG, quality 0.5 - aggressive compression)
         canvas.toBlob((blob) => {
           if (!blob) {
-            resolve(file);
-            return;
+             resolve(file);
+             return;
           }
-          // Create new File from blob with original name but .jpg extension (optional, keeping original name is fine usually)
           const newFile = new File([blob], file.name, {
             type: 'image/jpeg',
             lastModified: Date.now(),
           });
           console.log(`[ImageCompression] ${file.name}: ${(file.size/1024).toFixed(1)}KB -> ${(newFile.size/1024).toFixed(1)}KB`);
           resolve(newFile);
-        }, 'image/jpeg', 0.6);
+        }, 'image/jpeg', 0.5);
       };
       img.onerror = (err) => resolve(file); // Return original on error
     };
@@ -112,6 +111,8 @@ export default function RegisterForm() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Detailed status for better UX
+  const [submitStatus, setSubmitStatus] = useState('');
 
   const roleParam = searchParams?.get('role');
 
@@ -937,12 +938,24 @@ export default function RegisterForm() {
         </section>
 
         <div className="space-y-4">
+          {/* Submit Button */}
           <button
-            type="submit"
+            type="button"
+            onClick={handleSubmit}
             disabled={isSubmitting}
-            className="lira-button lira-button--blue w-full justify-center"
+            className={`flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-4 text-base font-bold text-white shadow-md transition hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed`}
           >
-            {isSubmitting ? '처리 중...' : role === 'USER' ? '회원가입 완료' : '심사 신청 보내기'}
+            {isSubmitting ? (
+              <div className="flex items-center gap-2">
+                 <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                 </svg>
+                 <span>{submitStatus || '처리 중...'}</span>
+              </div>
+            ) : (
+              '심사 신청 보내기'
+            )}
           </button>
           {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</div>}
           {success && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-600">{success}</div>}
