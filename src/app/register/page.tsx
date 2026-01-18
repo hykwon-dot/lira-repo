@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import {
   FiArrowUpRight,
   FiCheckCircle,
@@ -192,7 +193,9 @@ export default function RegisterPage() {
             </div>
 
             <div className="mt-7 flex-1 sm:mt-8">
-              <RegisterForm />
+              <Suspense fallback={<div>Loading...</div>}>
+                <RegisterForm />
+              </Suspense>
             </div>
 
             <div className="mt-9 space-y-4 rounded-2xl border border-slate-200/70 bg-gradient-to-br from-slate-50 to-white p-5 text-[13px] text-slate-600 sm:mt-10 sm:text-sm">
