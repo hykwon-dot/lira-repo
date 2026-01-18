@@ -271,6 +271,26 @@ export default function RegisterForm() {
           return;
         }
 
+        // [Added] File Size Check (Prevent > 4MB payloads which fail via JSON/Lambda limits)
+        const MAX_PDF_SIZE = 3 * 1024 * 1024; // 3MB
+        if (businessLicenseFile && businessLicenseFile.type === 'application/pdf' && businessLicenseFile.size > MAX_PDF_SIZE) {
+            setError('사업자등록증 PDF 파일이 너무 큽니다. (3MB 이하로 줄이거나 이미지로 업로드해주세요)');
+            setIsSubmitting(false);
+            return;
+        }
+        if (pledgeFile && pledgeFile.type === 'application/pdf' && pledgeFile.size > MAX_PDF_SIZE) {
+            setError('윤리서약서 PDF 파일이 너무 큽니다. (3MB 이하로 줄이거나 이미지로 업로드해주세요)');
+            setIsSubmitting(false);
+            return;
+        }
+        // General limit for images too (though they get compressed, we check raw size just in case)
+        const MAX_RAW_SIZE = 10 * 1024 * 1024; // 10MB
+        if ((businessLicenseFile?.size || 0) > MAX_RAW_SIZE || (pledgeFile?.size || 0) > MAX_RAW_SIZE) {
+             setError('파일 크기가 너무 큽니다. (10MB 이하 파일만 선택해주세요)');
+             setIsSubmitting(false);
+             return;
+        }
+
       setError('');
 
       // Prepare Plain JSON payload (Avoid FormData/Multipart to bypass CloudFront WAF 403)
