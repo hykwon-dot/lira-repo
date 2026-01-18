@@ -145,6 +145,18 @@ export async function POST(req: NextRequest) {
         body = await req.json();
       }
       
+      // [Added for JSON Base64 Support] Pre-set download URLs if base64 data is present
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((body as any).businessLicenseBase64 && !(body as any).businessLicenseUrl) {
+         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         (body as any).businessLicenseUrl = `/api/files/download?type=license`;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((body as any).pledgeFileBase64 && !(body as any).pledgeUrl) {
+         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         (body as any).pledgeUrl = `/api/files/download?type=pledge`;
+      }
+
       console.log(`[API:${requestId}] Body parsed. Processing core logic...`);
       // REMOVED heavy JSON.stringify logging to save memory/cpu with large files
       
@@ -346,7 +358,13 @@ export async function POST(req: NextRequest) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pendingPledgeFile = (body as any).pledgeFile instanceof File ? (body as any).pledgeFile as File : null;
 
-      if (pendingBusinessLicense || pendingPledgeFile) {
+      // [Added for JSON Base64 Support]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const preEncodedLicense = typeof (body as any).businessLicenseBase64 === 'string' ? (body as any).businessLicenseBase64 as string : null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const preEncodedPledge = typeof (body as any).pledgeFileBase64 === 'string' ? (body as any).pledgeFileBase64 as string : null;
+
+      if (pendingBusinessLicense || pendingPledgeFile || preEncodedLicense || preEncodedPledge) {
         console.log(`[API:${requestId}] Updating LOB data (Deferred Processing)...`);
         try {
           // Process files to Base64 NOW
@@ -356,10 +374,15 @@ export async function POST(req: NextRequest) {
           if (pendingBusinessLicense) {
              const buf = Buffer.from(await pendingBusinessLicense.arrayBuffer());
              businessLicenseData = `data:${pendingBusinessLicense.type || 'application/octet-stream'};base64,${buf.toString('base64')}`;
+          } else if (preEncodedLicense) {
+             businessLicenseData = preEncodedLicense; 
           }
+
            if (pendingPledgeFile) {
              const buf = Buffer.from(await pendingPledgeFile.arrayBuffer());
              pledgeData = `data:${pendingPledgeFile.type || 'application/octet-stream'};base64,${buf.toString('base64')}`;
+          } else if (preEncodedPledge) {
+             pledgeData = preEncodedPledge;
           }
 
           // Force timeout for LOB update (5 seconds)

@@ -70,6 +70,16 @@ const compressImage = async (file: File): Promise<File> => {
   });
 };
 
+// --- Client-side Base64 Converter ---
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
 type PublicRole = 'USER' | 'INVESTIGATOR';
 
 export default function RegisterForm() {
@@ -252,106 +262,63 @@ export default function RegisterForm() {
         setSuccess('회원가입이 완료되었습니다. 맞춤 시뮬레이션으로 이동합니다.');
         router.push('/simulation');
         return;
-      }
-
-      // Investigator flow
-      if (specialties.length === 0) {
-        setError('최소 한 개 이상의 전문 분야를 선택해 주세요.');
-        return;
-      }
-      if (serviceAreas.length === 0) {
-        setError('주요 활동 지역을 최소 1개 이상 선택해 주세요.');
-        return;
-      }
-      if (!businessLicenseFile) {
-        setError('사업자등록증 파일을 업로드해 주세요.');
-        return;
-      }
-      const expNumber = experienceYears ? Number(experienceYears) : 0;
-      if (experienceYears && Number.isNaN(expNumber)) {
-        setError('경력 연수는 숫자로 입력해 주세요.');
-        return;
-      }
-
-      if (!pledgeFile) {
-        setError('서명된 서약서 파일을 업로드해 주세요.');
-        return;
-      }
-
-      // 파일 크기 체크 (5MB 제한 - FormData 전송 및 서버 설정 10MB 대응)
-      const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-      if (businessLicenseFile && businessLicenseFile.size > MAX_SIZE) {
-        setError(`사업자등록증 파일 크기는 5MB 이하여야 합니다. (현재: ${(businessLicenseFile.size / 1024 / 1024).toFixed(2)}MB)`);
-        return;
-      }
-      if (pledgeFile && pledgeFile.size > MAX_SIZE) {
-        setError(`서약서 파일 크기는 5MB 이하여야 합니다. (현재: ${(pledgeFile.size / 1024 / 1024).toFixed(2)}MB)`);
-        return;
-      }
+      } else {
+        // INVESTIGATOR
+        const expNumber = parseInt(experienceYears || '0', 10);
+        if (Number.isNaN(expNumber)) {
+          setError('경력(년수)은 숫자만 입력해주세요.');
+          setIsSubmitting(false);
+          return;
+        }
 
       setError('');
 
-      // Helper to convert file to Base64
-      const fileToBase64 = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => {
-             // remove data:image/...;base64, prefix if desired, but code usually expects it or handles it.
-             // Currently backend expects "data:..." URL or raw base64?
-             // route.ts: const businessLicenseData = (body as any).businessLicenseData...
-             // and later uses it. The previous logic constructed `data:${mimeType};base64,${base64Data}`.
-             // FileReader.readAsDataURL returns exactly that format.
-             resolve(reader.result as string);
-          };
-          reader.onerror = (error) => reject(error);
-        });
+      // Prepare Plain JSON payload (Avoid FormData/Multipart to bypass CloudFront WAF 403)
+      const payload: Record<string, any> = {
+        role: 'INVESTIGATOR',
+        email,
+        password,
+        name,
+        licenseNumber: licenseNumber || '',
+        officeAddress: officeAddress || '',
+        specialties, // Send array directly
+        serviceAreas,
+        serviceArea: serviceAreas.join(', '),
+        experienceYears: expNumber,
+        introduction: intro || '',
+        portfolioUrl: portfolioUrl || '',
+        contactPhone: phone || '',
+        agencyPhone: agencyPhone || '',
+        acceptsTerms,
+        acceptsPrivacy
       };
 
-      // 2026-01-16: Use FormData instead of JSON to avoid WAF 403 blocks and improve upload stability
-      const formData = new FormData();
-      formData.append('role', 'INVESTIGATOR');
-      formData.append('email', email);
-      formData.append('password', password);
-      formData.append('name', name);
-      formData.append('licenseNumber', licenseNumber || '');
-      formData.append('officeAddress', officeAddress || '');
-      formData.append('specialties', JSON.stringify(specialties)); // Backend parses this
-      formData.append('serviceAreas', JSON.stringify(serviceAreas)); // Backend parses this
-      formData.append('serviceArea', serviceAreas.join(', '));
-      formData.append('experienceYears', String(expNumber));
-      formData.append('introduction', intro || '');
-      formData.append('portfolioUrl', portfolioUrl || '');
-      formData.append('contactPhone', phone || '');
-      formData.append('agencyPhone', agencyPhone || '');
-      formData.append('acceptsTerms', String(acceptsTerms));
-      formData.append('acceptsPrivacy', String(acceptsPrivacy));
-
       if (businessLicenseFile) {
-        // Compress image before upload
+        setSubmitStatus('사업자등록증 최적화 중...');
         console.log('Compressing business license...');
         const compressed = await compressImage(businessLicenseFile);
-        formData.append('businessLicense', compressed);
+        payload.businessLicenseBase64 = await fileToBase64(compressed);
       }
       if (pledgeFile) {
-        // Compress image before upload
+        setSubmitStatus('윤리서약서 최적화 중...');
         console.log('Compressing pledge file...');
         const compressed = await compressImage(pledgeFile);
-        formData.append('pledgeFile', compressed);
+        payload.pledgeFileBase64 = await fileToBase64(compressed);
       }
 
-      // 180초 타임아웃 설정 (대용량 파일 업로드 및 콜드스타트 고려)
+      // 180초 타임아웃
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 180000);
 
       try {
-        console.log(`[Version: v20260114-Timeout-Debug] Sending registration request via FormData...`);
+        console.log(`[Version: v20260114-JSON] Sending registration request via JSON...`);
+        setSubmitStatus('서버 연결 확인 중...');
         
-        // 1. Connectivity Check (Fast Fail)
+        // 1. Connectivity Check
         try {
            const healthCheck = await fetch('/api/health/deployment', { 
              method: 'GET', 
-             signal: AbortSignal.timeout(5000) // 5s timeout for health
+             signal: AbortSignal.timeout(5000) 
            });
            if (!healthCheck.ok) {
              console.warn('Health check failed:', healthCheck.status);
@@ -365,17 +332,18 @@ export default function RegisterForm() {
            return;
         }
 
+        setSubmitStatus('심사 정보 전송 중...');
+
         // 2. Main Registration Request
         const res = await fetch('/api/register', {
           method: 'POST',
-          // Header 'Content-Type': 'multipart/form-data' is set automatically
-          body: formData,
-          signal: controller.signal,
-          // prevent caching
-          cache: 'no-store', 
           headers: {
-             'x-lira-client-timeout': '180000'
-          }
+            'Content-Type': 'application/json',
+            'x-lira-client-timeout': '180000'
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+          cache: 'no-store' 
         });
         
         console.log('Registration response status:', res.status);
@@ -423,7 +391,8 @@ export default function RegisterForm() {
       } finally {
         clearTimeout(timeoutId);
       }
-    } catch (err) {
+    }
+  } catch (err) {
       console.error('Registration error:', err);
       if (err instanceof TypeError && err.message.includes('fetch')) {
         setError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
