@@ -271,7 +271,7 @@ export default function RegisterForm() {
           return;
         }
 
-        // [Added] File Size Check (Prevent > 4MB payloads which fail via JSON/Lambda limits)
+        // [File Size Check]
         const MAX_PDF_SIZE = 3 * 1024 * 1024; // 3MB
         if (businessLicenseFile && businessLicenseFile.type === 'application/pdf' && businessLicenseFile.size > MAX_PDF_SIZE) {
             setError('사업자등록증 PDF 파일이 너무 큽니다. (3MB 이하로 줄이거나 이미지로 업로드해주세요)');
@@ -283,8 +283,7 @@ export default function RegisterForm() {
             setIsSubmitting(false);
             return;
         }
-        // General limit for images too (though they get compressed, we check raw size just in case)
-        const MAX_RAW_SIZE = 10 * 1024 * 1024; // 10MB
+        const MAX_RAW_SIZE = 10 * 1024 * 1024;
         if ((businessLicenseFile?.size || 0) > MAX_RAW_SIZE || (pledgeFile?.size || 0) > MAX_RAW_SIZE) {
              setError('파일 크기가 너무 큽니다. (10MB 이하 파일만 선택해주세요)');
              setIsSubmitting(false);
@@ -293,15 +292,16 @@ export default function RegisterForm() {
 
       setError('');
 
-      // Prepare Plain JSON payload (Avoid FormData/Multipart to bypass CloudFront WAF 403)
-      const payload: Record<string, any> = {
+      // [Step 1] Prepare ONLY Text Data for Initial Registration
+      // We decouple file upload to avoid WAF 403 on the public /api/register endpoint
+      const registrationPayload: Record<string, any> = {
         role: 'INVESTIGATOR',
         email,
         password,
         name,
         licenseNumber: licenseNumber || '',
         officeAddress: officeAddress || '',
-        specialties, // Send array directly
+        specialties, 
         serviceAreas,
         serviceArea: serviceAreas.join(', '),
         experienceYears: expNumber,
@@ -313,100 +313,123 @@ export default function RegisterForm() {
         acceptsPrivacy
       };
 
+      // [Pre-process Files] Prepare them but DO NOT send in Step 1
+      const filePayload: Record<string, string> = {};
+      
       if (businessLicenseFile) {
-        setSubmitStatus('사업자등록증 최적화 중...');
-        console.log('Compressing business license...');
-        const compressed = await compressImage(businessLicenseFile);
-        payload.businessLicenseBase64 = await fileToBase64(compressed);
+        setSubmitStatus('파일 최적화 중 (1/2)...');
+        try {
+            const compressed = await compressImage(businessLicenseFile);
+            filePayload.businessLicenseBase64 = await fileToBase64(compressed);
+        } catch (e) {
+            console.warn('License compression failed', e);
+        }
       }
       if (pledgeFile) {
-        setSubmitStatus('윤리서약서 최적화 중...');
-        console.log('Compressing pledge file...');
-        const compressed = await compressImage(pledgeFile);
-        payload.pledgeFileBase64 = await fileToBase64(compressed);
+        setSubmitStatus('파일 최적화 중 (2/2)...');
+        try {
+            const compressed = await compressImage(pledgeFile);
+            filePayload.pledgeFileBase64 = await fileToBase64(compressed);
+        } catch (e) {
+            console.warn('Pledge compression failed', e);
+        }
       }
 
-      // 180초 타임아웃
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 180000);
 
       try {
-        console.log(`[Version: v20260114-JSON] Sending registration request via JSON...`);
-        setSubmitStatus('서버 연결 확인 중...');
+        console.log(`[Version: v20260114-Split] 1. Registering User (Text Only)...`);
+        setSubmitStatus('가입 정보 확인 중...');
         
-        // 1. Connectivity Check
+        // Connectivity Check
         try {
-           const healthCheck = await fetch('/api/health/deployment', { 
-             method: 'GET', 
-             signal: AbortSignal.timeout(5000) 
-           });
-           if (!healthCheck.ok) {
-             console.warn('Health check failed:', healthCheck.status);
-           } else {
-             console.log('Health check passed. Server is reachable.');
-           }
+           const healthCheck = await fetch('/api/health/deployment', { method: 'GET', signal: AbortSignal.timeout(5000) });
+           if (!healthCheck.ok) console.warn('Health check warning:', healthCheck.status);
         } catch (hErr) {
-           console.error('Health check unreachable:', hErr);
-           setError('서버에 연결할 수 없습니다. (Health Check Timeout) - 인터넷 연결이나 방화벽 설정을 확인해주세요.');
+           setError('서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.');
            clearTimeout(timeoutId);
            return;
         }
 
-        setSubmitStatus('심사 정보 전송 중...');
-
-        // 2. Main Registration Request
+        // [Step 1 Execute]
+        setSubmitStatus('기본 정보 저장 중...');
         const res = await fetch('/api/register', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-lira-client-timeout': '180000'
-          },
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-          cache: 'no-store' 
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(registrationPayload),
+          signal: controller.signal
         });
-        
-        console.log('Registration response status:', res.status);
-        
+
+        // Handle Step 1 Response
         let data;
-        const contentType = res.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          data = await res.json();
-        } else {
-          // JSON이 아닌 응답(예: 413 Payload Too Large HTML) 처리
-          const text = await res.text();
-          console.error('Non-JSON response:', text);
-          if (res.status === 413) {
-            setError('파일 크기가 너무 큽니다. (서버 제한 초과)');
-            return;
-          }
-          throw new Error(`서버 응답 형식이 올바르지 않습니다. (Status: ${res.status})`);
-        }
-        
-        console.log('Registration response data:', data);
-        
-        if (!res.ok) {
-          setError(data.error || '민간조사원 등록에 실패했습니다.');
-          setIsSubmitting(false); // Ensure button state is reset immediately
-          return;
+        try {
+             data = await res.json();
+        } catch {
+             const text = await res.text();
+             console.error('Register Non-JSON:', text);
+             if (res.status === 403) throw new Error('WAF_BLOCK');
+             throw new Error(`Server Error: ${res.status}`);
         }
 
-        setSuccess('등록 신청이 완료되었습니다. 관리자 승인 후 안내 메일을 드릴게요.');
+        if (!res.ok) {
+          setError(data.error || '가입 요청이 거부되었습니다.');
+          setIsSubmitting(false);
+          return;
+        }
         
-        // Store user data if token is provided
-        if (data.token) {
-          setUser(data, data.token);
+        // Success! User created.
+        const token = data.token;
+        if (token) setUser(data, token);
+
+        // [Step 2] Upload Files (If any) using the new Token
+        const hasFiles = Object.keys(filePayload).length > 0;
+        let uploadFailed = false;
+
+        if (hasFiles && token) {
+            setSubmitStatus('제출 서류 업로드 중...');
+            console.log('2. Uploading Files via Profile API...');
+            
+            try {
+                const uploadRes = await fetch('/api/me/profile', {
+                    method: 'PATCH',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(filePayload)
+                });
+                
+                if (!uploadRes.ok) {
+                    console.error('File Upload Failed:', uploadRes.status);
+                    uploadFailed = true;
+                } else {
+                    console.log('File Upload Success');
+                }
+            } catch (upErr) {
+                console.error('File Upload Network Error:', upErr);
+                uploadFailed = true;
+            }
+        }
+
+        if (uploadFailed) {
+            alert('회원가입은 성공했으나, 서류 업로드에 실패했습니다. 로그인 후 마이페이지에서 사업자등록증과 서약서를 다시 등록해주세요.');
+        } else {
+            setSuccess('등록 신청이 완료되었습니다. 관리자 승인 후 안내 메일을 드릴게요.');
         }
         
         setTimeout(() => {
           router.push('/login?pending=investigator');
-        }, 2000);
+        }, 1500);
+
       } catch (err: unknown) {
-        const errorMessage = String(err);
-        if (errorMessage.includes('AbortError') || (err instanceof Error && err.name === 'AbortError')) {
-          setError('서버 응답 시간이 초과되었습니다. 네트워크 상태를 확인하거나 잠시 후 다시 시도해주세요.');
+        const msg = String(err);
+        if (msg.includes('WAF_BLOCK') || msg.includes('403')) {
+             setError('보안 정책에 의해 가입 요청이 차단되었습니다. (WAF 403) - VPN을 끄거나 다른 네트워크에서 시도해주세요.');
+        } else if (msg.includes('AbortError')) {
+           setError('서버 응답 시간 초과. (Timeout)');
         } else {
-          throw err;
+           setError(`오류 발생: ${err instanceof Error ? err.message : '알 수 없음'}`);
         }
       } finally {
         clearTimeout(timeoutId);

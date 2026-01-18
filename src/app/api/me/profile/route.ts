@@ -379,6 +379,19 @@ async function handleProfileUpdate(req: NextRequest) {
     const avatarBase64 = payloadRecord.avatarBase64; 
     const isBase64Upload = typeof avatarBase64 === 'string' && avatarBase64.startsWith('data:image/');
     
+    // [Added] Handle Business License & Pledge Data (Deferred Upload from Register)
+    const businessLicenseBase64 = payloadRecord.businessLicenseBase64;
+    if (typeof businessLicenseBase64 === 'string' && businessLicenseBase64.startsWith('data:')) {
+        updateData.businessLicenseData = businessLicenseBase64;
+        updateData.businessLicenseUrl = `/api/files/download?type=license&userId=${user.id}`;
+    }
+
+    const pledgeFileBase64 = payloadRecord.pledgeFileBase64;
+    if (typeof pledgeFileBase64 === 'string' && pledgeFileBase64.startsWith('data:')) {
+        updateData.pledgeData = pledgeFileBase64;
+        updateData.pledgeUrl = `/api/files/download?type=pledge&userId=${user.id}`;
+    }
+
     if (isBase64Upload) {
       try {
         const matches = avatarBase64.match(/^data:(image\/([a-zA-Z+]+));base64,(.+)$/);
