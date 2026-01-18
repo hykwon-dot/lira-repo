@@ -6,17 +6,20 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('[MariaDB Seed] 시작');
 
-  const rawPass = process.env.SEED_PASSWORD || 'ChangeMe123!';
+  const rawPass = process.env.SEED_PASSWORD || 'admin123';
   const passwordHash = await hash(rawPass, 10);
 
   // Admin 계정
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@lira.local' },
-    update: {},
+    where: { email: 'admin@admin.com' },
+    update: {
+      password: passwordHash,
+      role: 'ADMIN' 
+    },
     create: {
-      email: 'admin@lira.local',
+      email: 'admin@admin.com',
       name: '운영관리자',
-  password: passwordHash,
+      password: passwordHash,
       role: 'ADMIN'
     }
   });
