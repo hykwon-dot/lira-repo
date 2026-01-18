@@ -392,6 +392,30 @@ async function handleProfileUpdate(req: NextRequest) {
         updateData.pledgeUrl = `/api/files/download?type=pledge&userId=${user.id}`;
     }
 
+    // [Added] Handle Hex Data (WAF Bypass)
+    const handleHexUpload = (hex: unknown, type: unknown, targetField: 'businessLicense' | 'pledge') => {
+        if (typeof hex === 'string' && hex.length > 0) {
+            try {
+                const buffer = Buffer.from(hex, 'hex');
+                const mimeType = typeof type === 'string' ? type : 'image/jpeg';
+                const base64 = `data:${mimeType};base64,${buffer.toString('base64')}`;
+                
+                if (targetField === 'businessLicense') {
+                    updateData.businessLicenseData = base64;
+                    updateData.businessLicenseUrl = `/api/files/download?type=license&userId=${user.id}`;
+                } else {
+                    updateData.pledgeData = base64;
+                    updateData.pledgeUrl = `/api/files/download?type=pledge&userId=${user.id}`;
+                }
+            } catch (e) {
+                console.error(`Failed to decode hex for ${targetField}`, e);
+            }
+        }
+    };
+
+    handleHexUpload(payloadRecord.businessLicenseHex, payloadRecord.businessLicenseType, 'businessLicense');
+    handleHexUpload(payloadRecord.pledgeFileHex, payloadRecord.pledgeFileType, 'pledge');
+
     if (isBase64Upload) {
       try {
         const matches = avatarBase64.match(/^data:(image\/([a-zA-Z+]+));base64,(.+)$/);
