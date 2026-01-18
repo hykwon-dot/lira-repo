@@ -214,12 +214,15 @@ ${JSON.stringify(currentSummary, null, 2)}
         console.error('[INTAKE_GENERATION_ERROR]', error);
         const isAuthError = error instanceof Error && (error.message.includes('401') || error.message.includes('invalid_api_key'));
         const isMissingKey = error instanceof Error && error.message.includes('OPENAI_API_KEY is not set');
+        const errorDetail = error instanceof Error ? error.message : 'Unknown error';
         
         return NextResponse.json(
           {
             error: isAuthError || isMissingKey ? 'INVALID_API_KEY' : 'AI_INTAKE_FAILED',
-            message: isAuthError || isMissingKey ? 'OpenAI API 키가 설정되지 않았거나 유효하지 않습니다.' : '대화 요약을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.',
-            details: error instanceof Error ? { message: error.message } : 'Unknown error',
+            message: isAuthError || isMissingKey 
+              ? 'OpenAI API 키가 설정되지 않았거나 유효하지 않습니다.' 
+              : `오류 발생: ${errorDetail}`, // 디버깅을 위해 상세 에러 노출
+            details: error instanceof Error ? { message: error.message, stack: error.stack } : 'Unknown error',
           },
           { status: isAuthError || isMissingKey ? 401 : 500 }
         );
