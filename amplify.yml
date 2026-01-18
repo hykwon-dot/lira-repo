@@ -7,7 +7,8 @@ frontend:
         - npx prisma generate
     build:
       commands:
-        - env | grep -E "OPENAI|DATABASE"
+        - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
+        - echo "DATABASE_URL=$DATABASE_URL" >> .env
         - npm run build
   artifacts:
     baseDirectory: .next
