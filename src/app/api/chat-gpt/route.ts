@@ -240,7 +240,10 @@ ${JSON.stringify(currentSummary, null, 2)}
   } catch (error) {
     console.error('[CHAT_API_ERROR]', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return new NextResponse(JSON.stringify({ error: `Internal Server Error: ${errorMessage}` }), {
+    return new NextResponse(JSON.stringify({ 
+      error: 'INTERNAL_SERVER_ERROR', 
+      message: `서버 내부 오류가 발생했습니다: ${errorMessage}` 
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

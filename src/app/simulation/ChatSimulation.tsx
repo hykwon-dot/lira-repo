@@ -878,8 +878,11 @@ export const ChatSimulation = () => {
           let errorMessage = `Intake request failed with status ${response.status}`;
           try {
             const errorData = await response.json();
+            // errorData.error 또는 errorData.message 중 하나라도 있으면 사용
             if (errorData?.message) {
               errorMessage = errorData.message;
+            } else if (errorData?.error) {
+               errorMessage = errorData.error;
             }
           } catch {
             // ignore json parse error
