@@ -391,8 +391,9 @@ export default function RegisterForm() {
             console.log('2. Uploading Files via Profile API...');
             
             try {
+                // Use POST instead of PATCH to avoid potential WAF/Firewall blocking on PATCH method
                 const uploadRes = await fetch('/api/me/profile', {
-                    method: 'PATCH',
+                    method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
@@ -402,7 +403,23 @@ export default function RegisterForm() {
                 
                 if (!uploadRes.ok) {
                     console.error('File Upload Failed:', uploadRes.status);
-                    uploadFailed = true;
+                    
+                    // Fallback: Try individually if combined fails (reduce payload size)
+                    if (filePayload.businessLicenseBase64 && filePayload.pledgeFileBase64) {
+                        console.log('Retrying individually...');
+                         await fetch('/api/me/profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                            body: JSON.stringify({ businessLicenseBase64: filePayload.businessLicenseBase64 })
+                        });
+                         await fetch('/api/me/profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                            body: JSON.stringify({ pledgeFileBase64: filePayload.pledgeFileBase64 })
+                        });
+                    } else {
+                        uploadFailed = true;
+                    }
                 } else {
                     console.log('File Upload Success');
                 }

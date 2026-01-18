@@ -468,11 +468,11 @@ async function handleProfileUpdate(req: NextRequest) {
   return NextResponse.json({ user: sanitizeUser(user), role: user.role, profile: null });
 }
 
-export async function PATCH(req: NextRequest) {
+export async function POST(req: NextRequest) {
   return handleProfileUpdate(req);
 }
 
-export async function POST(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
   return handleProfileUpdate(req);
 }
 
