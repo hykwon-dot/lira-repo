@@ -764,8 +764,8 @@ export default function RegisterForm() {
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(e) => {
                     const file = e.target.files?.[0] || null;
-                    if (file && file.size > 2 * 1024 * 1024) {
-                      alert('파일 용량은 2MB를 초과할 수 없습니다.');
+                    if (file && file.size > 5 * 1024 * 1024) {
+                      alert('파일 용량은 5MB를 초과할 수 없습니다.');
                       e.target.value = '';
                       setBusinessLicenseFile(null);
                       return;
@@ -775,7 +775,7 @@ export default function RegisterForm() {
                   className="lira-input"
                   required
                 />
-                <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 2MB)</span>
+                <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 5MB)</span>
               </label>
 
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
@@ -807,7 +807,7 @@ export default function RegisterForm() {
                       onChange={(e) => {
                         const file = e.target.files?.[0] || null;
                         if (file && file.size > 2 * 1024 * 1024) {
-                          alert('파일 용량은 2MB를 초과할 수 없습니다.');
+                          alert('파일 용량은 5MB를 초과할 수 없습니다.');
                           e.target.value = '';
                           setPledgeFile(null);
                           return;
@@ -817,7 +817,7 @@ export default function RegisterForm() {
                       className="lira-input"
                       required
                     />
-                    <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 2MB)</span>
+                    <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 5MB)</span>
                   </label>
                 </div>
               </div>
