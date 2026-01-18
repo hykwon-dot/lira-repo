@@ -11,6 +11,66 @@ import {
   INVESTIGATOR_SPECIALTY_GROUPS,
 } from '@/lib/options';
 
+// --- Client-side Image Compression Utility ---
+const compressImage = async (file: File): Promise<File> => {
+  // Only compress images. PDF or other types are returned as is.
+  if (!file.type.startsWith('image/')) return file;
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Max dimension: 1280px (Reasonable for viewing docs)
+        const MAX_DIMENSION = 1280;
+        if (width > height) {
+          if (width > MAX_DIMENSION) {
+            height *= MAX_DIMENSION / width;
+            width = MAX_DIMENSION;
+          }
+        } else {
+          if (height > MAX_DIMENSION) {
+            width *= MAX_DIMENSION / height;
+            height = MAX_DIMENSION;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+           resolve(file); // Fallback: return original
+           return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert to blob (JPEG, quality 0.6)
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          // Create new File from blob with original name but .jpg extension (optional, keeping original name is fine usually)
+          const newFile = new File([blob], file.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          });
+          console.log(`[ImageCompression] ${file.name}: ${(file.size/1024).toFixed(1)}KB -> ${(newFile.size/1024).toFixed(1)}KB`);
+          resolve(newFile);
+        }, 'image/jpeg', 0.6);
+      };
+      img.onerror = (err) => resolve(file); // Return original on error
+    };
+    reader.onerror = (err) => resolve(file); // Return original on error
+  });
+};
+
 type PublicRole = 'USER' | 'INVESTIGATOR';
 
 export default function RegisterForm() {
@@ -267,10 +327,16 @@ export default function RegisterForm() {
       formData.append('acceptsPrivacy', String(acceptsPrivacy));
 
       if (businessLicenseFile) {
-        formData.append('businessLicense', businessLicenseFile);
+        // Compress image before upload
+        console.log('Compressing business license...');
+        const compressed = await compressImage(businessLicenseFile);
+        formData.append('businessLicense', compressed);
       }
       if (pledgeFile) {
-        formData.append('pledgeFile', pledgeFile);
+        // Compress image before upload
+        console.log('Compressing pledge file...');
+        const compressed = await compressImage(pledgeFile);
+        formData.append('pledgeFile', compressed);
       }
 
       // 180초 타임아웃 설정 (대용량 파일 업로드 및 콜드스타트 고려)
