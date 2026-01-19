@@ -198,7 +198,7 @@ ${JSON.stringify(currentSummary, null, 2)}
 
       try {
         const { object } = await generateObject({
-          model: openai('gpt-4o'),
+          model: openai('gpt-4o-mini'),
           schema: intakeSchema,
           temperature: 0.7,
           frequencyPenalty: 0.5,
