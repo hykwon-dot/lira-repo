@@ -54,17 +54,24 @@ const analysisSchema = z.object({
 });
 
 const intakeSchema = z.object({
-  assistantMessage: z.string().describe("사용자에게 바로 보여줄 한국어 답변"),
-  conversationSummary: z.string().describe("탐정에게 전달할 핵심 사건 요약"),
+  assistantMessage: z.string().describe("사용자에게 바로 보여줄 한국어 답변. 단계별 완료 상황을 언급하며 다음 행동(더 정보 제공 vs 의뢰)을 제안하는 멘트 포함."),
+  conversationSummary: z.string().describe("탐정에게 전달할 핵심 사건 요약 (5~7문장)"),
+  investigationChecklist: z.array(z.object({
+    id: z.number().describe("단계 번호 (1~5)"),
+    label: z.string().describe("단계 이름 (예: 기본 정보, 관계 파악, 증거 확보, 피해 규모, 의뢰 목적)"),
+    status: z.enum(['pending', 'in_progress', 'completed']).describe("현재 완료 상태"),
+    description: z.string().describe("이 단계에서 확인된 핵심 내용 요약"),
+    keyPoints: z.array(z.string()).describe("이 단계에서 확인된 주요 사실 목록 (체크리스트)"),
+  })).describe("5단계 사건 조사 체크리스트 진행 상황"),
+  currentPhase: z.number().describe("현재 진행 중인 단계 (1~5)"),
+  nextActionSuggestion: z.enum(['continue_interview', 'suggest_hiring']).describe("AI가 판단한 다음 추천 행동"),
   summary: z.object({
     caseTitle: z.string().describe("사건을 대표하는 간결한 제목"),
     caseType: z.string().describe("사건 유형 분류"),
     primaryIntent: z.string().describe("의뢰인의 주된 목적"),
     urgency: z.string().describe("긴급도 혹은 시간 제약"),
     objective: z.string().describe("AI가 파악한 해결 목표"),
-    keyFacts: z.array(z.string()).describe("확정적으로 파악된 핵심 사실 목록"),
     missingDetails: z.array(z.string()).describe("추가로 확인이 필요한 정보"),
-    recommendedDocuments: z.array(z.string()).describe("준비하면 좋은 자료나 증빙"),
     nextQuestions: z.array(z.string()).describe("이후 대화를 이어가기 위해 던질 질문 후보"),
   }).describe("현재까지 수집된 사건 정보 요약"),
 });
@@ -170,23 +177,28 @@ ${JSON.stringify(currentScenario, null, 2)}`;
     }
 
     if (mode === 'intake') {
-      const intakePrompt = `당신은 한국의 민간조사(SAAS) 플랫폼 LIRA(리라)의 AI Intake 파트너입니다. 
+      const intakePrompt = `당신은 한국의 민간조사(탐정) 플랫폼 LIRA(리라)의 전문 Intake 파트너입니다.
+당신의 목표는 의뢰인을 도와 사건의 핵심 정보를 체계적으로 정리(5단계 체크리스트)하고, 의뢰인이 준비가 되었을 때 탐정에게 연결해주는 것입니다.
 
-당신의 역할:
-- 사용자의 설명을 바탕으로 사건 유형을 파악하고, 필요 정보(5W1H)가 모두 수집될 때까지 부드럽게 추가 질문을 이어갑니다.
-- 질문은 한 번에 1~2개로 압축하여 명확히 제시하고, 사용자가 이미 제공한 내용을 불필요하게 반복해서 확인하거나 묻지 않습니다.
-- 대화가 반복되지 않도록 매번 새로운 문장 표현과 어휘를 사용하세요. 기계적인 답변을 지양합니다.
-- 사건 유형 예시: 배우자 외도, 미행/감시, 기업 내부 감사, 지적재산 침해, 실종, 스토킹, 디지털 증거 분석, 채권추심 등.
-- 답변(assistantMessage)은 공감하는 태도로 시작하되, "요약해 드리겠습니다" 같은 말보다는 자연스럽게 내용을 확인하고 바로 다음 핵심 질문으로 넘어가세요.
-- 사용자의 이전 답변을 앵무새처럼 따라하지 말고, *이해했다는 맥락*만 보여준 뒤 부족한 정보를 물어보세요.
-- conversationSummary: 사건의 전체 맥락을 파악할 수 있는 5~7문장의 요약.
-- nextQuestions: 대화를 진전시킬 수 있는 구체적이고 창의적인 질문 3가지.
+**5단계 조사 체크리스트:**
+1단계: 기본 정보 (누가, 무엇을, 언제 - 사건의 개요)
+2단계: 배경/관계 (관련 인물, 회사 정보, 관계의 역사)
+3단계: 증거 현황 (현재 확보된 자료, 증거의 종류)
+4단계: 피해/영향 (금전적 피해, 정신적 피해, 비즈니스 영향)
+5단계: 의뢰 목적 (법적 대응, 증거 수집, 소재 파악 등)
 
-중요 기준:
-1. 이미 수집한 사실을 keyFacts에 정리합니다.
-2. 아직 모호한 부분이나 추가 확인이 필요한 항목은 missingDetails에 남깁니다.
-3. primaryIntent와 objective는 사용자의 진짜 목적과 원하는 해결 방향을 명확히 적어주세요.
-4. 사용자가 엉뚱한 말을 하거나 반복적인 입력을 해도, 지혜롭게 사건 관련 대화로 유도하거나 정중히 확인하세요.
+**대화 및 답변 가이드 (Strict):**
+- 대화는 부드럽고 전문적이어야 합니다. 기계적인 질문 나열을 피하세요.
+- 각 답변마다 현재 어느 단계까지 확인되었는지 내적으로 판단하세요.
+- 한 단계의 정보가 어느 정도(약 70% 이상) 모였다면 다음과 같은 포맷으로 중간 정리를 해주세요:
+  "이러이러한 내용이군요. 지금 [X]단계([단계명])까지 확인이 되었는데, 더 자세한 내용을 확인할 수도 있고, 이 정도에서 탐정님에게 의뢰를 시작할 수도 있습니다. 더 알려주시겠어요? 아니면 바로 의뢰하시겠습니까? 의뢰하시려면 오른쪽 '탐정 추천'을 확인해주세요."
+- 사용자가 "더 하겠다"고 하면 다음 단계 질문을 이어가세요.
+- 사용자가 "의뢰하겠다"고 하면 상담을 마무리하고 오른쪽 패널을 참고하라고 안내하세요.
+
+**JSON 출력 필수 사항:**
+- investigationChecklist: 위 5단계의 현재 상태를 반드시 갱신해서 채워주세요.
+- currentPhase: 현재 대화가 집중하고 있는 단계 (1~5).
+- assistantMessage: 위 가이드에 따른 자연스러운 대화문.
 `; 
 
       const summaryContext = currentSummary && Object.keys(currentSummary).length > 0
