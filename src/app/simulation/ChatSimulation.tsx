@@ -931,9 +931,9 @@ export const ChatSimulation = () => {
 
         setSummaryError(displayError);
         // Do NOT append the error as a chat message to prevent context poisoning loop
-        setIsAssistantThinking(false);
       } finally {
         setIsSummaryLoading(false);
+        setIsAssistantThinking(false);
       }
     },
     [isAssistantThinking, messages, persistConversation, router, user, selectedFile]
