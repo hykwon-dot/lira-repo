@@ -601,30 +601,31 @@ export const CaseSummarySidebar = ({
         </div>
       </motion.section>
 
-      <div className="space-y-5">
-        {guidanceSections.map((section) => (
-          <GuidanceSection key={section.id} {...section} />
-        ))}
-      </div>
-
-      <div className="mt-8">
-        <SectionHeader icon={FiCheckCircle} title="진행 단계 (5단계 체크리스트)" />
-        <div className="mt-3">
-           {summary?.investigationChecklist ? (
-             summary.investigationChecklist.map((phase) => (
+      {/* NEW: Checklist takes priority over generic guidance */}
+      {summary?.investigationChecklist && summary.investigationChecklist.length > 0 ? (
+        <div className="mt-2 space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <SectionHeader icon={FiCheckCircle} title="실시간 조사 진행도" />
+          </div>
+          <div className="space-y-3">
+             {summary.investigationChecklist.map((phase) => (
                <ChecklistPhase 
                  key={phase.id} 
                  phase={phase} 
                  isActive={phase.id === (summary.currentPhase ?? 1)} 
                />
-             ))
-           ) : (
-             <div className="text-sm text-slate-400 p-4 text-center border border-dashed rounded-xl">
-               아직 체크리스트 데이터가 없습니다.
-             </div>
-           )}
+             ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-5">
+          {guidanceSections.map((section) => (
+            <GuidanceSection key={section.id} {...section} />
+          ))}
+        </div>
+      )}
+
+      {/* Legacy Checklist rendering removed from bottom */}
     </div>
   );
 };
