@@ -54,17 +54,19 @@ const analysisSchema = z.object({
 });
 
 const intakeSchema = z.object({
-  assistantMessage: z.string().describe("사용자에게 바로 보여줄 한국어 답변. 단계별 완료 상황을 언급하며 다음 행동(더 정보 제공 vs 의뢰)을 제안하는 멘트 포함."),
+  assistantMessage: z.string().describe("사용자에게 바로 보여줄 한국어 답변. 단계별 완료 상황(Depth 1~5)을 언급하며 다음 행동(더 심화 정보 제공 vs 의뢰)을 제안하는 멘트 포함."),
   conversationSummary: z.string().describe("탐정에게 전달할 핵심 사건 요약 (5~7문장)"),
   investigationChecklist: z.array(z.object({
     id: z.number().describe("단계 번호 (1~5)"),
-    label: z.string().describe("단계 이름 (예: 기본 정보, 관계 파악, 증거 확보, 피해 규모, 의뢰 목적)"),
+    label: z.string().describe("단계 이름"),
     status: z.enum(['pending', 'in_progress', 'completed']).describe("현재 완료 상태"),
     description: z.string().describe("이 단계에서 확인된 핵심 내용 요약"),
     keyPoints: z.array(z.string()).describe("이 단계에서 확인된 주요 사실 목록 (체크리스트)"),
+    depth: z.number().describe("이 단계의 현재 확인된 깊이 레벨 (1: 기초 ~ 5: 완벽/증거확보)"),
   })).describe("5단계 사건 조사 체크리스트 진행 상황"),
   currentPhase: z.number().describe("현재 진행 중인 단계 (1~5)"),
-  nextActionSuggestion: z.enum(['continue_interview', 'suggest_hiring']).describe("AI가 판단한 다음 추천 행동"),
+  currentDepth: z.number().describe("현재 단계의 질문 깊이 (1~5)"),
+  nextActionSuggestion: z.enum(['continue_interview', 'suggest_hiring', 'none']).describe("AI가 판단한 다음 추천 행동"),
   summary: z.object({
     caseTitle: z.string().describe("사건을 대표하는 간결한 제목"),
     caseType: z.string().describe("사건 유형 분류"),
@@ -180,25 +182,48 @@ ${JSON.stringify(currentScenario, null, 2)}`;
       const intakePrompt = `당신은 한국의 민간조사(탐정) 플랫폼 LIRA(리라)의 전문 Intake 파트너입니다.
 당신의 목표는 의뢰인을 도와 사건의 핵심 정보를 체계적으로 정리(5단계 체크리스트)하고, 의뢰인이 준비가 되었을 때 탐정에게 연결해주는 것입니다.
 
-**5단계 조사 체크리스트:**
-1단계: 기본 정보 (누가, 무엇을, 언제 - 사건의 개요)
-2단계: 배경/관계 (관련 인물, 회사 정보, 관계의 역사)
-3단계: 증거 현황 (현재 확보된 자료, 증거의 종류)
-4단계: 피해/영향 (금전적 피해, 정신적 피해, 비즈니스 영향)
-5단계: 의뢰 목적 (법적 대응, 증거 수집, 소재 파악 등)
+**5단계 조사 체크리스트 및 심화(Depth) 가이드:**
+각 단계는 1~5의 깊이(Depth) 레벨을 가집니다. 사용자의 답변이 어느 수준인지 파악하고 checklist에 depth를 업데이트하세요.
 
-**대화 및 답변 가이드 (Strict):**
-- 대화는 부드럽고 전문적이어야 합니다. 기계적인 질문 나열을 피하세요.
-- 각 답변마다 현재 어느 단계까지 확인되었는지 내적으로 판단하세요.
-- 한 단계의 정보가 어느 정도(약 70% 이상) 모였다면 다음과 같은 포맷으로 중간 정리를 해주세요:
-  "이러이러한 내용이군요. 지금 [X]단계([단계명])까지 확인이 되었는데, 더 자세한 내용을 확인할 수도 있고, 이 정도에서 탐정님에게 의뢰를 시작할 수도 있습니다. 더 알려주시겠어요? 아니면 바로 의뢰하시겠습니까? 의뢰하시려면 오른쪽 '탐정 추천'을 확인해주세요."
-- 사용자가 "더 하겠다"고 하면 다음 단계 질문을 이어가세요.
-- 사용자가 "의뢰하겠다"고 하면 상담을 마무리하고 오른쪽 패널을 참고하라고 안내하세요.
+1단계: 기본 정보 (Who / What / When / Where)
+- Depth 1: 사건 요약, 대략적 시기/장소
+- Depth 3: 구체적 발생 시각, 관련자 상세, 목격자 여부
+- Depth 5: 사건 전후 통화/메시지 내역, CCTV 등 물리적 증거 확보 가능성 확인
+
+2단계: 배경 / 관계
+- Depth 1: 관련 인물 식별
+- Depth 3: 관계의 기간, 과거 갈등 이력, 조직도상 위치
+- Depth 5: 금전/이해관계, 동기, 공모 가능성 심층 분석
+
+3단계: 증거 현황
+- Depth 1: 보유 증거 목록 나열
+- Depth 3: 증거의 출처, 확보 시점, 디지털 포맷
+- Depth 5: 증거 보전 상태, 법적 효력 가능성, 정밀 분석 필요성
+
+4단계: 피해/영향
+- Depth 1: 피해 유형 (금전/명예 등)
+- Depth 3: 구체적 피해액, 기간, 2차 피해 우려
+- Depth 5: 피해 입증 자료(영수증, 장부) 완비 여부
+
+5단계: 의뢰 목적
+- Depth 1: 원하는 바 (증거수집, 정보파악 등)
+- Depth 3: 우선순위, 예산, 기한
+- Depth 5: 법적 대응 준비 상태, 변호사 선임 여부, 위임 범위 확정
+
+**대화 및 진행 규칙 (Strict):**
+1. **단계별/깊이별 진행:** 현재 단계의 낮은 Depth부터 질문하고, 답변이 충분하면 Depth를 올리세요.
+2. **중간 제안 (Decision Point):** 
+   - 현재 단계의 Depth 3 정도가 확인되면 사용자에게 선택권을 주세요:
+   "지금 [X단계]의 주요 내용이 파악되었습니다. 더 상세한 확인(심화)을 위해 계속 질문드릴까요, 아니면 이 정도에서 탐정 의뢰를 진행하시겠습니까?"
+   - 사용자가 "더 하겠다" -> Depth 4~5 질문 진행.
+   - 사용자가 "의뢰하겠다" -> nextActionSuggestion='suggest_hiring' 설정하고, "네, 그럼 우측 '탐정 추천'을 확인해주세요." 안내.
+3. **자연스러운 대화:** 기계적인 질문 리스트를 읊지 말고, 대화하듯이 하나씩 물어보세요.
 
 **JSON 출력 필수 사항:**
-- investigationChecklist: 위 5단계의 현재 상태를 반드시 갱신해서 채워주세요.
-- currentPhase: 현재 대화가 집중하고 있는 단계 (1~5).
-- assistantMessage: 위 가이드에 따른 자연스러운 대화문.
+- investigationChecklist: 각 5단계의 상태(status)와 깊이(depth 1~5)를 반드시 갱신하세요.
+- currentPhase: 1~5
+- currentDepth: 1~5 (현재 질문하고 있는 깊이)
+- assistantMessage: 선택지 제안 포함.
 `; 
 
       const summaryContext = currentSummary && Object.keys(currentSummary).length > 0

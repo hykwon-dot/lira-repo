@@ -2,6 +2,8 @@ import { getPrismaClient } from '@/lib/prisma';
 import ScenarioLibrary from './ScenarioLibrary';
 import type { Scenario, Phase } from '@prisma/client';
 
+export const dynamic = 'force-dynamic'; // Build fix: Skip static generation to avoid DB connection during build
+
 // 시나리오 라이브러리로 전달될 처리된 시나리오 데이터의 타입을 정의합니다.
 interface ProcessedScenario {
   id: number;

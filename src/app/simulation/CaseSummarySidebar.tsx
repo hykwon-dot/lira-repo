@@ -205,52 +205,75 @@ const statusBadgeStyles: Record<
   },
 };
 
-const ChecklistPhase = ({ phase, isActive }: { phase: any; isActive: boolean }) => (
-  <div className={`mb-4 rounded-xl border p-3 transition-all ${
-    phase.status === 'completed' 
-      ? 'border-emerald-200 bg-emerald-50/50' 
-      : isActive 
-        ? 'border-indigo-200 bg-indigo-50/50 ring-1 ring-indigo-100' 
-        : 'border-slate-100 bg-white'
-  }`}>
-    <div className="flex items-center justify-between mb-2">
-      <div className="flex items-center gap-2">
-        <div className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-          phase.status === 'completed' ? 'bg-emerald-100 text-emerald-600' : 
-          isActive ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'
-        }`}>
-          {phase.status === 'completed' ? <FiCheckCircle /> : phase.id}
+const ChecklistPhase = ({ phase, isActive }: { phase: any; isActive: boolean }) => {
+  // Depth calculation for visual bar (1 to 5)
+  const depthPercentage = phase.depth ? (phase.depth / 5) * 100 : 0;
+  
+  return (
+    <div className={`mb-4 rounded-xl border p-3 transition-all ${
+      phase.status === 'completed' 
+        ? 'border-emerald-200 bg-emerald-50/50' 
+        : isActive 
+          ? 'border-indigo-200 bg-indigo-50/50 ring-1 ring-indigo-100' 
+          : 'border-slate-100 bg-white'
+    }`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+            phase.status === 'completed' ? 'bg-emerald-100 text-emerald-600' : 
+            isActive ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'
+          }`}>
+            {phase.status === 'completed' ? <FiCheckCircle /> : phase.id}
+          </div>
+          <span className={`text-sm font-semibold ${
+             phase.status === 'completed' ? 'text-emerald-700' : 
+             isActive ? 'text-indigo-700' : 'text-slate-600'
+          }`}>
+            {phase.label}
+          </span>
         </div>
-        <span className={`text-sm font-semibold ${
-           phase.status === 'completed' ? 'text-emerald-700' : 
-           isActive ? 'text-indigo-700' : 'text-slate-600'
-        }`}>
-          {phase.label}
+        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+          {phase.status === 'completed' ? '완료' : phase.status === 'in_progress' ? '진행중' : '대기'}
         </span>
       </div>
-      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-        {phase.status === 'completed' ? '완료' : phase.status === 'in_progress' ? '진행중' : '대기'}
-      </span>
-    </div>
-    
-    {phase.description && (
-      <p className="pl-8 text-xs text-slate-600 mb-2 leading-relaxed">
-        {phase.description}
-      </p>
-    )}
+      
+      {/* Depth Indicator Bar */}
+      {phase.status !== 'pending' && (
+        <div className="mb-3 px-1">
+          <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+            <span>정보 심도 (Depth)</span>
+            <span className="font-medium text-slate-600">Lv.{phase.depth || 1}/5</span>
+          </div>
+          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div 
+              className={`h-full rounded-full transition-all duration-500 ${
+                phase.status === 'completed' ? 'bg-emerald-400' : 'bg-indigo-400'
+              }`}
+              style={{ width: `${Math.max(depthPercentage, 5)}%` }}
+            />
+          </div>
+        </div>
+      )}
 
-    {phase.keyPoints && phase.keyPoints.length > 0 && (
-      <ul className="pl-8 space-y-1">
-        {phase.keyPoints.map((point: string, i: number) => (
-          <li key={i} className="flex items-start gap-1.5 text-xs text-slate-500">
-            <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-slate-400" />
-            {point}
-          </li>
-        ))}
-      </ul>
-    )}
-  </div>
-);
+      {phase.description && (
+        <p className="pl-8 text-xs text-slate-600 mb-2 leading-relaxed">
+          {phase.description}
+        </p>
+      )}
+
+      {phase.keyPoints && phase.keyPoints.length > 0 && (
+        <ul className="pl-8 space-y-1">
+          {phase.keyPoints.map((point: string, i: number) => (
+            <li key={i} className="flex items-start gap-1.5 text-xs text-slate-500">
+              <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-slate-400" />
+              {point}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
 
 const SectionHeader = ({ icon: Icon, title }: { icon: any; title: string }) => (
   <header className="mb-4 flex items-center gap-2">

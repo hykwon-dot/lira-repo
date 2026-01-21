@@ -93,6 +93,16 @@ const normalizeIntakeSummary = (summary: unknown): IntakeSummary | null => {
     missingDetails: ensureStringArray(record.missingDetails),
     recommendedDocuments: ensureStringArray(record.recommendedDocuments),
     nextQuestions: ensureStringArray(record.nextQuestions),
+    
+    // New Checklist System
+    investigationChecklist: Array.isArray(record.investigationChecklist) 
+      ? (record.investigationChecklist as any[]) 
+      : [],
+    currentPhase: typeof record.currentPhase === 'number' ? record.currentPhase : 1,
+    currentDepth: typeof record.currentDepth === 'number' ? record.currentDepth : 1,
+    nextActionSuggestion: typeof record.nextActionSuggestion === 'string' 
+      ? (record.nextActionSuggestion as any) 
+      : 'none',
   };
 };
 

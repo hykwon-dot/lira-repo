@@ -4,6 +4,7 @@ export interface InvestigationChecklistPhase {
   status: 'pending' | 'in_progress' | 'completed';
   description: string;
   keyPoints: string[];
+  depth: number; // 1 to 5
 }
 
 export interface IntakeSummary {
@@ -21,5 +22,6 @@ export interface IntakeSummary {
   // New Checklist System
   investigationChecklist?: InvestigationChecklistPhase[];
   currentPhase?: number;
-  nextActionSuggestion?: 'continue_interview' | 'suggest_hiring';
+  currentDepth?: number; // 1 to 5
+  nextActionSuggestion?: 'continue_interview' | 'suggest_hiring' | 'none';
 }
