@@ -298,17 +298,26 @@ export const ChatSimulation = () => {
   };
 
   useEffect(() => {
-    if (useChatStore.getState().messages.length === 0) {
-      setMessages([
-        {
-          id: cuid(),
-          role: "assistant",
-          content: assistantGreeting,
-          createdAt: Date.now(),
-        },
-      ]);
-    }
-  }, [setMessages]);
+    // Always reset conversation on component mount (page visit)
+    setMessages([
+      {
+        id: cuid(),
+        role: "assistant",
+        content: assistantGreeting,
+        createdAt: Date.now(),
+      },
+    ]);
+    // Clear all analysis states on mount to ensure fresh start
+    setIntakeSummary(null);
+    setConversationSummary(null);
+    setRecommendations([]);
+    setEvidenceSummaries([]);
+    setRealtimeInsights(null);
+    setReportDraft(null);
+    setNegotiationPlan(null);
+    setComplianceReport(null);
+    setConversationId(null);
+  }, [setMessages]); // Run once on mount (and when setMessages changes, which is stable)
 
   const [isAssistantThinking, setIsAssistantThinking] = useState(false);
   const [intakeSummary, setIntakeSummary] = useState<IntakeSummary | null>(null);
@@ -488,6 +497,8 @@ export const ChatSimulation = () => {
         const sortedSessions = sortSessionsByRecency(mappedSessions);
         setPersistedSessions(sortedSessions);
 
+        // Auto-load removed as per requirement: Always start fresh on page load/visit
+        /*
         if (!bootstrapHadStoredMessagesRef.current && sortedSessions.length > 0) {
           const latestSession = sortedSessions[0];
           if (latestSession.messages.length > 0) {
@@ -500,6 +511,7 @@ export const ChatSimulation = () => {
             bootstrapHadStoredMessagesRef.current = true;
           }
         }
+        */
       } catch (error) {
         if (options?.signal?.aborted) return;
         console.error("[SIMULATION_HISTORY_FETCH_ERROR]", error);
