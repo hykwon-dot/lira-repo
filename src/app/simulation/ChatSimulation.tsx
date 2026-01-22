@@ -2207,9 +2207,16 @@ export const ChatSimulation = () => {
                 )}
                 <textarea
                   name="message"
-                  placeholder="사건의 세부 상황이나 궁금한 점을 알려주세요."
+                  placeholder="사건의 세부 상황이나 궁금한 점을 알려주세요. (Ctrl+Enter로 전송)"
                   rows={1}
                   disabled={isAssistantThinking}
+                  onKeyDown={(e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                       e.preventDefault();
+                       const form = e.currentTarget.closest('form');
+                       if (form) form.requestSubmit();
+                    }
+                  }}
                   className="max-h-32 min-h-[40px] flex-1 resize-none border-none bg-transparent text-[13px] text-slate-800 outline-none placeholder:text-slate-400 sm:text-sm"
                 />
                 <button
