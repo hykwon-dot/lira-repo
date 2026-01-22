@@ -2367,41 +2367,46 @@ export const ChatSimulation = () => {
                   investigatorSlot={investigatorInsightsSlot}
                   customerRecommendationsSlot={customerRecommendationsSlot}
                 />
-                <div>
-                  <h3 className="mb-3 text-sm font-semibold text-slate-700">규제·윤리 감시</h3>
-                  <ComplianceMonitorPanel
-                    report={complianceReport}
-                    isLoading={isComplianceLoading}
-                    error={complianceError}
-                    onRefresh={handleRefreshCompliance}
-                  />
-                </div>
-                <EvidenceVaultPanel
-                  artifacts={evidenceArtifacts}
-                  summaries={evidenceSummaries}
-                  isLoading={isEvidenceLoading}
-                  error={evidenceError}
-                  onRefresh={handleRefreshEvidence}
-                />
-                <ReportDraftPanel
-                  report={reportDraft}
-                  isLoading={isReportLoading}
-                  error={reportError}
-                  onGenerate={() => {
-                    void handleGenerateReport();
-                  }}
-                  showInvestigatorInsights={canViewInvestigatorIntel}
-                />
-                <div>
-                  <h3 className="mb-3 text-sm font-semibold text-slate-700">협상 스크립트 코치</h3>
-                  <NegotiationCoachPanel
-                    plan={negotiationPlan}
-                    isLoading={isNegotiationLoading}
-                    error={negotiationError}
-                    onRegenerate={handleRegenerateNegotiationPlan}
-                    showInvestigatorInsights={canViewInvestigatorIntel}
-                  />
-                </div>
+                
+                {canViewInvestigatorIntel && (
+                  <>
+                    <div>
+                      <h3 className="mb-3 text-sm font-semibold text-slate-700">규제·윤리 감시</h3>
+                      <ComplianceMonitorPanel
+                        report={complianceReport}
+                        isLoading={isComplianceLoading}
+                        error={complianceError}
+                        onRefresh={handleRefreshCompliance}
+                      />
+                    </div>
+                    <EvidenceVaultPanel
+                      artifacts={evidenceArtifacts}
+                      summaries={evidenceSummaries}
+                      isLoading={isEvidenceLoading}
+                      error={evidenceError}
+                      onRefresh={handleRefreshEvidence}
+                    />
+                    <ReportDraftPanel
+                      report={reportDraft}
+                      isLoading={isReportLoading}
+                      error={reportError}
+                      onGenerate={() => {
+                        void handleGenerateReport();
+                      }}
+                      showInvestigatorInsights={canViewInvestigatorIntel}
+                    />
+                    <div>
+                      <h3 className="mb-3 text-sm font-semibold text-slate-700">협상 스크립트 코치</h3>
+                      <NegotiationCoachPanel
+                        plan={negotiationPlan}
+                        isLoading={isNegotiationLoading}
+                        error={negotiationError}
+                        onRegenerate={handleRegenerateNegotiationPlan}
+                        showInvestigatorInsights={canViewInvestigatorIntel}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
           </section>
         </div>
