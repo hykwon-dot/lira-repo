@@ -403,6 +403,16 @@ export const ChatSimulation = () => {
     conversationIdRef.current = null;
     setConversationId(null);
 
+    // Clear all analysis states on user switch
+    setIntakeSummary(null);
+    setConversationSummary(null);
+    setRecommendations([]);
+    setEvidenceSummaries([]);
+    setRealtimeInsights(null);
+    setReportDraft(null);
+    setNegotiationPlan(null);
+    setComplianceReport(null);
+
     if (!currentUserId) {
       setMessages([
         {
@@ -979,8 +989,15 @@ export const ChatSimulation = () => {
     setMessages([resetMessage]);
     conversationIdRef.current = null;
     setConversationId(null);
-    lastAnalyzedAssistantIdRef.current = null;
+    
+    // Clear all analysis states
+    setIntakeSummary(null);
+    setConversationSummary(null);
+    setRecommendations([]);
+    setEvidenceSummaries([]);
     setRealtimeInsights(null);
+    
+    lastAnalyzedAssistantIdRef.current = null;
     setRealtimeError(null);
     setIsRealtimeLoading(false);
     setReportDraft(null);
@@ -1028,6 +1045,19 @@ export const ChatSimulation = () => {
     if (!session?.messages?.length) return;
 
     setMessages(session.messages);
+    
+    // Restore summary if available, otherwise clear it to prevent stale data
+    if (session.intakeSummary) {
+      setIntakeSummary(session.intakeSummary);
+    } else {
+      setIntakeSummary(null);
+    }
+
+    // Clear other derived states not yet persisted
+    setConversationSummary(null);
+    setRecommendations([]);
+    setEvidenceSummaries([]);
+
     const normalizedExternalId = session.externalId ?? null;
     conversationIdRef.current = normalizedExternalId;
     setConversationId(normalizedExternalId);
