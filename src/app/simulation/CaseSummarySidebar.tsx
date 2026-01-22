@@ -460,15 +460,6 @@ export const CaseSummarySidebar = ({
 
   const guidanceSections: GuidanceSectionProps[] = [
     {
-      id: "questions",
-      icon: FiMessageCircle,
-      title: "바로 물어보기 좋은 질문",
-      description:
-        "AI에게 이렇게 요청하면 핵심 정보를 빠르게 정리할 수 있어요.",
-      accent: "indigo",
-      items: questionSuggestions,
-    },
-    {
       id: "clarification",
       icon: FiCompass,
       title: "추가로 확인하면 좋은 정보",
