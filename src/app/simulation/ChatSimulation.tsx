@@ -212,6 +212,7 @@ interface PersistedSession {
   createdAt: string;
   updatedAt: string;
   messages: ChatMessage[];
+  intakeSummary: IntakeSummary | null;
 }
 
 const mapConversationPayload = (value: unknown): PersistedSession | null => {
@@ -239,6 +240,9 @@ const mapConversationPayload = (value: unknown): PersistedSession | null => {
       ? conversation.updatedAt
       : createdAt;
   const messages = mapServerMessagesToChat(record.messages);
+  
+  const intakeSummary = normalizeIntakeSummary(conversation.intakeSummary);
+
   return {
     id: String(rawId),
     externalId,
@@ -246,6 +250,7 @@ const mapConversationPayload = (value: unknown): PersistedSession | null => {
     createdAt,
     updatedAt,
     messages,
+    intakeSummary,
   };
 };
 
@@ -479,6 +484,9 @@ export const ChatSimulation = () => {
             setMessages(latestSession.messages);
             conversationIdRef.current = latestSession.externalId ?? null;
             setConversationId(latestSession.externalId ?? null);
+            if (latestSession.intakeSummary) {
+              setIntakeSummary(latestSession.intakeSummary);
+            }
             bootstrapHadStoredMessagesRef.current = true;
           }
         }
@@ -696,6 +704,7 @@ export const ChatSimulation = () => {
             question,
             answer,
             conversationId: conversationIdRef.current,
+            intakeSummary,
           }),
         });
 
@@ -730,7 +739,7 @@ export const ChatSimulation = () => {
         console.error("[SIMULATION_CONVERSATION_SAVE_ERROR]", error);
       }
     },
-    [loadPersistedSessions, user?.id],
+    [loadPersistedSessions, user?.id, intakeSummary],
   );
 
   const transcriptForHandoff = useMemo(
