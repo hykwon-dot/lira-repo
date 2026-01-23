@@ -18,18 +18,11 @@ interface ChatStore {
   clearMessages: () => void;
 }
 
-export const useChatStore = create<ChatStore>()(
-  persist(
-    (set) => ({
-      messages: [],
-      addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
-      setMessages: (messages) => set((state) => ({
-        messages: typeof messages === 'function' ? messages(state.messages) : messages
-      })),
-      clearMessages: () => set({ messages: [] }),
-    }),
-    {
-      name: 'chat-storage',
-    }
-  )
-);
+export const useChatStore = create<ChatStore>((set) => ({
+  messages: [],
+  addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
+  setMessages: (messages) => set((state) => ({
+    messages: typeof messages === 'function' ? messages(state.messages) : messages
+  })),
+  clearMessages: () => set({ messages: [] }),
+}));

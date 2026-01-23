@@ -636,43 +636,13 @@ export const ChatSimulation = () => {
 
     storageKeyRef.current = historyKey;
 
-    let restoredMessages: ChatMessage[] | null = null;
-    let restoredConversationId: string | null = null;
+    // Force clear any previous session data to ensure fresh start
+    window.localStorage.removeItem(historyKey);
+    window.localStorage.removeItem(conversationKey);
 
-    try {
-      const rawHistory = window.localStorage.getItem(historyKey);
-      if (rawHistory) {
-        const parsed = JSON.parse(rawHistory) as {
-          messages?: ChatMessage[];
-        };
-        if (Array.isArray(parsed?.messages) && parsed.messages.length > 0) {
-          restoredMessages = parsed.messages;
-        }
-      }
-
-      const rawConversationId = window.localStorage.getItem(conversationKey);
-      if (rawConversationId) {
-        restoredConversationId = rawConversationId;
-      }
-    } catch (error) {
-      console.warn("[SIMULATION_HISTORY_RESTORE_ERROR]", error);
-    }
-
-    if (restoredMessages) {
-      setMessages(restoredMessages);
-      bootstrapHadStoredMessagesRef.current = true;
-    } else {
-      bootstrapHadStoredMessagesRef.current = false;
-    }
-
-    if (restoredConversationId) {
-      conversationIdRef.current = restoredConversationId;
-      setConversationId(restoredConversationId);
-    } else {
-      conversationIdRef.current = null;
-      setConversationId(null);
-    }
-
+    bootstrapHadStoredMessagesRef.current = false;
+    conversationIdRef.current = null;
+    setConversationId(null);
     historyHydratedRef.current = true;
 
     return () => {
@@ -681,31 +651,8 @@ export const ChatSimulation = () => {
   }, [user?.id]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!historyHydratedRef.current) return;
-    if (!user?.id) return;
-
-    const keySuffix = String(user.id);
-    const historyKey = storageKeyRef.current ?? buildHistoryStorageKey(keySuffix);
-    const conversationKey = buildConversationStorageKey(keySuffix);
-
-    try {
-      window.localStorage.setItem(
-        historyKey,
-        JSON.stringify({ messages }),
-      );
-
-      if (conversationId) {
-        window.localStorage.setItem(
-          conversationKey,
-          conversationId,
-        );
-      } else {
-        window.localStorage.removeItem(conversationKey);
-      }
-    } catch (error) {
-      console.warn("[SIMULATION_HISTORY_STORE_ERROR]", error);
-    }
+    // Persistence disabled based on user requirement: "Page reset on visit"
+    // We do not save to localStorage anymore.
   }, [messages, conversationId, user?.id]);
 
   const persistConversation = useCallback(
