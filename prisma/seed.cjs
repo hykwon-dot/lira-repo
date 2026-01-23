@@ -1,5 +1,5 @@
 const { PrismaClient } = require('../src/generated/prisma');
-const scenarioData = require('./enterprise_scenarios.json');
+const scenarioData = require('./investigator_scenarios.json');
 
 const prisma = new PrismaClient();
 

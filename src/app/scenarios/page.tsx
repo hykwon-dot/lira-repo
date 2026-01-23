@@ -28,12 +28,13 @@ type RawScenario = {
 };
 
 const TITLE_MAPPING: Record<string, string> = {
-  domesticTechExpo_Enterprise: '국내 기술 엑스포',
-  snsProductLaunch_Enterprise: 'SNS 제품 마케팅',
-  overseasTechExpo_Enterprise: '해외 기술 엑스포',
   adultery_investigation: '불륜 의혹 조사',
-  credit_investigation_case: '신용 조사 프로젝트',
-  missing_person_case: '실종자 수색 작전',
+  credit_investigation_case: '신용 및 자산 조사',
+  missing_person_case: '실종자 수색',
+  industrial_espionage: '산업 기밀 유출 조사',
+  insurance_fraud_investigation: '보험 사기 혐의 조사',
+  background_check: '평판 조회 및 신원 확인',
+  stalking_response: '스토킹 피해 대응 및 증거 수집'
 };
 
 const formatTitleFromId = (id: string) =>
@@ -57,7 +58,7 @@ const extractSuccessRate = (overview?: RawScenario['overview']) => {
 };
 
 async function getScenarios(): Promise<ScenarioSummary[]> {
-  const filePath = path.join(process.cwd(), 'prisma', 'enterprise_scenarios.json');
+  const filePath = path.join(process.cwd(), 'prisma', 'investigator_scenarios.json');
   const fileContent = await fs.readFile(filePath, 'utf8');
   const data: Record<string, RawScenario> = JSON.parse(fileContent);
 

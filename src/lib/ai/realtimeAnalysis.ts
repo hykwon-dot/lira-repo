@@ -166,7 +166,7 @@ async function loadEnterpriseScenarioCorpus(): Promise<Array<{ id: string; text:
   }
 
   // Fallback to JSON corpus when DB is empty (local dev)
-  const filePath = path.join(process.cwd(), "prisma", "enterprise_scenarios.json");
+  const filePath = path.join(process.cwd(), "prisma", "investigator_scenarios.json");
   const raw = await fs.readFile(filePath, "utf8");
   const parsed = JSON.parse(raw) as unknown;
 
