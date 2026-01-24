@@ -11,6 +11,21 @@
 			"problemMatcher": [
 				"$tsc"
 			]
+		},
+		{
+			"label": "Prisma Migrate",
+			"type": "shell",
+			"command": "npx prisma",
+			"args": [
+				"migrate",
+				"dev",
+				"--name",
+				"add_conversation_metadata",
+				"--schema",
+				"prisma/schema.prisma"
+			],
+			"isBackground": false,
+			"group": "db"
 		}
 	]
 }

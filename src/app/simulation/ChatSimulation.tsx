@@ -212,6 +212,7 @@ interface PersistedSession {
   createdAt: string;
   updatedAt: string;
   messages: ChatMessage[];
+  intakeSummary: IntakeSummary | null;
 }
 
 const mapConversationPayload = (value: unknown): PersistedSession | null => {
@@ -239,6 +240,9 @@ const mapConversationPayload = (value: unknown): PersistedSession | null => {
       ? conversation.updatedAt
       : createdAt;
   const messages = mapServerMessagesToChat(record.messages);
+  
+  const intakeSummary = normalizeIntakeSummary(conversation.intakeSummary);
+
   return {
     id: String(rawId),
     externalId,
@@ -246,6 +250,7 @@ const mapConversationPayload = (value: unknown): PersistedSession | null => {
     createdAt,
     updatedAt,
     messages,
+    intakeSummary,
   };
 };
 
@@ -293,17 +298,26 @@ export const ChatSimulation = () => {
   };
 
   useEffect(() => {
-    if (useChatStore.getState().messages.length === 0) {
-      setMessages([
-        {
-          id: cuid(),
-          role: "assistant",
-          content: assistantGreeting,
-          createdAt: Date.now(),
-        },
-      ]);
-    }
-  }, [setMessages]);
+    // Always reset conversation on component mount (page visit)
+    setMessages([
+      {
+        id: cuid(),
+        role: "assistant",
+        content: assistantGreeting,
+        createdAt: Date.now(),
+      },
+    ]);
+    // Clear all analysis states on mount to ensure fresh start
+    setIntakeSummary(null);
+    setConversationSummary(null);
+    setRecommendations([]);
+    setEvidenceSummaries([]);
+    setRealtimeInsights(null);
+    setReportDraft(null);
+    setNegotiationPlan(null);
+    setComplianceReport(null);
+    setConversationId(null);
+  }, [setMessages]); // Run once on mount (and when setMessages changes, which is stable)
 
   const [isAssistantThinking, setIsAssistantThinking] = useState(false);
   const [intakeSummary, setIntakeSummary] = useState<IntakeSummary | null>(null);
@@ -398,6 +412,16 @@ export const ChatSimulation = () => {
     conversationIdRef.current = null;
     setConversationId(null);
 
+    // Clear all analysis states on user switch
+    setIntakeSummary(null);
+    setConversationSummary(null);
+    setRecommendations([]);
+    setEvidenceSummaries([]);
+    setRealtimeInsights(null);
+    setReportDraft(null);
+    setNegotiationPlan(null);
+    setComplianceReport(null);
+
     if (!currentUserId) {
       setMessages([
         {
@@ -473,15 +497,21 @@ export const ChatSimulation = () => {
         const sortedSessions = sortSessionsByRecency(mappedSessions);
         setPersistedSessions(sortedSessions);
 
+        // Auto-load removed as per requirement: Always start fresh on page load/visit
+        /*
         if (!bootstrapHadStoredMessagesRef.current && sortedSessions.length > 0) {
           const latestSession = sortedSessions[0];
           if (latestSession.messages.length > 0) {
             setMessages(latestSession.messages);
             conversationIdRef.current = latestSession.externalId ?? null;
             setConversationId(latestSession.externalId ?? null);
+            if (latestSession.intakeSummary) {
+              setIntakeSummary(latestSession.intakeSummary);
+            }
             bootstrapHadStoredMessagesRef.current = true;
           }
         }
+        */
       } catch (error) {
         if (options?.signal?.aborted) return;
         console.error("[SIMULATION_HISTORY_FETCH_ERROR]", error);
@@ -606,43 +636,13 @@ export const ChatSimulation = () => {
 
     storageKeyRef.current = historyKey;
 
-    let restoredMessages: ChatMessage[] | null = null;
-    let restoredConversationId: string | null = null;
+    // Force clear any previous session data to ensure fresh start
+    window.localStorage.removeItem(historyKey);
+    window.localStorage.removeItem(conversationKey);
 
-    try {
-      const rawHistory = window.localStorage.getItem(historyKey);
-      if (rawHistory) {
-        const parsed = JSON.parse(rawHistory) as {
-          messages?: ChatMessage[];
-        };
-        if (Array.isArray(parsed?.messages) && parsed.messages.length > 0) {
-          restoredMessages = parsed.messages;
-        }
-      }
-
-      const rawConversationId = window.localStorage.getItem(conversationKey);
-      if (rawConversationId) {
-        restoredConversationId = rawConversationId;
-      }
-    } catch (error) {
-      console.warn("[SIMULATION_HISTORY_RESTORE_ERROR]", error);
-    }
-
-    if (restoredMessages) {
-      setMessages(restoredMessages);
-      bootstrapHadStoredMessagesRef.current = true;
-    } else {
-      bootstrapHadStoredMessagesRef.current = false;
-    }
-
-    if (restoredConversationId) {
-      conversationIdRef.current = restoredConversationId;
-      setConversationId(restoredConversationId);
-    } else {
-      conversationIdRef.current = null;
-      setConversationId(null);
-    }
-
+    bootstrapHadStoredMessagesRef.current = false;
+    conversationIdRef.current = null;
+    setConversationId(null);
     historyHydratedRef.current = true;
 
     return () => {
@@ -651,31 +651,8 @@ export const ChatSimulation = () => {
   }, [user?.id]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!historyHydratedRef.current) return;
-    if (!user?.id) return;
-
-    const keySuffix = String(user.id);
-    const historyKey = storageKeyRef.current ?? buildHistoryStorageKey(keySuffix);
-    const conversationKey = buildConversationStorageKey(keySuffix);
-
-    try {
-      window.localStorage.setItem(
-        historyKey,
-        JSON.stringify({ messages }),
-      );
-
-      if (conversationId) {
-        window.localStorage.setItem(
-          conversationKey,
-          conversationId,
-        );
-      } else {
-        window.localStorage.removeItem(conversationKey);
-      }
-    } catch (error) {
-      console.warn("[SIMULATION_HISTORY_STORE_ERROR]", error);
-    }
+    // Persistence disabled based on user requirement: "Page reset on visit"
+    // We do not save to localStorage anymore.
   }, [messages, conversationId, user?.id]);
 
   const persistConversation = useCallback(
@@ -696,6 +673,7 @@ export const ChatSimulation = () => {
             question,
             answer,
             conversationId: conversationIdRef.current,
+            intakeSummary,
           }),
         });
 
@@ -730,7 +708,7 @@ export const ChatSimulation = () => {
         console.error("[SIMULATION_CONVERSATION_SAVE_ERROR]", error);
       }
     },
-    [loadPersistedSessions, user?.id],
+    [loadPersistedSessions, user?.id, intakeSummary],
   );
 
   const transcriptForHandoff = useMemo(
@@ -970,8 +948,15 @@ export const ChatSimulation = () => {
     setMessages([resetMessage]);
     conversationIdRef.current = null;
     setConversationId(null);
-    lastAnalyzedAssistantIdRef.current = null;
+    
+    // Clear all analysis states
+    setIntakeSummary(null);
+    setConversationSummary(null);
+    setRecommendations([]);
+    setEvidenceSummaries([]);
     setRealtimeInsights(null);
+    
+    lastAnalyzedAssistantIdRef.current = null;
     setRealtimeError(null);
     setIsRealtimeLoading(false);
     setReportDraft(null);
@@ -1019,6 +1004,19 @@ export const ChatSimulation = () => {
     if (!session?.messages?.length) return;
 
     setMessages(session.messages);
+    
+    // Restore summary if available, otherwise clear it to prevent stale data
+    if (session.intakeSummary) {
+      setIntakeSummary(session.intakeSummary);
+    } else {
+      setIntakeSummary(null);
+    }
+
+    // Clear other derived states not yet persisted
+    setConversationSummary(null);
+    setRecommendations([]);
+    setEvidenceSummaries([]);
+
     const normalizedExternalId = session.externalId ?? null;
     conversationIdRef.current = normalizedExternalId;
     setConversationId(normalizedExternalId);
@@ -2156,9 +2154,16 @@ export const ChatSimulation = () => {
                 )}
                 <textarea
                   name="message"
-                  placeholder="사건의 세부 상황이나 궁금한 점을 알려주세요."
+                  placeholder="사건의 세부 상황이나 궁금한 점을 알려주세요. (Ctrl+Enter로 전송)"
                   rows={1}
                   disabled={isAssistantThinking}
+                  onKeyDown={(e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                       e.preventDefault();
+                       const form = e.currentTarget.closest('form');
+                       if (form) form.requestSubmit();
+                    }
+                  }}
                   className="max-h-32 min-h-[40px] flex-1 resize-none border-none bg-transparent text-[13px] text-slate-800 outline-none placeholder:text-slate-400 sm:text-sm"
                 />
                 <button
@@ -2309,41 +2314,46 @@ export const ChatSimulation = () => {
                   investigatorSlot={investigatorInsightsSlot}
                   customerRecommendationsSlot={customerRecommendationsSlot}
                 />
-                <div>
-                  <h3 className="mb-3 text-sm font-semibold text-slate-700">규제·윤리 감시</h3>
-                  <ComplianceMonitorPanel
-                    report={complianceReport}
-                    isLoading={isComplianceLoading}
-                    error={complianceError}
-                    onRefresh={handleRefreshCompliance}
-                  />
-                </div>
-                <EvidenceVaultPanel
-                  artifacts={evidenceArtifacts}
-                  summaries={evidenceSummaries}
-                  isLoading={isEvidenceLoading}
-                  error={evidenceError}
-                  onRefresh={handleRefreshEvidence}
-                />
-                <ReportDraftPanel
-                  report={reportDraft}
-                  isLoading={isReportLoading}
-                  error={reportError}
-                  onGenerate={() => {
-                    void handleGenerateReport();
-                  }}
-                  showInvestigatorInsights={canViewInvestigatorIntel}
-                />
-                <div>
-                  <h3 className="mb-3 text-sm font-semibold text-slate-700">협상 스크립트 코치</h3>
-                  <NegotiationCoachPanel
-                    plan={negotiationPlan}
-                    isLoading={isNegotiationLoading}
-                    error={negotiationError}
-                    onRegenerate={handleRegenerateNegotiationPlan}
-                    showInvestigatorInsights={canViewInvestigatorIntel}
-                  />
-                </div>
+                
+                {canViewInvestigatorIntel && (
+                  <>
+                    <div>
+                      <h3 className="mb-3 text-sm font-semibold text-slate-700">규제·윤리 감시</h3>
+                      <ComplianceMonitorPanel
+                        report={complianceReport}
+                        isLoading={isComplianceLoading}
+                        error={complianceError}
+                        onRefresh={handleRefreshCompliance}
+                      />
+                    </div>
+                    <EvidenceVaultPanel
+                      artifacts={evidenceArtifacts}
+                      summaries={evidenceSummaries}
+                      isLoading={isEvidenceLoading}
+                      error={evidenceError}
+                      onRefresh={handleRefreshEvidence}
+                    />
+                    <ReportDraftPanel
+                      report={reportDraft}
+                      isLoading={isReportLoading}
+                      error={reportError}
+                      onGenerate={() => {
+                        void handleGenerateReport();
+                      }}
+                      showInvestigatorInsights={canViewInvestigatorIntel}
+                    />
+                    <div>
+                      <h3 className="mb-3 text-sm font-semibold text-slate-700">협상 스크립트 코치</h3>
+                      <NegotiationCoachPanel
+                        plan={negotiationPlan}
+                        isLoading={isNegotiationLoading}
+                        error={negotiationError}
+                        onRegenerate={handleRegenerateNegotiationPlan}
+                        showInvestigatorInsights={canViewInvestigatorIntel}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
           </section>
         </div>

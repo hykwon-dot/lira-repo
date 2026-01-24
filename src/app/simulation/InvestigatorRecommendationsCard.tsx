@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { CSSProperties, ElementType } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -83,6 +83,17 @@ export const InvestigatorRecommendationsCard = ({
   isMatchDisabled = false,
 }: InvestigatorRecommendationsCardProps) => {
   const [selectedRecommendation, setSelectedRecommendation] = useState<InvestigatorRecommendation | null>(null);
+
+  useEffect(() => {
+    if (selectedRecommendation) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [selectedRecommendation]);
 
   const openDetail = (recommendation: InvestigatorRecommendation) => {
     setSelectedRecommendation(recommendation);
@@ -368,7 +379,7 @@ export const InvestigatorRecommendationsCard = ({
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 16 }}
                     transition={{ duration: 0.18 }}
-                    className="relative w-full max-w-xl rounded-3xl border border-slate-200 bg-white/98 p-6 shadow-2xl"
+                    className="relative w-full max-w-xl max-h-[85vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white/98 p-6 shadow-2xl"
                   >
                     <button
                       type="button"

@@ -3,6 +3,7 @@ import ScenarioLibrary from '@/app/scenarios/ScenarioLibrary';
 import { ScenarioSummary } from '@/app/scenarios/types';
 import type { Scenario, Phase } from '@prisma/client';
 
+<<<<<<< HEAD
 export const dynamic = 'force-dynamic';
 
 async function getScenarios(): Promise<ScenarioSummary[]> {
@@ -16,6 +17,66 @@ async function getScenarios(): Promise<ScenarioSummary[]> {
       phases: true,
     },
   });
+=======
+type RawPhase = {
+  id?: string;
+  name?: string;
+  durationDays?: number;
+  details?: unknown;
+  tasks?: Array<{ desc?: string }> | null;
+};
+
+type RawScenario = {
+  title?: string;
+  overview?: {
+    industry?: string;
+    caseType?: string;
+    objective?: string;
+    totalDurationDays?: number;
+    budget?: { recommended?: number };
+    overallKPI?: Record<string, unknown>;
+    difficulty?: string;
+    successRate?: number;
+  };
+  difficulty?: string;
+  phases?: RawPhase[];
+};
+
+const TITLE_MAPPING: Record<string, string> = {
+  adultery_investigation: '불륜 의혹 조사',
+  credit_investigation_case: '신용 및 자산 조사',
+  missing_person_case: '실종자 수색',
+  industrial_espionage: '산업 기밀 유출 조사',
+  insurance_fraud_investigation: '보험 사기 혐의 조사',
+  background_check: '평판 조회 및 신원 확인',
+  stalking_response: '스토킹 피해 대응 및 증거 수집'
+};
+
+const formatTitleFromId = (id: string) =>
+  id
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const extractSuccessRate = (overview?: RawScenario['overview']) => {
+  if (!overview?.overallKPI) return undefined;
+  const candidate = overview.overallKPI.successRate ?? overview.overallKPI.leadConversionRate;
+  if (typeof candidate === 'number') {
+    return candidate;
+  }
+  if (typeof candidate === 'string') {
+    const parsed = Number(candidate.replace(/[^0-9.]/g, ''));
+    if (!Number.isNaN(parsed)) {
+      return parsed > 1 ? parsed : parsed / 100;
+    }
+  }
+  return undefined;
+};
+
+async function getScenarios(): Promise<ScenarioSummary[]> {
+  const filePath = path.join(process.cwd(), 'prisma', 'investigator_scenarios.json');
+  const fileContent = await fs.readFile(filePath, 'utf8');
+  const data: Record<string, RawScenario> = JSON.parse(fileContent);
+>>>>>>> c5414ad7b6eb26edb21f1cdc960bb0038a9a61d6
 
   return scenarios.map((scenario) => {
     // Overview field type assertion

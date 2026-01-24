@@ -19,7 +19,7 @@ export type PhaseWithTasks = Phase & {
 
 async function loadScenarioFromJson(key: string) {
   try {
-    const filePath = path.join(process.cwd(), 'prisma', 'enterprise_scenarios.json');
+    const filePath = path.join(process.cwd(), 'prisma', 'investigator_scenarios.json');
     const fileContent = await fs.readFile(filePath, 'utf8');
     const data = JSON.parse(fileContent);
     return data[key];

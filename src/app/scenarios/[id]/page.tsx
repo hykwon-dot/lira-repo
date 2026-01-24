@@ -52,7 +52,7 @@ async function getScenarioDetails(id: string): Promise<ScenarioWithDetails | nul
 
   // 3. Try to read from JSON (Fallback)
   try {
-    const filePath = path.join(process.cwd(), 'prisma', 'enterprise_scenarios.json');
+    const filePath = path.join(process.cwd(), 'prisma', 'investigator_scenarios.json');
     const fileContent = await fs.readFile(filePath, 'utf8');
     const data = JSON.parse(fileContent);
     

@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import scenariosData from './enterprise_scenarios.json'; // JSON 파일을 직접 import
+import scenariosData from './investigator_scenarios.json'; // JSON 파일을 직접 import
 import fs from 'fs';
 import path from 'path';
 
@@ -8,10 +8,10 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('[SEED] 시딩 스크립트 시작...');
 
-  const filePath = path.join(process.cwd(), 'prisma', 'enterprise_scenarios.json');
+  const filePath = path.join(process.cwd(), 'prisma', 'investigator_scenarios.json');
   
   if (!fs.existsSync(filePath)) {
-    console.error(`[SEED] ERROR: enterprise_scenarios.json 파일을 찾을 수 없습니다. 경로: ${filePath}`);
+    console.error(`[SEED] ERROR: investigator_scenarios.json 파일을 찾을 수 없습니다. 경로: ${filePath}`);
     return;
   }
 
@@ -20,9 +20,13 @@ async function main() {
   const scenariosAsObject = JSON.parse(jsonData);
 
   const titleMapping: { [key: string]: string } = {
-    "domesticTechExpo_Enterprise": "국내 기술 엑스포",
-    "snsProductLaunch_Enterprise": "SNS 제품 마케팅",
-    "overseasTechExpo_Enterprise": "해외 기술 엑스포"
+    "adultery_investigation": "불륜 의혹 조사",
+    "credit_investigation_case": "신용 및 자산 조사",
+    "missing_person_case": "실종자 수색",
+    "industrial_espionage": "산업 기밀 유출 조사",
+    "insurance_fraud_investigation": "보험 사기 혐의 조사",
+    "background_check": "평판 조회 및 신원 확인",
+    "stalking_response": "스토킹 피해 대응 및 증거 수집"
   };
 
   // JSON 객체를 순회하며 배열로 변환하고, title과 difficulty 필드를 정규화합니다.
