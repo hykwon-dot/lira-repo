@@ -241,10 +241,42 @@ async function main() {
         "용의자가 매우 치밀하게 디지털 흔적을 지웠으나, 클라우드 백업 로그에서 결정적 단서를 찾아낼 수 있었습니다."
       ],
       phases: [
-        { name: "비밀 감사 착수", duration: 5, deliverables: ["이상 거래 리스트", "법인카드 분석표"] },
-        { name: "디지털 증거 수집", duration: 10, deliverables: ["서버 포렌식 리포트", "이메일 복구 자료"] },
-        { name: "자금 흐름 추적", duration: 15, deliverables: ["계좌 추적도", "은닉 재산 목록"] },
-        { name: "법적 대응 준비", duration: 7, deliverables: ["소송 증거 책자", "피해 규모 산정서"] }
+        { 
+            name: "비밀 감사 착수", 
+            duration: 5, 
+            deliverables: ["이상 거래 리스트", "법인카드 분석표"],
+            tasks: ["ERP 접속 기록 전수 조사", "심야 시간대 법인카드 사용처 확보", "주말 출근자 보안 로그 대조"],
+            kpi: ["이상 징후 10건 이상 식별", "오탐율 5% 미만"],
+            risk: "대상자가 인지하고 증거 인멸 시도",
+            description: "대상자 몰래 회계 시스템과 보안 기록을 교차 분석하여 횡령의 초기 증거를 확보하는 단계입니다."
+        },
+        { 
+            name: "디지털 증거 수집", 
+            duration: 10, 
+            deliverables: ["서버 포렌식 리포트", "이메일 복구 자료"],
+            tasks: ["업무용 노트북 하드디스크 이미징", "삭제된 이메일 아카이브 복원", "메신저 대화 로그 키워드 검색"],
+            kpi: ["결정적 스모킹 건(Smoking Gun) 확보", "법적 증거 능력 유지"],
+            risk: "개인정보보호법 위반 소지",
+            description: "확보된 기기에서 삭제된 자료를 복원하고 법적 효력이 있는 형태의 디지털 증거로 가공합니다."
+        },
+        { 
+            name: "자금 흐름 추적", 
+            duration: 15, 
+            deliverables: ["계좌 추적도", "은닉 재산 목록"],
+            tasks: ["차명 계좌 연결 고리 파악", "자금 세탁 경로 시각화", "은닉 부동산 등기부 열람"],
+            kpi: ["횡령액의 80% 이상 용처 규명", "최종 귀속자 특정"],
+            risk: "해외 송금으로 인한 추적 난항",
+            description: "빼돌린 자금이 어디로 흘러들어갔는지 끝까지 추적하여 환수 대상을 특정합니다."
+        },
+        { 
+            name: "법적 대응 준비", 
+            duration: 7, 
+            deliverables: ["소송 증거 책자", "피해 규모 산정서"],
+            tasks: ["변호사와 증거 목록 검토", "고소장 작성을 위한 사실 관계 정리", "가압류 신청 서류 준비"],
+            kpi: ["고소장 접수 완료", "보전 처분 인용"],
+            risk: "역고소 가능성 대비 부족",
+            description: "수집된 모든 증거를 법리적으로 재구성하여 형사 고소 및 민사 소송을 빈틈없이 준비합니다."
+        }
       ]
     },
     'industrial_espionage': {
@@ -270,10 +302,42 @@ async function main() {
         "단순한 이직 문제가 아닌, 조직적 산업 스파이 링(Ring)이 개입된 것을 밝혀내어 업계 전체의 경각심을 높였습니다."
       ],
       phases: [
-        { name: "보안 로그 분석", duration: 3, deliverables: ["접속 기록 분석서", "데이터 전송 로그"] },
-        { name: "대상자 모니터링", duration: 7, deliverables: ["동선 보고서", "통신 내용 요약"] },
-        { name: "유출 경로 차단", duration: 5, deliverables: ["네트워크 차단 조치", "현장 검거 영상"] },
-        { name: "피해 복구 및 인증", duration: 10, deliverables: ["기술 가치 평가서", "재발 방지 대책"] }
+        { 
+            name: "보안 로그 분석", 
+            duration: 3, 
+            deliverables: ["접속 기록 분석서", "데이터 전송 로그"],
+            tasks: ["VPN 우회 접속 기록 확인", "대용량 파일 전송 이력 스캔", "출입 통제 시스템 로그 대조"],
+            kpi: ["의심 IP 특정완료", "이상 징후 패턴 발견"],
+            risk: "로그 보존 기간 만료",
+            description: "초기 단계로, 시스템에 남아있는 흔적을 분석하여 침해 사고의 징후를 조기에 포착합니다."
+        },
+        { 
+            name: "대상자 모니터링", 
+            duration: 7, 
+            deliverables: ["동선 보고서", "통신 내용 요약"],
+            tasks: ["퇴근 후 동선 잠복 미행", "경쟁사 관계자와의 회동 채증", "SNS 활동 모니터링"],
+            kpi: ["접선 현장 사진 확보", "공범 확인"],
+            risk: "미행 발각으로 인한 잠적",
+            description: "용의자의 물리적 동선을 밀착 감시하여 실제 기술 유출이 일어나는 접선 현장을 포착합니다."
+        },
+        { 
+            name: "유출 경로 차단", 
+            duration: 5, 
+            deliverables: ["네트워크 차단 조치", "현장 검거 영상"],
+            tasks: ["계정 접근 권한 즉시 박탈", "유출 파일 삭제 명령", "수사 기관 공조 요청"],
+            kpi: ["추가 유출 제로화", "용의자 신병 확보"],
+            risk: "랜섬웨어 등 보복 공격 가능성",
+            description: "확인된 유출 경로를 기술적으로 차단하고, 수사기관과 협력하여 물리적인 유출을 막습니다."
+        },
+        { 
+            name: "피해 복구 및 인증", 
+            duration: 10, 
+            deliverables: ["기술 가치 평가서", "재발 방지 대책"],
+            tasks: ["유출된 기술의 경제적 가치 산정", "보안 취약점 패치 및 정책 강화", "임직원 보안 서약서 갱신"],
+            kpi: ["재발 방지 시스템 100% 구축", "피해액 산정 완료"],
+            risk: "기업 이미지 실추 우려",
+            description: "사건 종결 후, 재발 방지를 위한 보안 체계를 강화하고 피해 규모를 정확히 산정합니다."
+        }
       ]
     },
     'infidelity': {
@@ -299,10 +363,42 @@ async function main() {
         "단순한 외도 조사를 넘어, 상간자가 의뢰인의 지인이라는 충격적 사실까지 밝혀내어 완벽한 관계 정리를 도왔습니다."
       ],
       phases: [
-        { name: "기초 정보 분석", duration: 2, deliverables: ["대상자 프로필", "주요 동선 파악"] },
-        { name: "현장 채증 활동", duration: 7, deliverables: ["증거 사진/영상", "출입 기록"] },
-        { name: "신원 특정 및 조회", duration: 3, deliverables: ["상간자 인적사항", "재산 조회 결과"] },
-        { name: "보고서 작성", duration: 2, deliverables: ["소송용 입증 자료", "종합 보고서"] }
+        { 
+            name: "기초 정보 분석", 
+            duration: 2, 
+            deliverables: ["대상자 프로필", "주요 동선 파악"],
+            tasks: ["SNS 및 메신저 프로필 분석", "차량 블랙박스 및 하이패스 기록 확보", "평소 생활 패턴 타임라인 작성"],
+            kpi: ["의심 시간대 특정", "주요 이동 수단 파악"],
+            risk: "배우자의 의심으로 증거 인멸",
+            description: "본격적인 조사에 앞서 의뢰인이 제공한 정보를 바탕으로 대상자의 생활 패턴과 의심 구간을 좁힙니다."
+        },
+        { 
+            name: "현장 채증 활동", 
+            duration: 7, 
+            deliverables: ["증거 사진/영상", "출입 기록"],
+            tasks: ["24시간 밀착 감시 및 동행", "숙박업소 등 부정행위 장소 출입 채증", "차량 내외부 대화 녹취(합법적 범위)"],
+            kpi: ["결정적 부정행위 증거 3건 이상", "영상 증거 확보"],
+            risk: "스토킹 처벌법 위반 주의",
+            description: "합법적인 테두리 내에서 현장에 잠복하여 부정행위를 입증할 수 있는 사진과 영상을 확보합니다."
+        },
+        { 
+            name: "신원 특정 및 조회", 
+            duration: 3, 
+            deliverables: ["상간자 인적사항", "재산 조회 결과"],
+            tasks: ["차량 번호판 조회를 통한 차주 파악", "거주지 등기부 등본 열람", "근무지 방문 확인"],
+            kpi: ["실명 및 주민등록번호 특정", "송달 가능한 주소 확보"],
+            risk: "개인정보 무단 조회 금지",
+            description: "상간자에 대한 위자료 청구 소송을 위해 정확한 인적 사항과 거주지를 파악하는 단계입니다."
+        },
+        { 
+            name: "보고서 작성", 
+            duration: 2, 
+            deliverables: ["소송용 입증 자료", "종합 보고서"],
+            tasks: ["일자별 행동 요약 보고서 작성", "증거 자료 넘버링 및 설명 첨부", "변호사 자문 연계"],
+            kpi: ["의뢰인 최종 승인", "증거 불충분 보완 완료"],
+            risk: "내용 유출 주의",
+            description: "모든 조사 내용을 종합하여 법정에서 유리하게 작용할 수 있도록 체계적인 보고서와 증거 목록을 완성합니다."
+        }
       ]
     },
     'missing_person': {
@@ -328,13 +424,46 @@ async function main() {
         "단순 소재 파악을 넘어, 양측의 만남 의사를 조심스럽게 타진하여 감동적인 재회까지 이끌어낸 보람찬 사건이었습니다."
       ],
       phases: [
-        { name: "단서 수집 및 분석", duration: 3, deliverables: ["예상 이동 경로도", "탐문 기록지"] },
-        { name: "현장 수색 및 추적", duration: 10, deliverables: ["탐색 구역 지도", "목격자 진술서"] },
-        { name: "소재 파악 및 접촉", duration: 5, deliverables: ["소재지 확인 사진", "대상자 상태 보고"] },
-        { name: "가족 인계/종결", duration: 1, deliverables: ["인계 확인서", "종결 보고서"] }
+        { 
+            name: "단서 수집 및 분석", 
+            duration: 3, 
+            deliverables: ["예상 이동 경로도", "탐문 기록지"],
+            tasks: ["최후 목격지 주변 CCTV 확보", "주변인 및 가족 심층 인터뷰", "휴대폰 기지국 위치 정보 분석 요청"],
+            kpi: ["초기 이동 방향 특정", "유효 제보 1건 이상"],
+            risk: "골든타임 경과 우려",
+            description: "실종 발생 초기, 가능한 모든 수단을 동원하여 대상자의 흔적과 이동 방향을 찾아냅니다."
+        },
+        { 
+            name: "현장 수색 및 추적", 
+            duration: 10, 
+            deliverables: ["탐색 구역 지도", "목격자 진술서"],
+            tasks: ["예상 은신처 탐문 수색", "전단지 배포 및 제보 접수", "드론 활용 광범위 지역 수색"],
+            kpi: ["탐색 구역 90% 이상 커버", "추가 목격자 확보"],
+            risk: "기상 악화로 인한 수색 지연",
+            description: "분석된 경로를 바탕으로 현장에 인력을 투입하여 광범위하고 정밀한 수색 작전을 펼칩니다."
+        },
+        { 
+            name: "소재 파악 및 접촉", 
+            duration: 5, 
+            deliverables: ["소재지 확인 사진", "대상자 상태 보고"],
+            tasks: ["은신처 잠복 및 확인", "대상자 신병 안전 확보", "가족/의뢰인에게 상황 전파"],
+            kpi: ["대상자 신원 100% 일치 확인", "안전 상태 확인"],
+            risk: "대상자의 도주 또는 저항",
+            description: "대상자의 정확한 위치를 확인한 후, 안전하게 신병을 확보하거나 접촉을 시도합니다."
+        },
+        { 
+            name: "가족 인계/종결", 
+            duration: 1, 
+            deliverables: ["인계 확인서", "종결 보고서"],
+            tasks: ["가족과의 상봉 주선", "병원 이송 및 후속 조치 지원", "사건 종결 행정 처리"],
+            kpi: ["안전한 인계 완료", "의뢰인 만족도 최상"],
+            risk: "재실종 또는 돌발 상황",
+            description: "대상자를 가족 품으로 안전하게 돌려보내거나 의뢰인과 만나게 해드리고 사건을 마무리합니다."
+        }
       ]
     }
   };
+
 
   const regions = ['서울 Gangnam', '부산 Haeundae', '인천 Songdo', '경기 Pangyo', '제주 Jeju City', '대전 Yuseong', '대구 Suseong'];
   
@@ -374,9 +503,30 @@ async function main() {
             name: p.name,
             durationDays: p.duration + (Math.random() > 0.5 ? 1 : 0), // Slight variance
             scheduleOffset: bp.phases.slice(0, idx).reduce((acc: number, prev: any) => acc + prev.duration, 0),
+            description: p.description, // Added description for rich phase UI
             budget: {},
-            phaseKPI: {},
-            deliverables: p.deliverables
+            phaseKPI: p.kpi ?? [],
+            deliverables: p.deliverables,
+            tasks: {
+               create: (p.tasks || []).map((t: string, taskIdx: number) => ({
+                 taskKey: `T${taskIdx+1}`,
+                 desc: t,
+                 competency: {},
+                 durationDays: null,
+                 priority: "HIGH",
+                 status: "PENDING",
+                 order: taskIdx
+               }))
+            },
+            risks: {
+               create: p.risk ? [{
+                 riskKey: `R${idx+1}`,
+                 name: p.risk,
+                 severity: "MEDIUM",
+                 trigger: "상황 발생 시",
+                 mitigation: "사전 대응 메뉴얼 준수"
+               }] : []
+            }
         }));
 
         batch.push(
