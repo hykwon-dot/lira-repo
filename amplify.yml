@@ -10,6 +10,8 @@ frontend:
         - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
         - echo "DATABASE_URL=$DATABASE_URL" >> .env
         - npm run build
+        - npx prisma db push --accept-data-loss
+        - npm run db:seed
   artifacts:
     baseDirectory: .next
     files:
