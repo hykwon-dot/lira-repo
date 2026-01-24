@@ -200,6 +200,121 @@ async function main() {
     await prisma.scenario.create({ data: s });
   }
 
+  // --- Success Cases Generator (Massive Data Seeding) ---
+  console.log('[MariaDB Seed] Generating Success Scenarios...');
+  
+  // 기존 시나리오 삭제 (Clean state for demo)
+  // FK 제약 조건 때문에 자식 테이블 먼저 삭제
+  try {
+    await prisma.phase.deleteMany({});
+    // 다른 연관 테이블이 있다면 추가 삭제 필요 (예: SimulationRun 등)
+    // SimulationRun이 Scenario를 참조한다면 삭제 필요
+    const scenarioCount = await prisma.scenario.count();
+    if (scenarioCount > 0) {
+        // FK 제약 무시하고 삭제하는 방법이 위험하므로, 연결된 데이터가 있는지 확인하고 삭제하는 것이 좋으나
+        // 개발 환경이므로 시나리오와 연관된 모든 데이터를 삭제합니다.
+        // 현재 스키마상 SimulationRun이나 다른 테이블이 있을 수 있음.
+        await (prisma as any).simulationRun?.deleteMany({});
+        await prisma.scenario.deleteMany({});
+    }
+  } catch (e) {
+    console.warn('[MariaDB Seed] 기존 데이터 삭제 중 오류 (무시하고 진행):', e);
+  }
+
+  const regions = ['서울 Gangnam', '부산 Haeundae', '인천 Airport', '경기 Pangyo', '제주 Island', '대전 Center', '대구 Industrial'];
+  const caseTypes = [
+    { type: '기업 횡령', items: ['자금 횡령', '법인카드 유용', '비자금 조성', '회계 조작'] },
+    { type: '산업 스파이', items: ['기술 유출', '인력 빼가기', '영업비밀 매매', '디자인 도용'] },
+    { type: '개인 신변', items: ['스토킹 피해', '실종자 찾기', '채무자 추적', '불륜/가정문제'] },
+    { type: '디지털 범죄', items: ['해킹 추적', '온라인 사기', '악플러 특정', '데이터 복구'] },
+  ];
+  
+  const investigatorNotes = [
+    "초기 증거 확보가 결정적이었습니다.",
+    "의뢰인의 신속한 제보 덕분에 골든타임을 지킬 수 있었습니다.",
+    "디지털 포렌식을 통해 삭제된 데이터를 복원한 것이 주요했습니다.",
+    "장기간의 잠복 근무 끝에 결정적 현장을 포착했습니다.",
+    "관계자들과의 꾸준한 라포 형성으로 내부 증언을 확보했습니다."
+  ];
+
+  const totalScenariosToCreate = 1000; // Demo: 1000 cases (Can scale to 10k)
+  
+  // Batch processing
+  const batchSize = 50;
+  
+  for(let i = 0; i < totalScenariosToCreate; i+= batchSize) {
+     const batch = [];
+     for(let j = 0; j < batchSize; j++) {
+        if(i + j >= totalScenariosToCreate) break;
+        
+        const typeObj = caseTypes[Math.floor(Math.random() * caseTypes.length)];
+        const subType = typeObj.items[Math.floor(Math.random() * typeObj.items.length)];
+        const region = regions[Math.floor(Math.random() * regions.length)];
+        const difficulty = Math.random() > 0.7 ? '상' : (Math.random() > 0.4 ? '중' : '하');
+        const duration = Math.floor(Math.random() * 30) + 7; // 7 ~ 37 days
+        const budget = Math.floor(Math.random() * 500) * 10000 + 1000000; // 1M ~ 6M KRW approx logic
+        
+        const title = `[${typeObj.type}] ${region} ${subType} 해결 사례`;
+        const objective = `${subType} 정황을 포착하고 결정적 증거를 확보하여 의뢰인에게 전달함.`;
+        
+        batch.push(
+           prisma.scenario.create({
+             data: {
+               title: title,
+               description: objective,
+               difficulty: difficulty,
+               // Using 'overview' JSON field to store case report details
+               overview: {
+                 objective: objective,
+                 background: `${region} 지역에서 발생한 ${subType} 건으로, 의뢰인은 익명의 제보를 통해 사건을 인지함.`,
+                 solution: "전담 팀 구성 및 24시간 모니터링, 디지털 포렌식 병행.",
+                 outcome: "증거 확보 100% 달성 및 법적 대응 자료 완비.",
+                 investigatorNote: investigatorNotes[Math.floor(Math.random() * investigatorNotes.length)]
+               },
+               // Dummy JSON fields for schema compatibility
+               spendTracking: {},
+               raciMatrix: {},
+               scheduleTemplate: {},
+               
+               phases: {
+                 create: [
+                   {
+                     phaseKey: "P1",
+                     name: "기초 조사",
+                     durationDays: Math.floor(duration * 0.2),
+                     scheduleOffset: 0,
+                     budget: {},
+                     phaseKPI: {},
+                     deliverables: ["기초 조사 보고서"]
+                   },
+                   {
+                     phaseKey: "P2",
+                     name: "심층 추적",
+                     durationDays: Math.floor(duration * 0.5),
+                     scheduleOffset: Math.floor(duration * 0.2),
+                     budget: {},
+                     phaseKPI: {},
+                     deliverables: ["중간 브리핑", "증거 영상"]
+                   },
+                   {
+                     phaseKey: "P3",
+                     name: "결과 보고",
+                     durationDays: Math.floor(duration * 0.3),
+                     scheduleOffset: Math.floor(duration * 0.7),
+                     budget: {},
+                     phaseKPI: {},
+                     deliverables: ["최종 보고서", "법률 자문 연계"]
+                   }
+                 ]
+               }
+             }
+           })
+        );
+     }
+     await prisma.$transaction(batch);
+     console.log(`[MariaDB Seed] Created scenarios outcome batch ${i} ~ ${i + batchSize}`);
+  }
+
   console.log('[MariaDB Seed] 완료 (공통 패스워드=' + rawPass + '):', {
     admin: admin.id,
     superAdmin: superAdmin.id,
