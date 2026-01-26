@@ -26,6 +26,64 @@
 			],
 			"isBackground": false,
 			"group": "db"
+		},
+		{
+			"label": "Check Git Status",
+			"type": "shell",
+			"command": "git status",
+			"args": [],
+			"isBackground": false,
+			"group": "none"
+		},
+		{
+			"label": "Deploy Fixes",
+			"type": "shell",
+			"command": "git add . ; git commit -m \"Fix prompts and remove Security widget\" ; git push origin main",
+			"args": [],
+			"isBackground": false,
+			"group": "none"
+		},
+		{
+			"label": "Pull and Push",
+			"type": "shell",
+			"command": "git pull origin main --no-edit ; git push origin main",
+			"args": [],
+			"isBackground": false,
+			"group": "none"
+		},
+		{
+			"label": "Check Git Status 2",
+			"type": "shell",
+			"command": "git status; git log -1",
+			"args": [],
+			"isBackground": false,
+			"group": "none"
+		},
+		{
+			"label": "Safe Deploy",
+			"type": "shell",
+			"command": "git stash ; git pull origin main --no-edit ; git stash pop ; git add . ; git commit -m \"Final fix for UI including widget removal\" ; git push origin main",
+			"args": [],
+			"isBackground": false,
+			"group": "none"
+		},
+		{
+			"label": "Debug Git",
+			"type": "shell",
+			"command": ".\\debug_git.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "Force Git Push",
+			"type": "shell",
+			"command": ".\\debug_git.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
 		}
 	]
 }

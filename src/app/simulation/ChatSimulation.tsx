@@ -307,17 +307,27 @@ export const ChatSimulation = () => {
         createdAt: Date.now(),
       },
     ]);
-    // Clear all analysis states on mount to ensure fresh start
+    
+    // Explicitly nullify all analysis results to ensure fresh start
+    // This fixes the issue where previous session data (recommendations, bribery, etc.)
+    // persists after navigating away and returning.
     setIntakeSummary(null);
     setConversationSummary(null);
-    setRecommendations([]);
+    setRecommendations([]);      
     setEvidenceSummaries([]);
-    setRealtimeInsights(null);
+    setRealtimeInsights(null);   
     setReportDraft(null);
     setNegotiationPlan(null);
     setComplianceReport(null);
     setConversationId(null);
-  }, [setMessages]); // Run once on mount (and when setMessages changes, which is stable)
+    
+    // Also clear session storage artifacts if any exist for this page context
+    try {
+      window.sessionStorage.removeItem("simulation-handoff");
+    } catch {
+      // ignore
+    }
+  }, [setMessages]); // Run once on mount
 
   const [isAssistantThinking, setIsAssistantThinking] = useState(false);
   const [intakeSummary, setIntakeSummary] = useState<IntakeSummary | null>(null);
@@ -1701,7 +1711,27 @@ export const ChatSimulation = () => {
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => router.push("/simulation/twin")}
+
+                  onClick={() => {
+                    const transcript = messages.map(m => ({
+                      role: m.role === 'user' ? 'user' : 'assistant',
+                      content: m.content
+                    }));
+                    
+                    const handoffData = {
+                      summary: intakeSummary,
+                      conversationSummary,
+                      transcript
+                    };
+                    
+                    try {
+                      window.sessionStorage.setItem("simulation-handoff", JSON.stringify(handoffData));
+                    } catch (e) {
+                      console.error("Failed to save handoff context", e);
+                    }
+                    
+                    router.push("/simulation/twin");
+                  }}
                   className="inline-flex items-center gap-2 rounded-full border border-indigo-200/60 bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-indigo-100 transition hover:border-indigo-100 hover:bg-indigo-200/10"
                 >
                   <FiPlay className="h-3.5 w-3.5" /> 사건 시뮬레이션 해보기

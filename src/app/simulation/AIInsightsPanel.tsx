@@ -70,12 +70,7 @@ export function AIInsightsPanel({
   }, [insights?.generatedAt]);
 
   const isInvestigatorView = showInvestigatorInsights;
-  const overallRisk = insights?.overallRisk ?? "low";
   
-  // Calculate relative width for risk bar (0-100 logic roughly)
-  const riskScore = insights?.riskScore ?? 0;
-  const riskPercent = Math.min(100, Math.max(0, riskScore));
-
   const SectionHeader = ({ icon: Icon, title, color = "text-slate-900" }: { icon: any, title: string, color?: string }) => (
     <div className="flex items-center gap-2 mb-3">
       <span className={`flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 ${color}`}>
@@ -88,13 +83,6 @@ export function AIInsightsPanel({
   return (
     <div className="flex flex-col gap-6 font-sans">
       
-      {/* 1. Risk Dashboard Widget - REMOVED */}
-      {/* 
-      <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-         (Code commented out as per user request to remove Security Level section)
-      </section> 
-      */}
-
       {/* 2. Investigator / Customer Slot */}
       {(investigatorSlot || customerRecommendationsSlot) && (
         <section>
