@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "db:seed": "ts-node --project prisma/tsconfig.json prisma/seed.ts",
+    "db:seed": "ts-node --project prisma/tsconfig.json prisma/seed_mariadb.ts",
     "db:check": "tsx scripts/db-health.ts",
     "test:register": "tsx scripts/register-api-test.ts",
     "test:simulation": "tsx scripts/test-simulation-logging.ts",

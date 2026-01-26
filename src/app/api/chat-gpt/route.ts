@@ -66,7 +66,7 @@ const intakeSchema = z.object({
   })).describe("5단계 사건 조사 체크리스트 진행 상황"),
   currentPhase: z.number().describe("현재 진행 중인 단계 (1~5)"),
   currentDepth: z.number().describe("현재 단계의 질문 깊이 (1~5)"),
-  nextActionSuggestion: z.enum(['continue_interview', 'suggest_hiring', 'none']).describe("AI가 판단한 다음 추천 행동"),
+  nextActionSuggestion: z.enum(['continue_interview', 'suggest_hiring', 'none']).describe("AI가 판단한 다음 추천 행동. 의뢰인이 연결을 원하거나 상담이 충분하면 'suggest_hiring' 선택."),
   summary: z.object({
     caseTitle: z.string().describe("사건을 대표하는 간결한 제목"),
     caseType: z.string().describe("사건 유형 분류"),
@@ -202,7 +202,12 @@ ${JSON.stringify(currentScenario, null, 2)}`;
    - 사용자 답변이 짧으면 "네, 그렇군요." 하고 바로 다음 질문으로 넘어가세요.
    - 답변이 확인되면: "확인했습니다. 그럼 이 부분은 된 것 같고, 혹시... [다음 질문]?" 처럼 부드럽게 넘어가세요.
 
-3. **적절한 타이밍의 제안 (Decision Point):**
+3. **즉시 연결 요청 대응 (Action):**
+   - 사용자가 "바로 연결해줘", "전문가 불러줘"라고 말하면 **즉시 수용**하세요.
+   - "네, 알겠습니다. 말씀하신 내용을 정리해서 가장 적합한 전문가를 바로 연결해 드리겠습니다."라고 안심시키세요.
+   - 이때 \`nextActionSuggestion\` 값을 반드시 \`suggest_hiring\`으로 설정하세요.
+
+4. **적절한 타이밍의 제안 (Decision Point):**
    - 대화가 어느 정도 무르익어(Depth 3 이상), 핵심적인 내용(누가, 언제, 무엇을, 왜)이 파악되었다면:
    - "말씀해주신 내용을 들어보니 대략적인 상황은 파악이 됩니다. 제가 이걸 정리해서 탐정님께 전달해드릴 수 있는데, 혹시 더 자세한 이야기를 나누고 싶으신가요? 아니면 이 정도 내용을 가지고 바로 전문가에게 상담을 요청해볼까요?"
    - 이렇게 선택권을 주세요.
@@ -217,6 +222,8 @@ ${JSON.stringify(currentScenario, null, 2)}`;
 5단계: 해결 목표 (무엇을 원하시는지)
 
 **JSON 출력 필수 사항:**
+- 반드시 **유효한 JSON**만 출력해야 합니다. 마크다운이나 잡담을 섞지 마세요.
+- \`nextActionSuggestion\`은 반드시 'continue_interview', 'suggest_hiring', 'none' 중 하나여야 합니다. 사용자가 연결을 원하면 'suggest_hiring'을 선택하세요.
 - assistantMessage: **사람 냄새 나는 따뜻한 말투**로 작성하세요. "다음 단계로 넘어갑니다" 같은 시스템 메시지는 절대 금지.
 - conversationSummary: 탐정에게 전달할 사건 요약 (개조식 Bullet points).
 - investigationChecklist: 내부 진행 상황 업데이트.

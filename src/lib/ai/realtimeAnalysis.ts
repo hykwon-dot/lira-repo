@@ -16,8 +16,8 @@ import { deriveTrendAlerts, recordRiskSignals } from "./riskTrendTracker";
 import { generateInvestigationFlow } from "./investigationFlowSimulator";
 
 const MESSAGE_SCHEMA = z.object({
-  role: z.enum(["user", "assistant"]),
-  content: z.string().min(1),
+  role: z.string(), // Allow 'system', 'data', etc. to prevent validation errors
+  content: z.string().optional(), // Allow empty content (e.g. tool calls)
 });
 
 const PAYLOAD_SCHEMA = z.object({
