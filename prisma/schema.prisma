@@ -54,6 +54,8 @@ model InvestigatorProfile {
   serviceArea       String?
   introduction      String?                @db.Text
   portfolioUrl      String?
+  businessLicenseData String?            @db.LongText
+  pledgeData          String?            @db.LongText
   termsAcceptedAt   DateTime?
   privacyAcceptedAt DateTime?
   avatarUrl         String?                @db.LongText
