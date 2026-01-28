@@ -2,33 +2,27 @@
 
 export function validateEnvironment() {
   const required = [
-    'DATABASE_URL'
+    'DATABASE_URL',
+    'JWT_SECRET',
+    'OPENAI_API_KEY'
   ];
 
   const missing = required.filter(key => !process.env[key]);
   
   if (missing.length > 0) {
     console.error('❌ Missing required environment variables:', missing);
-    return { valid: false, missing, error: `Missing required environment variables: ${missing.join(', ')}` };
-  }
-
-  // Check others loosely
-  if (!process.env.JWT_SECRET) {
-    console.warn('⚠️  JWT_SECRET is missing. Using fallback.');
-  }
-  if (!process.env.OPENAI_API_KEY) {
-    console.warn('⚠️  OPENAI_API_KEY is missing.');
+    return false;
   }
 
   // DATABASE_URL 형식 검증
   const dbUrl = process.env.DATABASE_URL;
   if (dbUrl && !dbUrl.startsWith('mysql://')) {
     console.error('❌ DATABASE_URL must start with mysql://');
-    return { valid: false, missing: [], error: `DATABASE_URL must start with mysql://. Got: ${dbUrl?.substring(0, 8)}...` };
+    return false;
   }
 
   console.log('✅ All required environment variables are present');
-  return { valid: true, missing: [] };
+  return true;
 }
 
 export function getEnvironmentInfo() {

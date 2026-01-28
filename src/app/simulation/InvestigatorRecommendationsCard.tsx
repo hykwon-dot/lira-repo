@@ -28,10 +28,6 @@ export interface InvestigatorRecommendation {
   serviceArea: string | null;
   specialties: string[];
   reason: string;
-  alignmentFactors: string[];
-  matchScore: number;
-  successProbability: number;
-  confidence: number;
 }
 
 interface InvestigatorRecommendationsCardProps {
@@ -51,8 +47,6 @@ const clampStyle = (lines: number): CSSProperties => ({
   textOverflow: "ellipsis",
 });
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-
 const rankHighlights = [
   {
     badge: "즉시 투입",
@@ -63,7 +57,7 @@ const rankHighlights = [
   {
     badge: "특화 경험",
     tone: "from-blue-500 via-sky-500 to-cyan-500",
-    headline: "대안 계획",
+    headline: "대안 플랜",
     description: "비슷한 유형에서 높은 해결률을 보여왔어요.",
   },
   {
@@ -161,8 +155,6 @@ export const InvestigatorRecommendationsCard = ({
             );
             const topSpecialties = specialties.slice(0, 2);
             const moreSpecialtyCount = Math.max(0, specialties.length - topSpecialties.length);
-            const successPercent = Math.round(clamp(rec.successProbability ?? 0.62, 0, 0.99) * 100);
-            const confidencePercent = Math.round(clamp(rec.confidence ?? 0.72, 0.4, 0.99) * 100);
 
             const metrics: Array<{
               id: string;
@@ -264,21 +256,6 @@ export const InvestigatorRecommendationsCard = ({
                   ) : null}
                 </div>
 
-                <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                  <div className="rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-xs text-indigo-700">
-                    <p className="font-semibold uppercase tracking-[0.18em] text-indigo-400">AI 매칭 지수</p>
-                    <p className="mt-1 text-lg font-semibold text-indigo-700">{Math.round(rec.matchScore ?? 72)} / 100</p>
-                  </div>
-                  <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-xs text-emerald-700">
-                    <p className="font-semibold uppercase tracking-[0.18em] text-emerald-400">예상 성공률</p>
-                    <p className="mt-1 text-lg font-semibold text-emerald-700">{successPercent}%</p>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
-                    <p className="font-semibold uppercase tracking-[0.18em] text-slate-400">데이터 신뢰도</p>
-                    <p className="mt-1 text-lg font-semibold text-slate-700">{confidencePercent}%</p>
-                  </div>
-                </div>
-
                 <div className="mt-3 flex flex-wrap gap-2">
                   {metrics.map((metric) => {
                     const MetricIcon = metric.icon;
@@ -297,14 +274,6 @@ export const InvestigatorRecommendationsCard = ({
                 <p className="mt-3 text-sm leading-relaxed text-slate-600" style={clampStyle(3)}>
                   {rec.reason}
                 </p>
-
-                {rec.alignmentFactors.length ? (
-                  <ul className="mt-3 space-y-1 rounded-2xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-[12px] text-slate-600">
-                    {rec.alignmentFactors.slice(0, 4).map((factor, factorIndex) => (
-                      <li key={`factor-${rec.id}-${factorIndex}`}>• {factor}</li>
-                    ))}
-                  </ul>
-                ) : null}
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <button
@@ -341,12 +310,6 @@ export const InvestigatorRecommendationsCard = ({
                 (item): item is string => Boolean(item && item.trim().length > 0),
               );
               const modalMeta = rankHighlights[Math.min(Math.max(selectedIndex, 0), rankHighlights.length - 1)];
-              const detailSuccessPercent = Math.round(
-                clamp(selectedRecommendation.successProbability ?? 0.62, 0, 0.99) * 100,
-              );
-              const detailConfidencePercent = Math.round(
-                clamp(selectedRecommendation.confidence ?? 0.72, 0.4, 0.99) * 100,
-              );
 
               return (
                 <motion.div
@@ -414,17 +377,6 @@ export const InvestigatorRecommendationsCard = ({
                       </div>
 
                       <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 text-sm text-indigo-900 md:col-span-2">
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-400">
-                            AI 매칭 지수
-                          </p>
-                          <p className="mt-2 text-2xl font-semibold text-indigo-700">
-                            {Math.round(selectedRecommendation.matchScore ?? 72)} / 100
-                          </p>
-                          <p className="mt-3 text-xs text-indigo-500">
-                            예상 성공률 {detailSuccessPercent}% · 데이터 신뢰도 {detailConfidencePercent}%
-                          </p>
-                        </div>
                         <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-600">
                           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                             핵심 지표
@@ -482,22 +434,6 @@ export const InvestigatorRecommendationsCard = ({
                           </div>
                         </div>
                       </div>
-
-                      {selectedRecommendation.alignmentFactors.length ? (
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-600">
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                            매칭 근거
-                          </p>
-                          <ul className="mt-3 space-y-2">
-                            {selectedRecommendation.alignmentFactors.map((factor, factorIndex) => (
-                              <li key={`detail-factor-${factorIndex}`} className="flex items-start gap-2">
-                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400" />
-                                <span className="text-slate-700">{factor}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
 
                       <div className="rounded-2xl border border-slate-200 bg-white/90 p-4">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">

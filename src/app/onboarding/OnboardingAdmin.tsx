@@ -21,7 +21,7 @@ export default function OnboardingAdmin() {
 
   return (
     <div className="max-w-2xl mx-auto p-8">
-      <h2 className="text-2xl font-bold mb-4">적응 데이터 관리</h2>
+      <h2 className="text-2xl font-bold mb-4">온보딩 데이터 관리</h2>
       <div className="mb-6">
         <input value={name} onChange={e => setName(e.target.value)} placeholder="문서명" className="input input-bordered w-full mb-2" />
         <select value={type} onChange={e => setType(e.target.value)} className="input input-bordered w-full mb-2">

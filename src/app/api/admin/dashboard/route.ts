@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPrismaClient } from '@/lib/prisma';
 
-export const dynamic = 'force-dynamic';
-
 function daysAgo(days: number) {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 }
@@ -50,20 +48,7 @@ export async function GET() {
       },
       orderBy: { createdAt: 'desc' },
       take: 6,
-      select: {
-        id: true,
-        licenseNumber: true,
-        experienceYears: true,
-        specialties: true,
-        status: true,
-        reviewNote: true,
-        createdAt: true,
-        contactPhone: true,
-        businessLicenseUrl: true,
-        pledgeUrl: true,
-        // Exclude huge data fields
-        // businessLicenseData: false, 
-        // pledgeData: false,
+      include: {
         user: {
           select: {
             id: true,
@@ -117,18 +102,7 @@ export async function GET() {
       },
       orderBy: { updatedAt: 'desc' },
       take: 8,
-      select: {
-        id: true,
-        licenseNumber: true,
-        experienceYears: true,
-        specialties: true,
-        status: true,
-        reviewNote: true,
-        createdAt: true,
-        contactPhone: true,
-        businessLicenseUrl: true,
-        pledgeUrl: true,
-        // Exclude data fields
+      include: {
         user: {
           select: {
             id: true,

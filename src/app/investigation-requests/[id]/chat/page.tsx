@@ -7,7 +7,6 @@ import { CASE_STATUS_META, CaseStatusKey } from "@/lib/investigationWorkflow";
 import { extractTimelinePayloadText, getTimelineMeta } from "@/lib/timelineMeta";
 import { useUserStore } from "@/lib/userStore";
 import type { CaseTimelineEntry } from "@/types/investigation";
-import { FiPaperclip, FiFile, FiEye, FiTrash2 } from "react-icons/fi";
 
 interface ChatParticipant {
   id: number;
@@ -86,10 +85,8 @@ export default function InvestigationChatRoomPage() {
   const [timelineNote, setTimelineNote] = useState("");
   const [timelineSubmitting, setTimelineSubmitting] = useState(false);
   const [timelineError, setTimelineError] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const messageEndRef = useRef<HTMLDivElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const requestId = useMemo(() => {
     const value = Number(params?.id);
@@ -204,21 +201,16 @@ export default function InvestigationChatRoomPage() {
   }, [messages, scrollToBottom]);
 
   const handleSend = useCallback(async () => {
-    if ((!input.trim() && !selectedFile) || !token || !requestId || sending || locked) return;
+    if (!input.trim() || !token || !requestId || sending || locked) return;
     setSending(true);
     try {
-      let contentToSend = input.trim();
-      if (selectedFile) {
-        contentToSend = contentToSend ? `${contentToSend}\n[첨부파일: ${selectedFile.name}]` : `[첨부파일: ${selectedFile.name}]`;
-      }
-
       const res = await fetch(`/api/investigation-requests/${requestId}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ content: contentToSend }),
+        body: JSON.stringify({ content: input.trim() }),
       });
 
       if (res.status === 401) {
@@ -233,9 +225,6 @@ export default function InvestigationChatRoomPage() {
       }
 
       setInput("");
-      setSelectedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-
       const data = await res.json();
       if (data?.message) {
         setMessages((prev) => [...prev, data.message]);
@@ -248,7 +237,7 @@ export default function InvestigationChatRoomPage() {
     } finally {
       setSending(false);
     }
-  }, [fetchChat, input, locked, requestId, router, sending, token, selectedFile]);
+  }, [fetchChat, input, locked, requestId, router, sending, token]);
 
   const handleSubmit = useCallback(
     (event: React.FormEvent<HTMLFormElement>) => {
@@ -320,27 +309,6 @@ export default function InvestigationChatRoomPage() {
     [canSubmitTimeline, fetchChat, requestId, router, timelineNote, timelineSubmitting, timelineTitle, timelineType, token],
   );
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
-
-  const performOCR = async (fileName: string) => {
-    return new Promise<string>((resolve) => {
-      setTimeout(() => {
-        resolve(`[OCR 분석 결과 - ${fileName}]\n\n문서 내용이 성공적으로 추출되었습니다.\n\n1. 문서 제목: 사건 관련 증거 자료\n2. 주요 내용: 상기 본인은 2024년 12월 1일 발생한 사건에 대해...\n3. 특이사항: 하단 서명 확인됨.\n\n(이것은 시뮬레이션된 OCR 결과입니다.)`);
-      }, 1500);
-    });
-  };
-
-  const handleOCRClick = async (fileName: string) => {
-    const ocrResult = await performOCR(fileName);
-    alert(ocrResult); // Simple alert for now, or append to chat locally?
-    // Appending to chat locally might be confusing if it's not saved.
-    // I'll just show an alert or a modal. Alert is simplest for now given the constraints.
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 pb-16 pt-12">
       <div className="lira-container flex flex-col gap-6">
@@ -398,20 +366,7 @@ export default function InvestigationChatRoomPage() {
                               isMine ? "bg-indigo-600 text-white" : "bg-white text-slate-700"
                             }`}
                           >
-                            <p className="whitespace-pre-wrap">{message.content}</p>
-                            {message.content.includes("[첨부파일:") && (
-                              <div className="mt-2 flex items-center gap-2 rounded-lg bg-white/20 p-2 text-xs">
-                                <FiFile className="h-4 w-4" />
-                                <span>{message.content.match(/\[첨부파일: (.*?)\]/)?.[1] ?? "파일"}</span>
-                                <button
-                                  onClick={() => handleOCRClick(message.content.match(/\[첨부파일: (.*?)\]/)?.[1] ?? "파일")}
-                                  className="ml-auto flex items-center gap-1 rounded bg-indigo-600 px-2 py-1 text-[10px] text-white hover:bg-indigo-500"
-                                >
-                                  <FiEye className="h-3 w-3" />
-                                  OCR 분석
-                                </button>
-                              </div>
-                            )}
+                            <p>{message.content}</p>
                           </div>
                           <span className="mt-1 text-xs text-slate-400">
                             {(message.sender?.name ?? "-")} {" "}· {formatTime(message.createdAt)}
@@ -427,39 +382,6 @@ export default function InvestigationChatRoomPage() {
                   {error && !locked && (
                     <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs text-rose-600">{error}</div>
                   )}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      accept="image/*,.pdf,.doc,.docx"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                      disabled={locked}
-                    >
-                      <FiPaperclip className="h-4 w-4" />
-                      파일 첨부
-                    </button>
-                    {selectedFile && (
-                      <div className="flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs text-indigo-700">
-                        <span className="max-w-[150px] truncate">{selectedFile.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedFile(null);
-                            if (fileInputRef.current) fileInputRef.current.value = "";
-                          }}
-                          className="ml-1 text-indigo-400 hover:text-indigo-600"
-                        >
-                          <FiTrash2 className="h-3 w-3" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
                   <textarea
                     value={input}
                     onChange={(event) => setInput(event.target.value)}

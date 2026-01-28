@@ -5,11 +5,7 @@ import Link from 'next/link';
 import { useUserStore } from '@/lib/userStore';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
-import {
-  CASE_TYPE_OPTIONS,
-  INVESTIGATOR_REGION_OPTIONS,
-  INVESTIGATOR_SPECIALTY_GROUPS,
-} from '@/lib/options';
+import { CASE_TYPE_OPTIONS, INVESTIGATOR_SPECIALTIES } from '@/lib/options';
 
 type PublicRole = 'USER' | 'INVESTIGATOR';
 
@@ -24,7 +20,6 @@ export default function RegisterForm() {
   const [name, setName] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
-  const [agencyPhone, setAgencyPhone] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState('');
   const [occupation, setOccupation] = useState('');
@@ -41,12 +36,11 @@ export default function RegisterForm() {
 
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [licenseNumber, setLicenseNumber] = useState('');
-  const [officeAddress, setOfficeAddress] = useState('');
   const [experienceYears, setExperienceYears] = useState('');
-  const [serviceAreas, setServiceAreas] = useState<string[]>([]);
+  const [serviceArea, setServiceArea] = useState('');
   const [intro, setIntro] = useState('');
   const [portfolioUrl, setPortfolioUrl] = useState('');
-  const [businessLicenseFile, setBusinessLicenseFile] = useState<File | null>(null);
+  const [businessLicense, setBusinessLicense] = useState<File | null>(null);
   const [pledgeFile, setPledgeFile] = useState<File | null>(null);
 
   const [error, setError] = useState('');
@@ -67,13 +61,11 @@ export default function RegisterForm() {
   const resetInvestigatorFields = () => {
     setSpecialties([]);
     setLicenseNumber('');
-    setOfficeAddress('');
     setExperienceYears('');
-    setServiceAreas([]);
+    setServiceArea('');
     setIntro('');
     setPortfolioUrl('');
-    setBusinessLicenseFile(null);
-    setAgencyPhone('');
+    setBusinessLicense(null);
     setPledgeFile(null);
   };
 
@@ -198,158 +190,43 @@ export default function RegisterForm() {
         setError('최소 한 개 이상의 전문 분야를 선택해 주세요.');
         return;
       }
-      if (serviceAreas.length === 0) {
-        setError('주요 활동 지역을 최소 1개 이상 선택해 주세요.');
-        return;
-      }
-      if (!businessLicenseFile) {
-        setError('사업자등록증 파일을 업로드해 주세요.');
-        return;
-      }
       const expNumber = experienceYears ? Number(experienceYears) : 0;
       if (experienceYears && Number.isNaN(expNumber)) {
         setError('경력 연수는 숫자로 입력해 주세요.');
         return;
       }
 
-      if (!pledgeFile) {
-        setError('서명된 서약서 파일을 업로드해 주세요.');
-        return;
-      }
-
-      // 파일 크기 체크 (1.5MB 제한 - JSON 전송을 위해 안전 마진 확보)
-      const MAX_SIZE = 1.5 * 1024 * 1024; // 1.5MB
-      if (businessLicenseFile && businessLicenseFile.size > MAX_SIZE) {
-        setError(`사업자등록증 파일 크기는 1.5MB 이하여야 합니다. (현재: ${(businessLicenseFile.size / 1024 / 1024).toFixed(2)}MB)`);
-        return;
-      }
-      if (pledgeFile && pledgeFile.size > MAX_SIZE) {
-        setError(`서약서 파일 크기는 1.5MB 이하여야 합니다. (현재: ${(pledgeFile.size / 1024 / 1024).toFixed(2)}MB)`);
-        return;
-      }
-
-      setError('');
-
-      // Helper to convert file to Base64
-      const fileToBase64 = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => {
-             // remove data:image/...;base64, prefix if desired, but code usually expects it or handles it.
-             // Currently backend expects "data:..." URL or raw base64?
-             // route.ts: const businessLicenseData = (body as any).businessLicenseData...
-             // and later uses it. The previous logic constructed `data:${mimeType};base64,${base64Data}`.
-             // FileReader.readAsDataURL returns exactly that format.
-             resolve(reader.result as string);
-          };
-          reader.onerror = (error) => reject(error);
-        });
+      const payload = {
+        role: 'INVESTIGATOR',
+        email,
+        password,
+        name,
+        licenseNumber: licenseNumber || null,
+        specialties,
+        experienceYears: expNumber,
+        serviceArea: serviceArea || null,
+        introduction: intro || null,
+        portfolioUrl: portfolioUrl || null,
+        contactPhone: phone || null,
+        acceptsTerms,
+        acceptsPrivacy,
       };
 
-      // 2026-01-16: Use FormData instead of JSON to avoid WAF 403 blocks and improve upload stability
-      const formData = new FormData();
-      formData.append('role', 'INVESTIGATOR');
-      formData.append('email', email);
-      formData.append('password', password);
-      formData.append('name', name);
-      formData.append('licenseNumber', licenseNumber || '');
-      formData.append('officeAddress', officeAddress || '');
-      formData.append('specialties', JSON.stringify(specialties)); // Backend parses this
-      formData.append('serviceAreas', JSON.stringify(serviceAreas)); // Backend parses this
-      formData.append('serviceArea', serviceAreas.join(', '));
-      formData.append('experienceYears', String(expNumber));
-      formData.append('introduction', intro || '');
-      formData.append('portfolioUrl', portfolioUrl || '');
-      formData.append('contactPhone', phone || '');
-      formData.append('agencyPhone', agencyPhone || '');
-      formData.append('acceptsTerms', String(acceptsTerms));
-      formData.append('acceptsPrivacy', String(acceptsPrivacy));
-
-      if (businessLicenseFile) {
-        formData.append('businessLicense', businessLicenseFile);
-      }
-      if (pledgeFile) {
-        formData.append('pledgeFile', pledgeFile);
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || '민간조사원 등록에 실패했습니다.');
+        return;
       }
 
-      // 180초 타임아웃 설정 (대용량 파일 업로드 및 콜드스타트 고려)
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 180000);
-
-      try {
-        console.log(`[Version: v20260114-Timeout-Debug] Sending registration request via FormData...`);
-        
-        // 1. Connectivity Check (Fast Fail)
-        try {
-           const healthCheck = await fetch('/api/health/deployment', { 
-             method: 'GET', 
-             signal: AbortSignal.timeout(5000) // 5s timeout for health
-           });
-           if (!healthCheck.ok) {
-             console.warn('Health check failed:', healthCheck.status);
-           } else {
-             console.log('Health check passed. Server is reachable.');
-           }
-        } catch (hErr) {
-           console.error('Health check unreachable:', hErr);
-           setError('서버에 연결할 수 없습니다. (Health Check Timeout) - 인터넷 연결이나 방화벽 설정을 확인해주세요.');
-           clearTimeout(timeoutId);
-           return;
-        }
-
-        // 2. Main Registration Request
-        const res = await fetch('/api/register', {
-          method: 'POST',
-          // Header 'Content-Type': 'multipart/form-data' is set automatically by browser with boundary
-          body: formData,
-          signal: controller.signal,
-        });
-        
-        console.log('Registration response status:', res.status);
-        
-        let data;
-        const contentType = res.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          data = await res.json();
-        } else {
-          // JSON이 아닌 응답(예: 413 Payload Too Large HTML) 처리
-          const text = await res.text();
-          console.error('Non-JSON response:', text);
-          if (res.status === 413) {
-            setError('파일 크기가 너무 큽니다. (서버 제한 초과)');
-            return;
-          }
-          throw new Error(`서버 응답 형식이 올바르지 않습니다. (Status: ${res.status})`);
-        }
-        
-        console.log('Registration response data:', data);
-        
-        if (!res.ok) {
-          setError(data.error || '민간조사원 등록에 실패했습니다.');
-          return;
-        }
-
-        setSuccess('등록 신청이 완료되었습니다. 관리자 승인 후 안내 메일을 드릴게요.');
-        
-        // Store user data if token is provided
-        if (data.token) {
-          setUser(data, data.token);
-        }
-        
-        setTimeout(() => {
-          router.push('/login?pending=investigator');
-        }, 2000);
-      } catch (err: unknown) {
-        const errorMessage = String(err);
-        if (errorMessage.includes('AbortError') || (err instanceof Error && err.name === 'AbortError')) {
-          setError('서버 응답 시간이 초과되었습니다. 네트워크 상태를 확인하거나 잠시 후 다시 시도해주세요.');
-        } else {
-          throw err;
-        }
-      } finally {
-        clearTimeout(timeoutId);
-      }
+      setSuccess('등록 신청이 완료되었습니다. 관리자 승인 후 안내 메일을 드릴게요.');
+      setTimeout(() => {
+        router.push('/login?pending=investigator');
+      }, 2000);
     } catch (err) {
       console.error('Registration error:', err);
       if (err instanceof TypeError && err.message.includes('fetch')) {
@@ -420,7 +297,7 @@ export default function RegisterForm() {
           </div>
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="lira-field md:col-span-2">
-              {role === 'INVESTIGATOR' ? '탐정 이름 (탐정사무소)' : '이름 (실명)'}
+              이름 (실명)
               <input
                 type="text"
                 value={name}
@@ -470,30 +347,6 @@ export default function RegisterForm() {
                 required={role === 'INVESTIGATOR'}
               />
             </label>
-            {role === 'INVESTIGATOR' && (
-              <>
-                <label className="lira-field">
-                  탐정사무소 번호
-                  <input
-                    type="tel"
-                    value={agencyPhone}
-                    onChange={(e) => setAgencyPhone(e.target.value)}
-                    className="lira-input"
-                    placeholder="예: 02-1234-5678"
-                  />
-                </label>
-                <label className="lira-field md:col-span-2">
-                  탐정사무소 주소
-                  <input
-                    type="text"
-                    value={officeAddress}
-                    onChange={(e) => setOfficeAddress(e.target.value)}
-                    className="lira-input"
-                    placeholder="예: 서울특별시 서초구 서초대로"
-                  />
-                </label>
-              </>
-            )}
           </div>
         </section>
 
@@ -635,49 +488,29 @@ export default function RegisterForm() {
             </div>
 
             <div className="mt-6 space-y-5">
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm font-semibold text-[#1a2340]">전문 분야 (최소 1개 선택)</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    대분류별 전문 역량을 선택하면 적합한 사건과 빠르게 매칭됩니다.
-                  </p>
-                </div>
-                <div className="space-y-6">
-                  {INVESTIGATOR_SPECIALTY_GROUPS.map((group) => (
-                    <div key={group.category} className="space-y-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-500">
-                        {group.category}
-                      </p>
-                      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                        {group.options.map((option) => {
-                          const checked = specialties.includes(option.value);
-                          return (
-                            <label
-                              key={option.value}
-                              className={`flex cursor-pointer flex-col gap-2 rounded-xl border px-4 py-3 text-sm shadow-sm transition ${
-                                checked
-                                  ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                                  : 'border-slate-200 bg-white text-slate-600'
-                              }`}
-                            >
-                              <div className="flex items-start gap-3">
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={() => setSpecialties((prev) => toggleSelection(prev, option.value))}
-                                  className="mt-1 lira-checkbox"
-                                />
-                                <div className="space-y-1">
-                                  <span className="font-semibold text-[#0f172a]">{option.label}</span>
-                                  <p className="text-xs leading-relaxed text-slate-500">{option.description}</p>
-                                </div>
-                              </div>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
+              <div>
+                <p className="text-sm font-semibold text-[#1a2340]">전문 분야 (최소 1개 선택)</p>
+                <p className="mt-1 text-xs text-slate-500">특화된 분야를 알려주시면 적합한 사건과 빠르게 매칭됩니다.</p>
+                <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
+                  {INVESTIGATOR_SPECIALTIES.map((option) => {
+                    const checked = specialties.includes(option.value);
+                    return (
+                      <label
+                        key={option.value}
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-sm shadow-sm transition ${
+                          checked ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => setSpecialties((prev) => toggleSelection(prev, option.value))}
+                          className="lira-checkbox"
+                        />
+                        <span>{option.label}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -705,36 +538,16 @@ export default function RegisterForm() {
                 </label>
               </div>
 
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-[#1a2340]">주요 활동 지역 (복수 선택)</p>
-                <p className="text-xs text-slate-500">활동 가능한 지역을 모두 선택해 주세요. 지역별 맞춤 매칭에 활용됩니다.</p>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {INVESTIGATOR_REGION_OPTIONS.map((option) => {
-                    const checked = serviceAreas.includes(option.value);
-                    return (
-                      <label
-                        key={option.value}
-                        className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-sm shadow-sm transition ${
-                          checked ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => setServiceAreas((prev) => toggleSelection(prev, option.value))}
-                          className="lira-checkbox"
-                        />
-                        <span>{option.label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-                {serviceAreas.length > 0 && (
-                  <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-2 text-xs text-emerald-700">
-                    선택한 지역: {serviceAreas.join(', ')}
-                  </div>
-                )}
-              </div>
+              <label className="lira-field">
+                주요 활동 지역
+                <input
+                  type="text"
+                  value={serviceArea}
+                  onChange={(e) => setServiceArea(e.target.value)}
+                  className="lira-input"
+                  placeholder="예: 전국, 수도권, 온라인"
+                />
+              </label>
 
               <label className="lira-field">
                 전문 분야 소개
@@ -759,67 +572,67 @@ export default function RegisterForm() {
 
               <label className="lira-field">
                 사업자등록증 (필수)
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    if (file && file.size > 2 * 1024 * 1024) {
-                      alert('파일 용량은 2MB를 초과할 수 없습니다.');
-                      e.target.value = '';
-                      setBusinessLicenseFile(null);
-                      return;
-                    }
-                    setBusinessLicenseFile(file);
-                  }}
-                  className="lira-input"
-                  required
-                />
-                <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 2MB)</span>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => setBusinessLicense(e.target.files?.[0] || null)}
+                    className="lira-input file:mr-4 file:rounded-full file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-200"
+                    required
+                  />
+                  {businessLicense ? (
+                    <p className="mt-1 text-xs text-emerald-600">선택된 파일: {businessLicense.name}</p>
+                  ) : (
+                    <p className="mt-1 text-xs text-slate-400">PDF, JPG, PNG 형식 (최대 3MB)</p>
+                  )}
+                </div>
               </label>
 
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                <h3 className="mb-3 text-sm font-bold text-[#1a2340]">탐정 윤리 서약</h3>
-                <div className="mb-4 text-xs leading-relaxed text-slate-600">
-                  <p>
-                    LIONE 플랫폼의 민간조사원으로 활동하기 위해서는 윤리 서약서 작성이 필요합니다.
-                    아래 양식을 다운로드하여 서명 후 업로드해 주세요.
-                  </p>
-                  <div className="mt-3">
-                    <a
-                      href="/downloads/LIONE_Investigator_Pledge.txt"
-                      download
-                      className="inline-flex items-center gap-2 text-blue-600 hover:underline"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      LIONE 이용 서약서 양식 다운로드
-                    </a>
-                  </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
+                <h3 className="mb-2 font-semibold text-[#1a2340]">탐정 윤리 서약</h3>
+                <p className="mb-4 text-sm text-slate-600">
+                  LIONE 플랫폼의 민간조사원으로 활동하기 위해서는 윤리 서약서 작성이 필요합니다. 아래 양식을 다운로드하여 서명 후 업로드해 주세요.
+                </p>
+                <div className="mb-6 flex flex-col gap-2">
+                  <a
+                    href="/downloads/LIONE 탐정 서약서 양식 (1).docx"
+                    download
+                    className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    LIONE 탐정 서약서 양식 (1) 다운로드
+                  </a>
+                  <a
+                    href="/downloads/LIONE 탐정 서약서 양식 (2).docx"
+                    download
+                    className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    LIONE 탐정 서약서 양식 (2) 다운로드
+                  </a>
                 </div>
-                <div className="space-y-2">
-                  <label className="lira-field">
-                    서명된 서약서 업로드 (필수)
+                
+                <label className="lira-field">
+                  서명된 서약서 업로드 (필수)
+                  <div className="relative">
                     <input
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0] || null;
-                        if (file && file.size > 2 * 1024 * 1024) {
-                          alert('파일 용량은 2MB를 초과할 수 없습니다.');
-                          e.target.value = '';
-                          setPledgeFile(null);
-                          return;
-                        }
-                        setPledgeFile(file);
-                      }}
-                      className="lira-input"
+                      onChange={(e) => setPledgeFile(e.target.files?.[0] || null)}
+                      className="lira-input file:mr-4 file:rounded-full file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-100"
                       required
                     />
-                    <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 2MB)</span>
-                  </label>
-                </div>
+                    {pledgeFile ? (
+                      <p className="mt-1 text-xs text-emerald-600">선택된 파일: {pledgeFile.name}</p>
+                    ) : (
+                      <p className="mt-1 text-xs text-slate-400">PDF, JPG, PNG 형식 (최대 3MB)</p>
+                    )}
+                  </div>
+                </label>
               </div>
             </div>
           </section>
@@ -877,6 +690,9 @@ export default function RegisterForm() {
           <div className="flex flex-col gap-2 text-sm text-slate-500 md:flex-row md:justify-center">
             <Link href="/" className="lira-button lira-button--ghost justify-center md:w-auto">
               메인으로 돌아가기
+            </Link>
+            <Link href="/simulation" className="lira-button lira-button--secondary justify-center md:w-auto">
+              제품 소개 살펴보기
             </Link>
           </div>
         </div>

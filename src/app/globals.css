@@ -25,7 +25,6 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  scrollbar-gutter: stable both-edges;
 }
 
 .lira-container {
@@ -37,14 +36,14 @@ body {
   padding-right: 1rem;
 }
 
-@media (min-width: 40rem) {
+@media (min-width: 640px) {
   .lira-container {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
 }
 
-@media (min-width: 64rem) {
+@media (min-width: 1024px) {
   .lira-container {
     padding-left: 2rem;
     padding-right: 2rem;
@@ -312,10 +311,6 @@ body {
   }
 
   /* Custom Scrollbar */
-  .custom-scrollbar {
-    scrollbar-gutter: stable both-edges;
-  }
-
   .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
   }
@@ -334,43 +329,3 @@ body {
     background: #64748b; /* bg-slate-500 */
   }
 }
-
-@keyframes scroll {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-scroll {
-  animation: scroll 30s linear infinite;
-}
-
-.animate-scroll:hover {
-  animation-play-state: paused;
-}
-
-
-/* 반응형 그리드 레이아웃 (Grid 사용) */
-.box-container {
-  display: grid;
-  grid-template-columns: 1fr; /* 모바일/태블릿: 1열 */
-  gap: 1rem; /* 아이템 간 간격 */
-  width: 100%;
-}
-
-/* PC 화면 (64rem 이상, 약 1024px) */
-@media (min-width: 64rem) {
-  .box-container {
-    grid-template-columns: repeat(3, 1fr); /* PC: 3열 */
-  }
-}
-
-/* 아이템 스타일 */
-.box {
-  width: 100%;
-  /* 필요한 경우 추가 스타일 작성 */
-}
-

@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -52,15 +51,9 @@ model InvestigatorProfile {
   reviewedAt        DateTime?
   reviewedById      Int?
   contactPhone      String?
-  agencyPhone       String?
   serviceArea       String?
-  officeAddress     String?
   introduction      String?                @db.Text
   portfolioUrl      String?
-  businessLicenseUrl String?
-  businessLicenseData String?               @db.LongText
-  pledgeUrl         String?
-  pledgeData        String?                 @db.LongText
   termsAcceptedAt   DateTime?
   privacyAcceptedAt DateTime?
   avatarUrl         String?                @db.LongText
@@ -432,23 +425,6 @@ model Notification {
   @@index([userId, readAt])
 }
 
-model Banner {
-  id        Int        @id @default(autoincrement())
-  title     String?
-  imageUrl  String
-  linkUrl   String?
-  type      BannerType @default(MAIN_LARGE)
-  isActive  Boolean    @default(true)
-  order     Int        @default(0)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-}
-
-enum BannerType {
-  MAIN_LARGE
-  MAIN_SMALL
-}
-
 enum UserRole {
   USER
   INVESTIGATOR
@@ -512,14 +488,4 @@ enum SimulationEventType {
   PHASE_ENTERED
   TASK_STATUS_CHANGED
   NOTE_ADDED
-}
-
-model Award {
-  id          Int       @id @default(autoincrement())
-  title       String
-  description String?
-  imageUrl    String?
-  date        DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
 }

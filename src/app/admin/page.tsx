@@ -717,52 +717,26 @@ export default function AdminPage() {
 
                         <div className="flex gap-2">
                           {inv.businessLicenseUrl ? (
-                            inv.businessLicenseUrl.startsWith('/uploads/') ? (
-                              <span
-                                title="이전 시스템에서 업로드된 파일은 만료되었습니다."
-                                className="flex-1 cursor-not-allowed rounded-xl bg-amber-50 py-2 text-center text-xs text-amber-600/70"
-                              >
-                                ⚠️ 만료된 파일
-                              </span>
-                            ) : (
-                              <Link
-                                href={
-                                  inv.businessLicenseUrl.startsWith('/api/') && token
-                                    ? `${inv.businessLicenseUrl}&token=${token}`
-                                    : inv.businessLicenseUrl
-                                }
-                                target="_blank"
-                                className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
-                              >
-                                📄 사업자등록증
-                              </Link>
-                            )
+                            <Link
+                              href={inv.businessLicenseUrl}
+                              target="_blank"
+                              className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
+                            >
+                              📄 사업자등록증
+                            </Link>
                           ) : (
                             <span className="flex-1 cursor-not-allowed rounded-xl bg-slate-50 py-2 text-center text-xs text-slate-300">
                               사업자등록증 미첨부
                             </span>
                           )}
                           {inv.pledgeUrl ? (
-                            inv.pledgeUrl.startsWith('/uploads/') ? (
-                              <span
-                                title="이전 시스템에서 업로드된 파일은 만료되었습니다."
-                                className="flex-1 cursor-not-allowed rounded-xl bg-amber-50 py-2 text-center text-xs text-amber-600/70"
-                              >
-                                ⚠️ 만료된 파일
-                              </span>
-                            ) : (
-                              <Link
-                                href={
-                                  inv.pledgeUrl.startsWith('/api/') && token
-                                    ? `${inv.pledgeUrl}&token=${token}`
-                                    : inv.pledgeUrl
-                                }
-                                target="_blank"
-                                className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
-                              >
-                                📝 서약서
-                              </Link>
-                            )
+                            <Link
+                              href={inv.pledgeUrl}
+                              target="_blank"
+                              className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
+                            >
+                              📝 서약서
+                            </Link>
                           ) : (
                             <span className="flex-1 cursor-not-allowed rounded-xl bg-slate-50 py-2 text-center text-xs text-slate-300">
                               서약서 미첨부

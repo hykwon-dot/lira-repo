@@ -204,7 +204,7 @@ export default function MyPage() {
         {
           href: "/scenarios",
           label: "시나리오 라이브러리",
-          description: "상황별 사례와 실행 계획 탐색",
+          description: "상황별 사례와 실행 플랜 탐색",
         },
         {
           href: "/simulation",
@@ -224,8 +224,8 @@ export default function MyPage() {
         },
         {
           href: "/report",
-          label: "보고서 센터",
-          description: "AI 분석 보고서와 통찰 확인",
+          label: "리포트 센터",
+          description: "AI 분석 리포트와 통찰 확인",
         },
         {
           href: "/scenarios",
@@ -250,7 +250,7 @@ export default function MyPage() {
         },
         {
           href: "/report",
-          label: "보고서 센터",
+          label: "리포트 센터",
           description: "작성 중인 보고서를 모아보기",
         },
       ];

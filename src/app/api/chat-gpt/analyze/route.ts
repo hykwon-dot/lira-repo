@@ -52,10 +52,10 @@ export async function POST(request: NextRequest) {
 
     // Combine conversation context
     const conversationContext = userMessages.map((msg, index) => 
-      `사용자: ${msg}\n도우미: ${assistantMessages[index] || ''}`
+      `사용자: ${msg}\n어시스턴트: ${assistantMessages[index] || ''}`
     ).join('\n\n');
 
-    const analysisPrompt = `다음은 사용자와 AI 도우미 간의 대화입니다:
+    const analysisPrompt = `다음은 사용자와 AI 어시스턴트 간의 대화입니다:
 
 ${conversationContext}
 

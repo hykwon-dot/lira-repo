@@ -5,9 +5,9 @@ frontend:
       commands:
         - npm ci
         - npx prisma generate
+        - npm run db:check
     build:
       commands:
-        - env | grep -E "OPENAI|DATABASE"
         - npm run build
   artifacts:
     baseDirectory: .next

@@ -8,9 +8,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Menu, X } from "lucide-react";
-import { RiKakaoTalkFill } from "react-icons/ri";
-
-const LOGO_SRC = "/images/lione-logo.svg" as const;
 
 export default function Header() {
   const { user, logout } = useUserStore();
@@ -41,6 +38,7 @@ export default function Header() {
     { href: "/", label: "홈" },
     { href: "/simulation", label: "AI 시뮬레이션" },
     { href: "/scenarios", label: "시나리오 라이브러리" },
+    { href: "/report", label: "데이터 리포트" },
   ];
 
   const isLinkActive = useMemo(() => {
@@ -53,8 +51,8 @@ export default function Header() {
     };
   }, [pathname]);
 
-  // 계정 찾기/비밀번호 재설정 페이지에서는 헤더를 숨김 (로그인, 회원가입 페이지는 표시)
-  if (pathname?.startsWith('/account/')) {
+  // 로그인/회원가입 페이지에서는 헤더를 숨김
+  if (pathname === '/login' || pathname === '/register' || pathname?.startsWith('/account/')) {
     return null;
   }
 
@@ -64,10 +62,10 @@ export default function Header() {
         <div className="flex flex-1 items-center gap-6">
           <Link href="/" className="flex items-center gap-3">
             <Image
-              src={LOGO_SRC}
-              alt="LIRA 로고"
-              width={168}
-              height={48}
+              src="/images/lione-logo.svg"
+              alt="LIONE 로고"
+              width={180}
+              height={54}
               priority
               className="h-8 w-auto md:h-10"
             />
@@ -92,15 +90,6 @@ export default function Header() {
           </nav>
         </div>
         <div className="hidden flex-shrink-0 items-center gap-4 md:flex">
-          <Link
-            href="http://pf.kakao.com/_bxbSxgn"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-full bg-[#FEE500] px-3 py-1.5 text-xs font-bold text-[#191919] hover:bg-[#FDD835] transition-colors"
-          >
-            <RiKakaoTalkFill className="h-4 w-4" />
-            <span>카카오톡 상담</span>
-          </Link>
           {loggedInUser && (
             <ErrorBoundary>
               <NotificationBell />
@@ -145,18 +134,18 @@ export default function Header() {
         </div>
       </div>
       {mobileMenuOpen && (
-        <div className="md:hidden">
+        <>
           <button
             type="button"
             aria-label="모바일 메뉴 닫기"
             onClick={() => setMobileMenuOpen(false)}
-            className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden"
           />
-          <nav className="fixed top-0 right-0 z-[101] flex h-[100dvh] w-[85vw] max-w-xs flex-col gap-6 border-l border-slate-100 bg-white px-6 py-8 shadow-2xl">
+          <nav className="fixed top-0 right-0 z-50 flex h-full w-[78vw] max-w-xs flex-col gap-6 border-l border-slate-100 bg-white px-6 py-8 shadow-xl md:hidden">
             <div className="flex items-center justify-between">
               <Image
-                src={LOGO_SRC}
-                alt="LIRA 로고"
+                src="/images/lione-logo.svg"
+                alt="LIONE 로고"
                 width={160}
                 height={48}
                 className="h-8 w-auto"
@@ -188,7 +177,7 @@ export default function Header() {
                 <div className="grid gap-2">
                   <Link
                     href="/login"
-                    className="inline-flex items-center justify-center rounded-full bg-blue-50 border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-100 hover:border-blue-300"
+                    className="inline-flex items-center justify-center rounded-full border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:border-blue-300"
                   >
                     로그인
                   </Link>
@@ -206,27 +195,13 @@ export default function Header() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="flex items-center justify-between rounded-xl border border-transparent bg-slate-50 px-3 py-3 text-sm font-medium text-slate-600 transition hover:border-blue-100 hover:bg-blue-50 hover:text-blue-600"
+                    className="flex items-center justify-between rounded-xl border border-transparent px-3 py-3 text-sm font-medium text-slate-600 transition hover:border-blue-100 hover:bg-blue-50 hover:text-blue-600"
                   >
                     <span>{link.label}</span>
                     <span className="text-xs text-slate-400">바로가기</span>
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link
-                  href="http://pf.kakao.com/_bxbSxgn"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between rounded-xl border border-[#FEE500] bg-[#FEE500] px-3 py-3 text-sm font-medium text-[#3c1e1e] transition hover:bg-[#FDD835]"
-                >
-                  <div className="flex items-center gap-2">
-                    <RiKakaoTalkFill className="h-5 w-5 text-[#3c1e1e]" />
-                    <span>카카오톡 상담</span>
-                  </div>
-                  <span className="text-xs text-slate-400">문의하기</span>
-                </Link>
-              </li>
             </ul>
             {loggedInUser ? (
               <div className="mt-auto space-y-3">
@@ -248,7 +223,7 @@ export default function Header() {
               </div>
             ) : null}
           </nav>
-        </div>
+        </>
       )}
     </header>
   );
