@@ -128,13 +128,13 @@ export default async function InvestigatorDetailPage({ params }: { params: { id:
 
                         {/* Verification Badges */}
                         <div className="flex gap-3 py-4 border-t border-slate-100">
-                             <div className={`flex items-center gap-2 text-sm font-medium ${investigator.businessLicenseUrl ? 'text-blue-700' : 'text-slate-400'}`}>
+                             <div className={`flex items-center gap-2 text-sm font-medium ${investigator.businessLicenseData ? 'text-blue-700' : 'text-slate-400'}`}>
                                  <CheckCircle2 className="w-4 h-4" />
-                                 사업자등록증 {investigator.businessLicenseUrl ? "인증됨" : "미인증"}
+                                 사업자등록증 {investigator.businessLicenseData ? "인증됨" : "미인증"}
                              </div>
-                             <div className={`flex items-center gap-2 text-sm font-medium ${investigator.pledgeUrl ? 'text-blue-700' : 'text-slate-400'}`}>
+                             <div className={`flex items-center gap-2 text-sm font-medium ${investigator.pledgeData ? 'text-blue-700' : 'text-slate-400'}`}>
                                  <CheckCircle2 className="w-4 h-4" />
-                                 서약서 서명 {investigator.pledgeUrl ? "완료" : "미완료"}
+                                 서약서 서명 {investigator.pledgeData ? "완료" : "미완료"}
                              </div>
                         </div>
                     </div>
