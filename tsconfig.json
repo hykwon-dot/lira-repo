@@ -23,5 +23,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "LiraNativeApp", "android", "my-project", "my-project-1", "prisma/seed-banners.ts"]
+  "exclude": ["node_modules", "LiraNativeApp", "android", "my-project", "my-project-1", "prisma/seed-banners.ts", "scripts"]
 }
