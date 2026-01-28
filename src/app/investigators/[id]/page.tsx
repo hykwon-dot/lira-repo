@@ -209,7 +209,7 @@ export default async function InvestigatorDetailPage({ params }: { params: { id:
                      <div className="text-center space-y-1">
                          <p className="text-sm text-slate-500">24시간 무료상담</p>
                          <p className="text-2xl font-bold text-slate-900 font-mono tracking-tight">
-                             {investigator.agencyPhone || investigator.contactPhone || "050-1234-5678"}
+                              {investigator.contactPhone || "050-1234-5678"}
                          </p>
                      </div>
 
