@@ -1,4 +1,4 @@
-import { GetParameterCommand, SSMClient } from "@aws-sdk/client-ssm";
+// import { GetParameterCommand, SSMClient } from "@aws-sdk/client-ssm";
 
 type SecretsGlobal = typeof globalThis & {
   __liraDbUrlPromise?: Promise<void>;
@@ -9,14 +9,14 @@ const runtime = globalThis as SecretsGlobal;
 
 const FALLBACK_DB_URL = "mysql://lira_user:asdasd11@lira-db.cluster-ctkse40gyfit.ap-northeast-2.rds.amazonaws.com:3306/lira?ssl={\"rejectUnauthorized\":false}&connect_timeout=10&pool_timeout=10";
 
-const resolveParameterName = () => {
-  if (process.env.DATABASE_URL) {
-    return null;
-  }
-  // If we are in Amplify but no param is set, use fallback
-  // Note: This is a temporary fix for diagnosing VPC isolation issues
-  return null; 
-};
+// const resolveParameterName = () => {
+//   if (process.env.DATABASE_URL) {
+//     return null;
+//   }
+//   // If we are in Amplify but no param is set, use fallback
+//   // Note: This is a temporary fix for diagnosing VPC isolation issues
+//   return null; 
+// };
 
 export async function ensureRuntimeDatabaseUrl(): Promise<void> {
   // 1. Check if ENV is already set
