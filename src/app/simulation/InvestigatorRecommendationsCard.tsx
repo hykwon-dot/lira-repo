@@ -28,6 +28,7 @@ export interface InvestigatorRecommendation {
   serviceArea: string | null;
   specialties: string[];
   reason: string;
+  alignmentFactors?: string[];
 }
 
 interface InvestigatorRecommendationsCardProps {
