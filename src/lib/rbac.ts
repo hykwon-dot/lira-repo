@@ -13,7 +13,8 @@ export type Capability =
   | 'conversation.read'
   | 'conversation.write'
   | 'admin.dashboard'
-  | 'system.manage';
+  | 'system.manage'
+  | 'site.content.manage';
 
 export type Role = 'USER' | 'INVESTIGATOR' | 'ENTERPRISE' | 'ADMIN' | 'SUPER_ADMIN';
 
@@ -51,6 +52,7 @@ const roleCapabilities: Record<Role, Capability[]> = {
     'investigation.match.read',
     'conversation.read',
     'admin.dashboard',
+    'site.content.manage',
   ],
   SUPER_ADMIN: [
     'scenario.read',
@@ -62,6 +64,7 @@ const roleCapabilities: Record<Role, Capability[]> = {
     'conversation.read',
     'admin.dashboard',
     'system.manage',
+    'site.content.manage',
   ],
 };
 
