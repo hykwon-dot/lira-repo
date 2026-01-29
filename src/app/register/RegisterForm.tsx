@@ -595,7 +595,7 @@ export default function RegisterForm() {
                 </p>
                 <div className="mb-6 flex flex-col gap-2">
                   <a
-                    href="/downloads/LIONE 탐정 서약서 양식 (1).docx"
+                    href="/downloads/LIONE%20%ED%83%90%EC%A0%95%20%EC%84%9C%EC%95%BD%EC%84%9C%20%EC%96%91%EC%8B%9D%20(1).docx"
                     download
                     className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline"
                   >
@@ -605,7 +605,7 @@ export default function RegisterForm() {
                     LIONE 탐정 서약서 양식 (1) 다운로드
                   </a>
                   <a
-                    href="/downloads/LIONE 탐정 서약서 양식 (2).docx"
+                    href="/downloads/LIONE%20%ED%83%90%EC%A0%95%20%EC%84%9C%EC%95%BD%EC%84%9C%20%EC%96%91%EC%8B%9D%20(2).docx"
                     download
                     className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline"
                   >
@@ -618,6 +618,9 @@ export default function RegisterForm() {
                 
                 <label className="lira-field">
                   서명된 서약서 업로드 (필수)
+                  <span className="block mb-1 text-xs font-normal text-slate-500">
+                    두 서약서를 모두 작성하여 하나의 파일(PDF 또는 압축파일)로 업로드해주세요.
+                  </span>
                   <div className="relative">
                     <input
                       type="file"
