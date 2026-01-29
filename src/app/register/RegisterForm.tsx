@@ -911,19 +911,29 @@ export default function RegisterForm() {
                 <h3 className="mb-3 text-sm font-bold text-[#1a2340]">탐정 윤리 서약</h3>
                 <div className="mb-4 text-xs leading-relaxed text-slate-600">
                   <p>
-                    LIONE 플랫폼의 민간조사원으로 활동하기 위해서는 윤리 서약서 작성이 필요합니다.
-                    아래 양식을 다운로드하여 서명 후 업로드해 주세요.
+                    LIONE 플랫폼의 민간조사원으로 활동하기 위해서는 윤리 서약서 및 서비스 이용 약관 확인이 필요합니다.
+                    아래 양식을 각각 다운로드하여 내용을 확인하고 서명 후 업로드해 주세요.
                   </p>
-                  <div className="mt-3">
+                  <div className="mt-3 flex flex-col gap-2">
                     <a
-                      href="/downloads/LIONE_Investigator_Pledge.txt"
+                      href="/downloads/LIONE 탐정 윤리 서약서_250310.pdf"
                       download
                       className="inline-flex items-center gap-2 text-blue-600 hover:underline"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
-                      LIONE 이용 서약서 양식 다운로드
+                      LIONE 탐정 윤리 서약서 다운로드 (PDF)
+                    </a>
+                    <a
+                      href="/downloads/LIONE 탐정 서비스 이용 약관_250310.pdf"
+                      download
+                      className="inline-flex items-center gap-2 text-blue-600 hover:underline"
+                    >
+                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      LIONE 탐정 서비스 이용 약관 다운로드 (PDF)
                     </a>
                   </div>
                 </div>
