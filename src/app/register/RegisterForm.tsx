@@ -137,6 +137,7 @@ export default function RegisterForm() {
   const [businessLicenseFile, setBusinessLicenseFile] = useState<File | null>(null);
   const [pledgeFile, setPledgeFile] = useState<File | null>(null);
   const [termsFile, setTermsFile] = useState<File | null>(null);
+  const [idCardFile, setIdCardFile] = useState<File | null>(null);
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -167,6 +168,7 @@ export default function RegisterForm() {
     setAgencyPhone('');
     setPledgeFile(null);
     setTermsFile(null);
+    setIdCardFile(null);
   };
 
   const resetCustomerFields = () => {
@@ -309,8 +311,13 @@ export default function RegisterForm() {
             setIsSubmitting(false);
             return;
         }
+        if (idCardFile && idCardFile.type === 'application/pdf' && idCardFile.size > MAX_PDF_SIZE) {
+            setError('신분증 사본 PDF 파일이 너무 큽니다. (3MB 이하로 줄이거나 이미지로 업로드해주세요)');
+            setIsSubmitting(false);
+            return;
+        }
         const MAX_RAW_SIZE = 10 * 1024 * 1024;
-        if ((businessLicenseFile?.size || 0) > MAX_RAW_SIZE || (pledgeFile?.size || 0) > MAX_RAW_SIZE || (termsFile?.size || 0) > MAX_RAW_SIZE) {
+        if ((businessLicenseFile?.size || 0) > MAX_RAW_SIZE || (pledgeFile?.size || 0) > MAX_RAW_SIZE || (termsFile?.size || 0) > MAX_RAW_SIZE || (idCardFile?.size || 0) > MAX_RAW_SIZE) {
              setError('파일 크기가 너무 큽니다. (10MB 이하 파일만 선택해주세요)');
              setIsSubmitting(false);
              return;
@@ -371,6 +378,16 @@ export default function RegisterForm() {
             filePayload.termsFileType = compressed.type;
         } catch (e) {
             console.warn('Terms conversion failed', e);
+        }
+      }
+      if (idCardFile) {
+        setSubmitStatus('파일 변환 중 (부호화 4/4)...');
+        try {
+            const compressed = await compressImage(idCardFile);
+            filePayload.idCardFileHex = await fileToHex(compressed);
+            filePayload.idCardFileType = compressed.type;
+        } catch (e) {
+            console.warn('ID Card conversion failed', e);
         }
       }
 
@@ -469,6 +486,16 @@ export default function RegisterForm() {
                               body: JSON.stringify({ 
                                   termsFileHex: filePayload.termsFileHex,
                                   termsFileType: filePayload.termsFileType
+                                })
+                          });
+                        }
+                        if (filePayload.idCardFileHex) {
+                          await fetch('/api/me/profile', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                              body: JSON.stringify({ 
+                                  idCardFileHex: filePayload.idCardFileHex,
+                                  idCardFileType: filePayload.idCardFileType
                                 })
                           });
                         }
@@ -933,6 +960,27 @@ export default function RegisterForm() {
                   required
                 />
                 <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 3MB)</span>
+              </label>
+
+              <label className="lira-field">
+                신분증 사본 (필수)
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (file && file.size > 3 * 1024 * 1024) {
+                      alert('파일 용량은 3MB를 초과할 수 없습니다. (압축 또는 이미지 변환 후 업로드해주세요)');
+                      e.target.value = '';
+                      setIdCardFile(null);
+                      return;
+                    }
+                    setIdCardFile(file);
+                  }}
+                  className="lira-input"
+                  required
+                />
+                <span className="text-xs text-slate-500 mt-1">주민등록증, 운전면허증 등 (주민번호 뒷자리 마스킹 권장)</span>
               </label>
 
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">

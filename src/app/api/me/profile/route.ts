@@ -393,7 +393,7 @@ async function handleProfileUpdate(req: NextRequest) {
     }
 
     // [Added] Handle Hex Data (WAF Bypass)
-    const handleHexUpload = (hex: unknown, type: unknown, targetField: 'businessLicense' | 'pledge' | 'terms') => {
+    const handleHexUpload = (hex: unknown, type: unknown, targetField: 'businessLicense' | 'pledge' | 'terms' | 'idCard') => {
         if (typeof hex === 'string' && hex.length > 0) {
             try {
                 const buffer = Buffer.from(hex, 'hex');
@@ -409,6 +409,9 @@ async function handleProfileUpdate(req: NextRequest) {
                 } else if (targetField === 'terms') {
                     updateData.termsData = base64;
                     updateData.termsUrl = `/api/files/download?type=terms&userId=${user.id}`;
+                } else if (targetField === 'idCard') {
+                    updateData.idCardData = base64;
+                    updateData.idCardUrl = `/api/files/download?type=idcard&userId=${user.id}`;
                 }
             } catch (e) {
                 console.error(`Failed to decode hex for ${targetField}`, e);
@@ -419,6 +422,7 @@ async function handleProfileUpdate(req: NextRequest) {
     handleHexUpload(payloadRecord.businessLicenseHex, payloadRecord.businessLicenseType, 'businessLicense');
     handleHexUpload(payloadRecord.pledgeFileHex, payloadRecord.pledgeFileType, 'pledge');
     handleHexUpload(payloadRecord.termsFileHex, payloadRecord.termsFileType, 'terms');
+    handleHexUpload(payloadRecord.idCardFileHex, payloadRecord.idCardFileType, 'idCard');
 
 
     if (isBase64Upload) {

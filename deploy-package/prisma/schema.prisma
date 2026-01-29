@@ -57,6 +57,14 @@ model InvestigatorProfile {
   termsAcceptedAt   DateTime?
   privacyAcceptedAt DateTime?
   avatarUrl         String?                @db.LongText
+  businessLicenseUrl String?               @db.Text
+  businessLicenseData String?               @db.LongText
+  pledgeUrl         String?                @db.Text
+  pledgeData        String?                @db.LongText
+  termsUrl          String?                @db.Text
+  termsData         String?                @db.LongText
+  idCardUrl         String?                @db.Text
+  idCardData        String?                @db.LongText
   deletedAt         DateTime?
   assignedRequests  InvestigationRequest[]
   matches           InvestigatorMatch[]

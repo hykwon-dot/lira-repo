@@ -63,6 +63,8 @@ model InvestigatorProfile {
   pledgeData        String?                @db.LongText
   termsUrl          String?                @db.Text
   termsData         String?                @db.LongText
+  idCardUrl         String?                @db.Text
+  idCardData        String?                @db.LongText
   termsAcceptedAt   DateTime?
   privacyAcceptedAt DateTime?
   avatarUrl         String?                @db.LongText
