@@ -992,8 +992,8 @@ export default function RegisterForm() {
                   </p>
                   <div className="mt-3 flex flex-col gap-2">
                     <a
-                      href="/downloads/리원(LIONE) 서비스 가입자 서약 및 확인서.pdf"
-                      download
+                      href="/downloads/LIONE_Pledge_and_Confirmation.pdf"
+                      download="리원 서비스 가입자 서약 및 확인서 (LIONE Pledge and Confirmation).pdf"
                       className="inline-flex items-center gap-2 text-blue-600 hover:underline"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1002,8 +1002,8 @@ export default function RegisterForm() {
                       리원(LIONE) 서비스 가입자 서약 및 확인서 다운로드 (PDF)
                     </a>
                     <a
-                      href="/downloads/LIONE 탐정 서비스 이용 약관.pdf"
-                      download
+                      href="/downloads/LIONE_Service_Agreement_Investigator.pdf"
+                      download="리원 서비스 이용약관_탐정 회원가입 (LIONE service agreement).pdf"
                       className="inline-flex items-center gap-2 text-blue-600 hover:underline"
                     >
                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
