@@ -60,6 +60,8 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
     className = "min-h-screen bg-slate-50";
   } else if (pathname === "/scenario") {
     className = "pt-6";
+  } else if (pathname === "/register") {
+    className = "min-h-screen";
   }
 
   return <main className={className}>{children}</main>;

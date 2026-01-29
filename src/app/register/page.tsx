@@ -74,7 +74,7 @@ export default function RegisterPage() {
         />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1180px] flex-col gap-10 px-4 pb-24 pt-12 sm:px-6 md:gap-12 md:px-8 lg:flex-row lg:pb-20 lg:pt-16">
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1180px] flex-col gap-10 px-4 pb-24 pt-20 sm:px-6 md:gap-12 md:px-8 lg:flex-row lg:pb-20 lg:pt-24">
         <aside className="flex w-full flex-col justify-between gap-10 rounded-[30px] border border-white/10 bg-white/[0.08] p-6 text-white shadow-[0_28px_90px_rgba(6,18,46,0.45)] backdrop-blur-2xl sm:p-8 lg:max-w-[420px] lg:gap-12 lg:rounded-[36px] lg:p-9">
           <div className="space-y-7 sm:space-y-8">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-sky-200 sm:px-4 sm:text-[11px]">
