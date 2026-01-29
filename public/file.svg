@@ -1,13 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-	<rect x="2" y="2" width="44" height="44" rx="14" fill="url(#paint0_linear)" />
-	<path d="M18 14H26L32 20V34C32 35.6569 30.6569 37 29 37H19C17.3431 37 16 35.6569 16 34V17C16 15.3431 17.3431 14 19 14Z" stroke="white" stroke-width="2.4" fill="rgba(255,255,255,0.08)" />
-	<path d="M26 14V19C26 20.1046 26.8954 21 28 21H32" stroke="white" stroke-width="2.4" stroke-linecap="round" />
-	<rect x="20" y="24" width="10" height="2.4" rx="1.2" fill="white" opacity="0.9" />
-	<rect x="20" y="29" width="12" height="2.4" rx="1.2" fill="white" opacity="0.65" />
-	<defs>
-		<linearGradient id="paint0_linear" x1="10" y1="8" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-			<stop stop-color="#6366f1" />
-			<stop offset="1" stop-color="#4338ca" />
-		</linearGradient>
-	</defs>
-</svg>
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>

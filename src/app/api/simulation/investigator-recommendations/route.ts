@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPrismaClient } from "@/lib/prisma";
 import { InvestigatorStatus } from "@prisma/client";
-import { scoreInvestigators } from "@/lib/ai/investigatorMatcher";
-import type { InvestigatorMatchContext } from "@/lib/ai/investigatorMatcher";
-import type { IntakeSummary } from "@/app/simulation/types";
-import type { AiRealtimeInsights } from "@/lib/ai/types";
 
 function toStringArray(value: unknown): string[] {
   if (!value) return [];
@@ -36,34 +32,12 @@ function toStringArray(value: unknown): string[] {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-  const keywordsInput = Array.isArray(body?.keywords) ? body.keywords : [];
-  const scenarioTitle: string | undefined = typeof body?.scenarioTitle === "string" ? body.scenarioTitle : undefined;
-  const intakeSummaryRaw = body?.intakeSummary;
-  const insightsRaw = body?.insights;
+    const keywordsInput = Array.isArray(body?.keywords) ? body.keywords : [];
+    const scenarioTitle: string | undefined = typeof body?.scenarioTitle === "string" ? body.scenarioTitle : undefined;
 
     const keywords = (keywordsInput as unknown[])
       .map((keyword) => (typeof keyword === "string" ? keyword.trim().toLowerCase() : ""))
       .filter((keyword): keyword is string => keyword.length > 0);
-
-    const intakeSummary: IntakeSummary | null =
-      intakeSummaryRaw && typeof intakeSummaryRaw === "object"
-        ? {
-            caseTitle: typeof intakeSummaryRaw.caseTitle === "string" ? intakeSummaryRaw.caseTitle : "",
-            caseType: typeof intakeSummaryRaw.caseType === "string" ? intakeSummaryRaw.caseType : "",
-            primaryIntent:
-              typeof intakeSummaryRaw.primaryIntent === "string" ? intakeSummaryRaw.primaryIntent : "",
-            urgency: typeof intakeSummaryRaw.urgency === "string" ? intakeSummaryRaw.urgency : "",
-            objective: typeof intakeSummaryRaw.objective === "string" ? intakeSummaryRaw.objective : "",
-            keyFacts: toStringArray(intakeSummaryRaw.keyFacts),
-            missingDetails: toStringArray(intakeSummaryRaw.missingDetails),
-            recommendedDocuments: toStringArray(intakeSummaryRaw.recommendedDocuments),
-            nextQuestions: toStringArray(intakeSummaryRaw.nextQuestions),
-          }
-        : null;
-
-    const insights: AiRealtimeInsights | null = insightsRaw && typeof insightsRaw === "object"
-      ? (insightsRaw as AiRealtimeInsights)
-      : null;
 
   const prisma = await getPrismaClient();
   const investigators = await prisma.investigatorProfile.findMany({
@@ -81,34 +55,91 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const profiles = investigators.map((inv) => ({
-      id: inv.id,
-      ratingAverage: inv.ratingAverage ? Number(inv.ratingAverage) : null,
-      successRate: inv.successRate ? Number(inv.successRate) : null,
-      experienceYears: inv.experienceYears ?? 0,
-      serviceArea: inv.serviceArea ?? null,
-      specialties: toStringArray(inv.specialties),
-      user: inv.user
-        ? {
-            id: inv.user.id,
-            name: inv.user.name ?? null,
-            email: inv.user.email ?? null,
+    const ranked = investigators
+      .map((inv) => {
+        const specialties = toStringArray(inv.specialties);
+        const normalizedSpecialties = specialties.map((spec) => spec.toLowerCase());
+
+        let keywordScore = 0;
+        const matchedKeywords = new Set<string>();
+  keywords.forEach((keyword) => {
+          if (normalizedSpecialties.some((spec) => spec.includes(keyword))) {
+            keywordScore += 25;
+            matchedKeywords.add(keyword);
           }
-        : null,
-    }));
+        });
 
-    const matchContext: InvestigatorMatchContext = {
-      keywords,
-      scenarioTitle,
-      intakeSummary,
-      insights,
-    };
+        // If scenario title contains keywords, try to match words from title
+        if (scenarioTitle && scenarioTitle.trim().length > 0) {
+          const titleTokens = scenarioTitle
+            .split(/\s+/)
+            .map((token) => token.replace(/[^\p{L}\p{N}]/gu, "").toLowerCase())
+            .filter((token) => token.length > 1);
+          titleTokens.forEach((token) => {
+            if (normalizedSpecialties.some((spec) => spec.includes(token))) {
+              keywordScore += 10;
+              matchedKeywords.add(token);
+            }
+          });
+        }
 
-    const recommendations = scoreInvestigators(profiles, matchContext).map((match) => ({
-      ...match,
-    }));
+        const rating = inv.ratingAverage ? Number(inv.ratingAverage) : null;
+        const successRate = inv.successRate ? Number(inv.successRate) : null;
+        const experienceYears = inv.experienceYears ?? 0;
 
-    return NextResponse.json({ recommendations });
+        const ratingScore = rating ? rating * 8 : 0;
+        const successScore = successRate ? successRate * 0.5 : 0;
+        const experienceScore = experienceYears * 2;
+
+        const totalScore = ratingScore + successScore + experienceScore + keywordScore;
+
+        const reasonParts: string[] = [];
+        if (matchedKeywords.size > 0) {
+          const displayKeywords = Array.from(matchedKeywords)
+            .slice(0, 3)
+            .map((kw) => `"${kw}"`)
+            .join(", ");
+          reasonParts.push(`시나리오 핵심 키워드 ${displayKeywords}${matchedKeywords.size > 3 ? " 등" : ""}과(와) 맞는 전문 분야를 보유`);
+        } else if (specialties.length > 0) {
+          reasonParts.push(`전문 분야: ${specialties.slice(0, 3).join(", ")}`);
+        }
+
+        if (rating) {
+          reasonParts.push(`평균 평점 ${rating.toFixed(1)}점`);
+        }
+        if (experienceYears > 0) {
+          reasonParts.push(`${experienceYears}년 경력`);
+        }
+        if (successRate) {
+          reasonParts.push(`사건 성공률 ${successRate.toFixed(1)}%`);
+        }
+        if (inv.serviceArea) {
+          reasonParts.push(`${inv.serviceArea} 지역 대응 가능`);
+        }
+
+        const reason = reasonParts.length > 0
+          ? reasonParts.join(" · ")
+          : "승인된 탐정으로 다양한 사건 경험을 보유하고 있습니다.";
+
+        return {
+          id: inv.id,
+          investigatorId: inv.id,
+          userId: inv.user?.id ?? null,
+          name: inv.user?.name ?? "이름 미상",
+          email: inv.user?.email ?? null,
+          rating,
+          successRate,
+          experienceYears,
+          serviceArea: inv.serviceArea ?? null,
+          specialties,
+          reason,
+          score: totalScore,
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
+    return NextResponse.json({ recommendations: ranked });
   } catch (error) {
     console.error("[INVESTIGATOR_RECOMMENDATION_ERROR]", error);
     return NextResponse.json(

@@ -8,7 +8,6 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
-  useRef,
 } from 'react';
 import {
   getScenario,
@@ -87,20 +86,27 @@ export const SimulationProvider = ({
   initialPhaseId: string;
 }) => {
   const token = useUserStore((state) => state.token);
-  
-  const storeSetRunId = useSimulationStore((state) => state.setRunId);
-  const setHistory = useSimulationStore((state) => state.setHistory);
-  const addHistoryEntry = useSimulationStore((state) => state.addHistoryEntry);
-  const setCompletedTasks = useSimulationStore((state) => state.setCompletedTasks);
-  const markTaskCompletion = useSimulationStore((state) => state.markTaskCompletion);
-  const reset = useSimulationStore((state) => state.reset);
+  const {
+    setRunId: storeSetRunId,
+    setHistory,
+    addHistoryEntry,
+    setCompletedTasks,
+    markTaskCompletion,
+    reset,
+  } = useSimulationStore((state) => ({
+    setRunId: state.setRunId,
+    setHistory: state.setHistory,
+    addHistoryEntry: state.addHistoryEntry,
+    setCompletedTasks: state.setCompletedTasks,
+    markTaskCompletion: state.markTaskCompletion,
+    reset: state.reset,
+  }));
 
   const [scenario, setScenario] = useState<ScenarioWithPhases | null>(null);
   const [currentPhase, setCurrentPhase] = useState<PhaseWithTasks | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [runIdState, setRunIdState] = useState<number | null>(null);
-  const initializingRef = useRef(false);
 
   const scenarioIdNumber = Number.parseInt(scenarioId, 10);
   const initialPhaseIdNumber = Number.parseInt(initialPhaseId, 10);
@@ -109,29 +115,11 @@ export const SimulationProvider = ({
     async (phaseIdToLoad: string) => {
       setLoading(true);
       try {
-        let currentScenario = scenario;
-        if (!currentScenario) {
+        if (!scenario) {
           const scenarioData = await getScenario(scenarioId);
           setScenario(scenarioData);
-          currentScenario = scenarioData;
         }
-
-        // If phaseIdToLoad is a number (DB ID), try to load it directly.
-        // If it fails, or if it's a small number (like 1, 2, 3) that might be an index,
-        // try to find the corresponding phase in the scenario by order.
-        let phaseData = await getPhaseDetails(phaseIdToLoad);
-        
-        if (!phaseData && currentScenario && currentScenario.phases) {
-           const numericPhaseId = parseInt(phaseIdToLoad, 10);
-           if (!isNaN(numericPhaseId)) {
-             // Try to find by order (assuming 1-based index from URL)
-             const phaseByOrder = currentScenario.phases.find(p => p.order === numericPhaseId - 1);
-             if (phaseByOrder) {
-               phaseData = await getPhaseDetails(phaseByOrder.id.toString());
-             }
-           }
-        }
-
+        const phaseData = await getPhaseDetails(phaseIdToLoad);
         setCurrentPhase(phaseData);
         if (phaseData) {
           setTasks(phaseData.tasks);
@@ -153,51 +141,13 @@ export const SimulationProvider = ({
   }, [reset, scenarioId, initialPhaseId]);
 
   const ensureRun = useCallback(async () => {
-    if (!token) {
-      return null;
-    }
-
-    let targetScenarioId = scenarioIdNumber;
-    let currentScenario = scenario;
-
-    if (Number.isNaN(targetScenarioId)) {
-      if (currentScenario) {
-        targetScenarioId = currentScenario.id;
-      } else {
-        try {
-          const resolvedScenario = await getScenario(scenarioId);
-          if (resolvedScenario) {
-            targetScenarioId = resolvedScenario.id;
-            setScenario(resolvedScenario);
-            currentScenario = resolvedScenario;
-          } else {
-            return null;
-          }
-        } catch (e) {
-          console.error('Error resolving scenario ID:', e);
-          return null;
-        }
-      }
-    } else if (!currentScenario) {
-       // Try to fetch scenario if we have ID but no object, to help with phase resolution
-       try {
-          const resolvedScenario = await getScenario(scenarioId);
-          if (resolvedScenario) {
-            setScenario(resolvedScenario);
-            currentScenario = resolvedScenario;
-          }
-       } catch (e) {
-          console.error('Error fetching scenario details:', e);
-       }
-    }
-
-    if (Number.isNaN(targetScenarioId)) {
+    if (!token || Number.isNaN(scenarioIdNumber)) {
       return null;
     }
 
     try {
       const params = new URLSearchParams({
-        scenarioId: String(targetScenarioId),
+        scenarioId: String(scenarioIdNumber),
         status: 'ACTIVE',
         limit: '1',
       });
@@ -216,22 +166,10 @@ export const SimulationProvider = ({
       }
 
       const createPayload: Record<string, unknown> = {
-        scenarioId: targetScenarioId,
+        scenarioId: scenarioIdNumber,
       };
-      
       if (!Number.isNaN(initialPhaseIdNumber)) {
-        let resolvedPhaseId = initialPhaseIdNumber;
-        // Try to resolve Order -> ID
-        if (currentScenario && currentScenario.phases) {
-            const phaseById = currentScenario.phases.find(p => p.id === initialPhaseIdNumber);
-            if (!phaseById) {
-                const phaseByOrder = currentScenario.phases.find(p => p.order === initialPhaseIdNumber - 1);
-                if (phaseByOrder) {
-                    resolvedPhaseId = phaseByOrder.id;
-                }
-            }
-        }
-        createPayload.currentPhaseId = resolvedPhaseId;
+        createPayload.currentPhaseId = initialPhaseIdNumber;
       }
 
       const createResponse = await fetch('/api/simulation/runs', {
@@ -254,7 +192,7 @@ export const SimulationProvider = ({
       console.error('Failed to ensure simulation run:', error);
       return null;
     }
-  }, [token, scenarioIdNumber, initialPhaseIdNumber, scenarioId, scenario]);
+  }, [token, scenarioIdNumber, initialPhaseIdNumber]);
 
   const fetchRunDetails = useCallback(
     async (runId: number) => {
@@ -282,8 +220,6 @@ export const SimulationProvider = ({
   );
 
   const initializeSimulation = useCallback(async () => {
-    if (initializingRef.current) return;
-    initializingRef.current = true;
     setLoading(true);
     try {
       let phaseToLoad = initialPhaseId;
@@ -304,55 +240,6 @@ export const SimulationProvider = ({
 
         if (currentPhaseIdValue) {
           phaseToLoad = String(currentPhaseIdValue);
-        }
-
-        // Check if we need to override with initialPhaseId (if user explicitly requested a phase)
-        if (initialPhaseId && runId) {
-             const initialNum = parseInt(initialPhaseId, 10);
-             if (!isNaN(initialNum)) {
-                 // We need scenario to resolve order
-                 let currentScenario = scenario;
-                 if (!currentScenario) {
-                     try {
-                        currentScenario = await getScenario(scenarioId);
-                        if (currentScenario) setScenario(currentScenario);
-                     } catch { /* ignore */ }
-                 }
-                 
-                 if (currentScenario && currentScenario.phases) {
-                     let targetPhaseId = initialNum;
-                     const phaseById = currentScenario.phases.find(p => p.id === initialNum);
-                     if (!phaseById) {
-                         const phaseByOrder = currentScenario.phases.find(p => p.order === initialNum - 1);
-                         if (phaseByOrder) targetPhaseId = phaseByOrder.id;
-                     } else {
-                         targetPhaseId = phaseById.id;
-                     }
-                     
-                     if (targetPhaseId && targetPhaseId !== currentPhaseIdValue) {
-                         console.log(`[Simulation] Overriding run phase ${currentPhaseIdValue} with requested ${targetPhaseId}`);
-                         phaseToLoad = String(targetPhaseId);
-                         
-                         // Update server state to reflect the jump
-                         try {
-                             await fetch(`/api/simulation/runs/${runId}/events`, {
-                                  method: 'POST',
-                                  headers: {
-                                    Authorization: `Bearer ${token}`,
-                                    'Content-Type': 'application/json',
-                                  },
-                                  body: JSON.stringify({
-                                    eventType: 'PHASE_ENTERED',
-                                    phaseId: targetPhaseId,
-                                    payload: { note: 'Started from specific phase' }
-                                  }),
-                             });
-                         } catch (error) {
-                             console.error('Failed to update run phase on server:', error);
-                         }
-                     }
-                 }
-             }
         }
 
         const detailedRun = runId ? await fetchRunDetails(runId) : null;
@@ -414,9 +301,8 @@ export const SimulationProvider = ({
       console.error('Failed to initialize simulation:', error);
     } finally {
       setLoading(false);
-      initializingRef.current = false;
     }
-  }, [ensureRun, fetchRunDetails, initialPhaseId, loadData, setCompletedTasks, setHistory, storeSetRunId, scenario, scenarioId, token]);
+  }, [ensureRun, fetchRunDetails, initialPhaseId, loadData, setCompletedTasks, setHistory, storeSetRunId]);
 
   useEffect(() => {
     void initializeSimulation();

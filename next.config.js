@@ -2,8 +2,11 @@ const nextConfig = {
   // 빌드 시 자동으로 타임스탬프 설정 (2주 만료 체크용)
   env: {
     NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
-    // Amplify에서 secret은 런타임에 처리되지만 Public은 여기서
-    // (보안) OPENAI 키는 서버사이드 전용이므로 제거 권장하나 호환성 유지
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    KAKAO_CLIENT_ID: process.env.KAKAO_CLIENT_ID,
+    NAVER_CLIENT_ID: process.env.NAVER_CLIENT_ID,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
   images: {
@@ -18,23 +21,11 @@ const nextConfig = {
       },
     ],
   },
-  // output: 'standalone', // Consider enabling if Amplify issues persist
   experimental: {
-    serverComponentsExternalPackages: ['@node-rs/bcrypt', '@prisma/client', 'prisma'],
+    serverComponentsExternalPackages: ['@node-rs/bcrypt'],
     serverActions: {
       bodySizeLimit: '10mb',
     },
-  },
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    ignoreBuildErrors: true,
   },
   async headers() {
     return [
@@ -59,4 +50,18 @@ const nextConfig = {
   // ...기타 옵션
 };
 
-module.exports = nextConfig;
+module.exports = {
+  ...nextConfig,
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // !! WARN !!
+    // Dangerously allow production builds to successfully complete even if
+    // your project has type errors.
+    // !! WARN !!
+    ignoreBuildErrors: true,
+  }
+};

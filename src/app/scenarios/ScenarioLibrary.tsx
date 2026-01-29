@@ -1,11 +1,9 @@
 "use client";
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Briefcase, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useUserStore } from '@/lib/userStore';
 import { ScenarioSummary } from '@/app/scenarios/types';
 
 interface ScenarioCardProps {
@@ -77,15 +75,7 @@ interface ScenarioLibraryProps {
 }
 
 export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
-    const router = useRouter();
-    const { user } = useUserStore();
     const [activeTab, setActiveTab] = useState('전체');
-
-    useEffect(() => {
-        if (!user) {
-            router.replace('/login?redirect=/scenarios');
-        }
-    }, [user, router]);
 
     const industries = useMemo(() => {
         const unique = new Set<string>();
@@ -102,24 +92,20 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
         return scenarios.filter((scenario) => (scenario.industry || '기타') === activeTab);
     }, [activeTab, scenarios]);
 
-    if (!user) {
-        return null; // Redirecting...
-    }
-
     if (!scenarios || scenarios.length === 0) {
         return <p className="text-center text-slate-500 mt-10">사용 가능한 시나리오가 없습니다.</p>;
     }
 
     return (
-        <div className="bg-slate-50">
-            <div className="container mx-auto">
-                <div className="text-center mb-8 md:mb-12">
-                    <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2">분야별 시나리오</h2>
-                    <p className="text-sm md:text-base text-slate-600">관심 있는 산업 분야를 선택하여 확인해보세요.</p>
+        <div className="min-h-screen bg-slate-50">
+            <div className="container mx-auto px-4 py-12">
+                <div className="text-center mb-12">
+                    <h1 className="text-4xl font-extrabold text-slate-800 mb-2">시나리오 라이브러리</h1>
+                    <p className="text-lg text-slate-600">다양한 산업 분야의 비즈니스 시뮬레이션을 탐색하고 시작하세요.</p>
                 </div>
 
-                <div className="mb-8 md:mb-10 overflow-x-auto -mx-4 px-4 md:overflow-visible md:mx-0 md:px-0 md:text-center no-scrollbar pb-2 md:pb-0">
-                    <div className="inline-flex items-center gap-2 bg-slate-200 p-1.5 rounded-full whitespace-nowrap">
+                <div className="flex justify-center mb-10">
+                    <div className="flex items-center gap-2 bg-slate-200 p-1.5 rounded-full">
                         {industries.map((industry) => (
                             <button
                                 key={industry}
@@ -133,7 +119,7 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
                 </div>
 
                 <AnimatePresence>
-                    <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                    <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {filteredScenarios.map((scenario) => (
                             <ScenarioCard key={scenario.id} scenario={scenario} />
                         ))}

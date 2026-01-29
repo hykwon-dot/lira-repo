@@ -1,25 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CASE_STATUS_META, CaseStatusKey } from "@/lib/investigationWorkflow";
 import { extractTimelinePayloadText, getTimelineMeta } from "@/lib/timelineMeta";
 import { useUserStore } from "@/lib/userStore";
 import { Star } from "lucide-react";
-import AIInsightsPanel from "@/app/simulation/AIInsightsPanel";
-import ReportDraftPanel from "@/app/simulation/ReportDraftPanel";
-import NegotiationCoachPanel from "@/app/simulation/NegotiationCoachPanel";
-import {
-  InvestigatorRecommendationsCard,
-  type InvestigatorRecommendation,
-} from "@/app/simulation/InvestigatorRecommendationsCard";
-import type {
-  AiRealtimeInsights,
-  AiInvestigationReportDraft,
-  AiNegotiationCoachPlan,
-} from "@/lib/ai/types";
-import { FiAlertCircle, FiRefreshCcw } from "react-icons/fi";
 
 interface TimelineEntry {
   id: number;
@@ -126,19 +113,6 @@ export default function InvestigationRequestDetailPage() {
   const [reviewState, setReviewState] = useState<{ rating: number; comment: string }>({ rating: 0, comment: "" });
   const [isEditingReview, setIsEditingReview] = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
-  const [briefingLoading, setBriefingLoading] = useState(false);
-  const [briefingIssues, setBriefingIssues] = useState({
-    general: null as string | null,
-    insights: null as string | null,
-    report: null as string | null,
-    negotiation: null as string | null,
-    recommendations: null as string | null,
-  });
-  const [briefingInsights, setBriefingInsights] = useState<AiRealtimeInsights | null>(null);
-  const [briefingReport, setBriefingReport] = useState<AiInvestigationReportDraft | null>(null);
-  const [briefingPlan, setBriefingPlan] = useState<AiNegotiationCoachPlan | null>(null);
-  const [briefingRecommendations, setBriefingRecommendations] = useState<InvestigatorRecommendation[]>([]);
-  const [briefingRefreshKey, setBriefingRefreshKey] = useState(0);
 
   const pushToast = (type: Toast["type"], message: string) => {
     const id = Date.now() + Math.random();
@@ -283,137 +257,13 @@ export default function InvestigationRequestDetailPage() {
     loadDetail();
   }, [params?.id, router, token, currentUser]);
 
-  const isAssignedInvestigator = useMemo(() => {
-    if (!request?.investigator?.user || !currentUser) return false;
-    if (currentUser.role !== "investigator") return false;
-    return String(request.investigator.user.id) === String(currentUser.id);
-  }, [currentUser, request?.investigator?.user]);
-
-  const isAdminUser = useMemo(() => {
-    if (!currentUser) return false;
-    return currentUser.role === "admin" || currentUser.role === "super_admin";
-  }, [currentUser]);
-
-  const canViewInvestigatorPanels = Boolean(isAssignedInvestigator || isAdminUser);
-
-  const showInvestigatorNotice = useMemo(() => {
-    if (canViewInvestigatorPanels) return false;
-    if (!request?.investigator?.user) return false;
-    return true;
-  }, [canViewInvestigatorPanels, request?.investigator?.user]);
-
-  useEffect(() => {
-    if (!canViewInvestigatorPanels || !request?.id || !token) {
-      setBriefingLoading(false);
-      setBriefingInsights(null);
-      setBriefingReport(null);
-      setBriefingPlan(null);
-      setBriefingRecommendations([]);
-      setBriefingIssues({
-        general: null,
-        insights: null,
-        report: null,
-        negotiation: null,
-        recommendations: null,
-      });
-      return;
-    }
-
-    const controller = new AbortController();
-
-    const loadBriefing = async () => {
-      setBriefingLoading(true);
-      setBriefingIssues((prev) => ({ ...prev, general: null }));
-
-      try {
-        const response = await fetch(`/api/investigation-requests/${request.id}/briefing`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
-          const message = typeof data?.error === "string" ? data.error : "AI 브리핑을 불러오지 못했습니다.";
-          throw new Error(message);
-        }
-
-        const payload = await response.json();
-        const issuesRaw = payload?.issues && typeof payload.issues === "object" ? (payload.issues as Record<string, unknown>) : {};
-
-        setBriefingInsights(payload?.insights ?? null);
-        setBriefingReport(payload?.report ?? null);
-        setBriefingPlan(payload?.negotiationPlan ?? null);
-        setBriefingRecommendations(
-          Array.isArray(payload?.recommendations)
-            ? (payload.recommendations as InvestigatorRecommendation[])
-            : [],
-        );
-        setBriefingIssues({
-          general: null,
-          insights: typeof issuesRaw.insights === "string" ? issuesRaw.insights : null,
-          report: typeof issuesRaw.report === "string" ? issuesRaw.report : null,
-          negotiation: typeof issuesRaw.negotiation === "string" ? issuesRaw.negotiation : null,
-          recommendations: typeof issuesRaw.recommendations === "string" ? issuesRaw.recommendations : null,
-        });
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        console.error("[INVESTIGATOR_BRIEFING_FETCH_ERROR]", err);
-        const message = err instanceof Error ? err.message : "AI 브리핑을 불러오지 못했습니다.";
-        setBriefingInsights(null);
-        setBriefingReport(null);
-        setBriefingPlan(null);
-        setBriefingRecommendations([]);
-        setBriefingIssues({
-          general: message,
-          insights: message,
-          report: message,
-          negotiation: message,
-          recommendations: message,
-        });
-      } finally {
-        if (!controller.signal.aborted) {
-          setBriefingLoading(false);
-        }
-      }
-    };
-
-    void loadBriefing();
-
-    return () => controller.abort();
-  }, [canViewInvestigatorPanels, request?.id, token, briefingRefreshKey]);
-
-  const handleRefreshBriefing = useCallback(() => {
-    setBriefingRefreshKey((prev) => prev + 1);
-  }, []);
-
-  const investigatorBriefingSlot = useMemo(() => {
-    if (!canViewInvestigatorPanels) return null;
-    return (
-      <>
-        <InvestigatorRecommendationsCard
-          recommendations={briefingRecommendations}
-          isLoading={briefingLoading}
-          scenarioTitle={request?.title}
-        />
-        {briefingIssues.recommendations ? (
-          <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-xs text-amber-700">
-            <FiAlertCircle className="mt-0.5 h-4 w-4" />
-            <span>{briefingIssues.recommendations}</span>
-          </div>
-        ) : null}
-      </>
-    );
-  }, [briefingIssues.recommendations, briefingLoading, briefingRecommendations, canViewInvestigatorPanels, request?.title]);
-
   const statusKey = (request?.status as CaseStatusKey) ?? "MATCHING";
   const statusMeta = CASE_STATUS_META[statusKey] ?? CASE_STATUS_META.MATCHING;
   const specialtyList = useMemo(() => toSpecialtyList(request?.investigator?.specialties), [request?.investigator?.specialties]);
   const isOwner = request?.user && currentUser ? String(request.user.id) === String(currentUser.id) : false;
   const review = request?.review ?? null;
   const hasReview = Boolean(review);
-  const canManageReview = (isOwner || isAdminUser || isAssignedInvestigator) && statusKey === "COMPLETED";
+  const canManageReview = isOwner && statusKey === "COMPLETED";
 
   return (
     <div className="min-h-screen bg-slate-50 pb-16 pt-12">
@@ -706,77 +556,6 @@ export default function InvestigationRequestDetailPage() {
                 </div>
               ) : null}
             </section>
-
-            {canViewInvestigatorPanels ? (
-              <section className="rounded-3xl border border-slate-200 bg-white px-6 py-7 shadow-sm">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.26em] text-indigo-500">Investigator Briefing</p>
-                    <h2 className="mt-1 text-lg font-semibold text-[#1a2340]">AI 브리핑 허브</h2>
-                    <p className="mt-1 text-sm text-slate-500">
-                      트렌드 경보, 실행 계획, 보고 초안, 협상 전략을 한곳에서 확인하세요.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {briefingIssues.general ? (
-                      <div className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs text-rose-600">
-                        <FiAlertCircle className="h-3.5 w-3.5" />
-                        {briefingIssues.general}
-                      </div>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={handleRefreshBriefing}
-                      className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-600 transition hover:border-indigo-300 hover:bg-indigo-100"
-                    >
-                      <FiRefreshCcw className={`${briefingLoading ? "animate-spin" : ""} h-3.5 w-3.5`} />
-                      다시 불러오기
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-6 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-                  <div className="space-y-6">
-                    <AIInsightsPanel
-                      insights={briefingInsights}
-                      isLoading={briefingLoading}
-                      error={briefingIssues.insights}
-                      onRetry={handleRefreshBriefing}
-                      showInvestigatorInsights
-                      investigatorSlot={investigatorBriefingSlot}
-                    />
-                  </div>
-                  <div className="space-y-6">
-                    <ReportDraftPanel
-                      report={briefingReport}
-                      isLoading={briefingLoading}
-                      error={briefingIssues.report}
-                      onGenerate={handleRefreshBriefing}
-                      showInvestigatorInsights
-                    />
-                    <NegotiationCoachPanel
-                      plan={briefingPlan}
-                      isLoading={briefingLoading}
-                      error={briefingIssues.negotiation}
-                      onRegenerate={handleRefreshBriefing}
-                      showInvestigatorInsights
-                    />
-                  </div>
-                </div>
-              </section>
-            ) : null}
-
-            {!canViewInvestigatorPanels && showInvestigatorNotice ? (
-              <section className="rounded-3xl border border-dashed border-slate-200 bg-white px-6 py-6 text-sm text-slate-500 shadow-sm">
-                <div className="flex flex-col gap-2">
-                  <h2 className="text-base font-semibold text-[#1a2340]">탐정 전용 브리핑</h2>
-                  <p>
-                    이 사건을 맡은 민간조사원 또는 관리자 계정으로 접속하면 AI 브리핑 허브에서 트렌드 경보, 다음 행동 제안,
-                    체크리스트, 협상 코치를 확인할 수 있습니다.
-                  </p>
-                </div>
-              </section>
-            ) : null}
 
             <section className="rounded-3xl border border-slate-200 bg-white px-6 py-6 shadow-sm">
               <h2 className="text-lg font-semibold text-[#1a2340]">타임라인</h2>

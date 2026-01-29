@@ -156,7 +156,7 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
                   <span className="text-indigo-200"> 가장 적합한 대응 계획</span>을 제안받으세요.
                 </h1>
                 <p className="mt-3 text-sm text-indigo-100 md:text-base">
-                  AI가 정리한 핵심 지표와 단계별 가이드를 토대로 기업 조사부터 민감한 개인 사건까지,
+                  AI가 정리한 핵심 메트릭과 단계별 가이드를 토대로 기업 조사부터 민감한 개인 사건까지,
                   데이터 기반 의사결정을 지원합니다.
                 </p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -179,13 +179,13 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
                   icon={TrendingUp}
                   value={`${totalScenarios}건`}
                   label="가용 시나리오"
-                  caption="주요 카테고리별 전략을 선별·추천했습니다."
+                  caption="주요 카테고리별 전략을 큐레이션했습니다."
                 />
                 <MetricCard
                   icon={Clock}
                   value={`${Math.round(averageDuration) || 0}일`}
                   label="평균 예상 기간"
-                  caption="단계별 소요 시간으로 현실성 있는 계획을 확보하세요."
+                  caption="단계별 소요 시간으로 현실성 있는 플랜을 확보하세요."
                 />
                 <MetricCard
                   icon={Shield}

@@ -55,13 +55,11 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
     };
   }, []);
 
-  let className = "pt-20 min-h-screen";
+  let className = "pt-28";
   if (pathname.startsWith("/simulation")) {
-    className = "pt-0 min-h-screen bg-slate-50";
-  } else if (pathname.startsWith("/scenarios")) {
-    className = "pt-0 min-h-screen";
+    className = "min-h-screen bg-slate-50";
   } else if (pathname === "/scenario") {
-    className = "pt-6 min-h-screen";
+    className = "pt-6";
   }
 
   return <main className={className}>{children}</main>;
