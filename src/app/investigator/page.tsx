@@ -88,10 +88,10 @@ const compressImageToBase64 = async (file: File): Promise<string> => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         
-        // Increased to 800px and 0.8 quality to improve image resolution
+        // Increased to 1200px and 0.8 quality to improve image resolution
         // The backend supports chunked upload, so larger payloads are acceptable.
-        const MAX_WIDTH = 800;
-        const MAX_HEIGHT = 800;
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
         let width = img.width;
         let height = img.height;
 

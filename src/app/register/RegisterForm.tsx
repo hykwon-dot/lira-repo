@@ -27,8 +27,8 @@ const compressImage = async (file: File): Promise<File> => {
         let width = img.width;
         let height = img.height;
 
-        // Max dimension: 800px (Aggressive reduction for WAF bypass)
-        const MAX_DIMENSION = 800;
+        // Max dimension: 1200px (Balanced for resolution and WAF bypass)
+        const MAX_DIMENSION = 1200;
         if (width > height) {
           if (width > MAX_DIMENSION) {
             height *= MAX_DIMENSION / width;
@@ -50,7 +50,7 @@ const compressImage = async (file: File): Promise<File> => {
         }
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Convert to blob (JPEG, quality 0.5 - aggressive compression)
+        // Convert to blob (JPEG, quality 0.8 - good balance)
         canvas.toBlob((blob) => {
           if (!blob) {
              resolve(file);
@@ -62,7 +62,7 @@ const compressImage = async (file: File): Promise<File> => {
           });
           console.log(`[ImageCompression] ${file.name}: ${(file.size/1024).toFixed(1)}KB -> ${(newFile.size/1024).toFixed(1)}KB`);
           resolve(newFile);
-        }, 'image/jpeg', 0.5);
+        }, 'image/jpeg', 0.8);
       };
       img.onerror = () => resolve(file); // Return original on error
     };
