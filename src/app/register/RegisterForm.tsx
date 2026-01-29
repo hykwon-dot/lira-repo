@@ -944,17 +944,17 @@ export default function RegisterForm() {
                   </p>
                   <div className="mt-3 flex flex-col gap-2">
                     <a
-                      href="/downloads/LIONE 탐정 윤리 서약서_250310.pdf"
+                      href="/downloads/LIONE 탐정 활동 서약서.pdf"
                       download
                       className="inline-flex items-center gap-2 text-blue-600 hover:underline"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
-                      LIONE 탐정 윤리 서약서 다운로드 (PDF)
+                      LIONE 탐정 활동 서약서 다운로드 (PDF)
                     </a>
                     <a
-                      href="/downloads/LIONE 탐정 서비스 이용 약관_250310.pdf"
+                      href="/downloads/LIONE 탐정 서비스 이용 약관.pdf"
                       download
                       className="inline-flex items-center gap-2 text-blue-600 hover:underline"
                     >
