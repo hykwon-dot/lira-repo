@@ -393,7 +393,7 @@ async function handleProfileUpdate(req: NextRequest) {
     }
 
     // [Added] Handle Hex Data (WAF Bypass)
-    const handleHexUpload = (hex: unknown, type: unknown, targetField: 'businessLicense' | 'pledge') => {
+    const handleHexUpload = (hex: unknown, type: unknown, targetField: 'businessLicense' | 'pledge' | 'terms') => {
         if (typeof hex === 'string' && hex.length > 0) {
             try {
                 const buffer = Buffer.from(hex, 'hex');
@@ -403,9 +403,12 @@ async function handleProfileUpdate(req: NextRequest) {
                 if (targetField === 'businessLicense') {
                     updateData.businessLicenseData = base64;
                     updateData.businessLicenseUrl = `/api/files/download?type=license&userId=${user.id}`;
-                } else {
+                } else if (targetField === 'pledge') {
                     updateData.pledgeData = base64;
                     updateData.pledgeUrl = `/api/files/download?type=pledge&userId=${user.id}`;
+                } else if (targetField === 'terms') {
+                    updateData.termsData = base64;
+                    updateData.termsUrl = `/api/files/download?type=terms&userId=${user.id}`;
                 }
             } catch (e) {
                 console.error(`Failed to decode hex for ${targetField}`, e);
@@ -415,6 +418,8 @@ async function handleProfileUpdate(req: NextRequest) {
 
     handleHexUpload(payloadRecord.businessLicenseHex, payloadRecord.businessLicenseType, 'businessLicense');
     handleHexUpload(payloadRecord.pledgeFileHex, payloadRecord.pledgeFileType, 'pledge');
+    handleHexUpload(payloadRecord.termsFileHex, payloadRecord.termsFileType, 'terms');
+
 
     if (isBase64Upload) {
       try {

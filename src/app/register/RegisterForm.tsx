@@ -136,6 +136,7 @@ export default function RegisterForm() {
   const [portfolioUrl, setPortfolioUrl] = useState('');
   const [businessLicenseFile, setBusinessLicenseFile] = useState<File | null>(null);
   const [pledgeFile, setPledgeFile] = useState<File | null>(null);
+  const [termsFile, setTermsFile] = useState<File | null>(null);
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -165,6 +166,7 @@ export default function RegisterForm() {
     setBusinessLicenseFile(null);
     setAgencyPhone('');
     setPledgeFile(null);
+    setTermsFile(null);
   };
 
   const resetCustomerFields = () => {
@@ -302,8 +304,13 @@ export default function RegisterForm() {
             setIsSubmitting(false);
             return;
         }
+        if (termsFile && termsFile.type === 'application/pdf' && termsFile.size > MAX_PDF_SIZE) {
+            setError('이용약관 서약서 PDF 파일이 너무 큽니다. (3MB 이하로 줄이거나 이미지로 업로드해주세요)');
+            setIsSubmitting(false);
+            return;
+        }
         const MAX_RAW_SIZE = 10 * 1024 * 1024;
-        if ((businessLicenseFile?.size || 0) > MAX_RAW_SIZE || (pledgeFile?.size || 0) > MAX_RAW_SIZE) {
+        if ((businessLicenseFile?.size || 0) > MAX_RAW_SIZE || (pledgeFile?.size || 0) > MAX_RAW_SIZE || (termsFile?.size || 0) > MAX_RAW_SIZE) {
              setError('파일 크기가 너무 큽니다. (10MB 이하 파일만 선택해주세요)');
              setIsSubmitting(false);
              return;
@@ -347,13 +354,23 @@ export default function RegisterForm() {
         }
       }
       if (pledgeFile) {
-        setSubmitStatus('파일 변환 중 (부호화 2/2)...');
+        setSubmitStatus('파일 변환 중 (부호화 2/3)...');
         try {
             const compressed = await compressImage(pledgeFile);
             filePayload.pledgeFileHex = await fileToHex(compressed);
             filePayload.pledgeFileType = compressed.type;
         } catch (e) {
             console.warn('Pledge conversion failed', e);
+        }
+      }
+      if (termsFile) {
+        setSubmitStatus('파일 변환 중 (부호화 3/3)...');
+        try {
+            const compressed = await compressImage(termsFile);
+            filePayload.termsFileHex = await fileToHex(compressed);
+            filePayload.termsFileType = compressed.type;
+        } catch (e) {
+            console.warn('Terms conversion failed', e);
         }
       }
 
@@ -445,6 +462,16 @@ export default function RegisterForm() {
                                 pledgeFileType: filePayload.pledgeFileType
                              })
                         });
+                        if (filePayload.termsFileHex) {
+                          await fetch('/api/me/profile', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                              body: JSON.stringify({ 
+                                  termsFileHex: filePayload.termsFileHex,
+                                  termsFileType: filePayload.termsFileType
+                                })
+                          });
+                        }
                     } else {
                         uploadFailed = true;
                     }
@@ -938,9 +965,9 @@ export default function RegisterForm() {
                     </a>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <label className="lira-field">
-                    서명된 서약서 업로드 (필수)
+                    서명된 윤리 서약서 업로드 (필수)
                     <input
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png"
@@ -953,6 +980,26 @@ export default function RegisterForm() {
                           return;
                         }
                         setPledgeFile(file);
+                      }}
+                      className="lira-input"
+                      required
+                    />
+                    <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 3MB)</span>
+                  </label>
+                  <label className="lira-field">
+                    서명된 서비스 이용 약관 업로드 (필수)
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        if (file && file.size > 3 * 1024 * 1024) {
+                          alert('파일 용량은 3MB를 초과할 수 없습니다. (압축 또는 이미지 변환 후 업로드해주세요)');
+                          e.target.value = '';
+                          setTermsFile(null);
+                          return;
+                        }
+                        setTermsFile(file);
                       }}
                       className="lira-input"
                       required

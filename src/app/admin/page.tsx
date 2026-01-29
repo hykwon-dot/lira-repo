@@ -26,6 +26,7 @@ type Investigator = {
   contactPhone: string | null;
   businessLicenseData: string | null;
   pledgeData: string | null;
+  termsData: string | null;
   user: {
     id: number;
     name: string | null;
@@ -740,6 +741,19 @@ export default function AdminPage() {
                           ) : (
                             <span className="flex-1 cursor-not-allowed rounded-xl bg-slate-50 py-2 text-center text-xs text-slate-300">
                               서약서 미첨부
+                            </span>
+                          )}
+                          {inv.termsData ? (
+                            <Link
+                              href={inv.termsData}
+                              target="_blank"
+                              className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
+                            >
+                              📋 이용약관
+                            </Link>
+                          ) : (
+                            <span className="flex-1 cursor-not-allowed rounded-xl bg-slate-50 py-2 text-center text-xs text-slate-300">
+                              이용약관 미첨부
                             </span>
                           )}
                         </div>
