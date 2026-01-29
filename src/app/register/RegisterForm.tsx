@@ -944,7 +944,7 @@ export default function RegisterForm() {
                   </p>
                   <div className="mt-3 flex flex-col gap-2">
                     <a
-                      href="/downloads/LIONE 탐정 서약서 양식 (1).pdf"
+                      href="/downloads/LIONE 탐정 윤리 서약서_250310.pdf"
                       download
                       className="inline-flex items-center gap-2 text-blue-600 hover:underline"
                     >
@@ -954,7 +954,7 @@ export default function RegisterForm() {
                       LIONE 탐정 윤리 서약서 다운로드 (PDF)
                     </a>
                     <a
-                      href="/downloads/LIONE 탐정 서약서 양식 (2).pdf"
+                      href="/downloads/LIONE 탐정 서비스 이용 약관_250310.pdf"
                       download
                       className="inline-flex items-center gap-2 text-blue-600 hover:underline"
                     >
