@@ -88,9 +88,10 @@ const compressImageToBase64 = async (file: File): Promise<string> => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         
-        // Use 200px to ensure Base64 string is tiny (< 10KB) for strict WAF
-        const MAX_WIDTH = 200;
-        const MAX_HEIGHT = 200;
+        // Increased to 800px and 0.8 quality to improve image resolution
+        // The backend supports chunked upload, so larger payloads are acceptable.
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
         let width = img.width;
         let height = img.height;
 
@@ -110,8 +111,8 @@ const compressImageToBase64 = async (file: File): Promise<string> => {
         canvas.height = height;
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // Quality 0.5 -> Aggressive compression
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
+        // Quality 0.8 -> Better quality for profile images
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
         resolve(dataUrl);
       };
       img.onerror = reject;
