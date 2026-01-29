@@ -52,7 +52,7 @@ export default function Header() {
   }, [pathname]);
 
   // 로그인/회원가입 페이지에서는 헤더를 숨김
-  if (pathname === '/login' || pathname === '/register' || pathname?.startsWith('/account/')) {
+  if (pathname === '/login' || pathname?.startsWith('/account/')) {
     return null;
   }
 
