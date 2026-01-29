@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiChevronDown, FiChevronUp, FiCheckCircle, FiAlertTriangle, FiTarget, FiTrendingUp, FiList } from 'react-icons/fi';
+import { FiChevronDown, FiChevronUp, FiCheckCircle, FiAlertTriangle, FiTarget, FiTrendingUp, FiList, FiFileText } from 'react-icons/fi';
 import type { PhaseWithDetails } from './types';
 import React from 'react';
 
@@ -23,6 +23,7 @@ interface SectionProps {
 const getIcon = (title: string) => {
     if (title.includes('요구')) return <FiList className="text-blue-500" />;
     if (title.includes('성공')) return <FiCheckCircle className="text-green-500" />;
+    if (title.includes('산출물')) return <FiFileText className="text-indigo-500" />;
     if (title.includes('조심')) return <FiAlertTriangle className="text-yellow-500" />;
     if (title.includes('리스크')) return <FiTrendingUp className="text-red-500" />;
     return <FiTarget className="text-purple-500" />;
@@ -94,6 +95,17 @@ export function PhaseCard({ phase, index, isSelected, onSelect, isOpen, onToggle
                  ) : (
                   <p className="text-gray-500">- 등록된 성공 기준이 없습니다.</p>
                  )}
+              </Section>
+
+              <Section title="산출물 (Deliverables)" icon={getIcon('산출물')}>
+                {phase.deliverables && Array.isArray(phase.deliverables) && phase.deliverables.length > 0 ? (
+                  phase.deliverables.map((d, i) => {
+                      if (typeof d === 'string') return <p key={i}>- 📄 {d}</p>;
+                      return null;
+                  })
+                ) : (
+                  <p className="text-gray-500">- 등록된 산출물이 없습니다.</p>
+                )}
               </Section>
 
               <Section title="리스크 헷지" icon={getIcon('리스크')}>

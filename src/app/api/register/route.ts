@@ -3,8 +3,10 @@ import { getPrismaClient } from '@/lib/prisma';
 import { signToken } from '@/lib/jwt';
 import { hash as hashPassword } from '@node-rs/bcrypt';
 import type { Prisma } from '@prisma/client';
+import { Buffer } from 'buffer';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Increase timeout for large file uploads
 
 
 // 허용된 공개 가입 역할 (SUPER_ADMIN 은 seed 또는 내부 승격 전용)
@@ -24,9 +26,13 @@ interface InvestigatorPayload extends BasePayload {
   licenseNumber?: string | null;
   experienceYears?: number;
   serviceArea?: string | null;
+  serviceAreas?: unknown;
+  officeAddress?: string | null;
   introduction?: string | null;
   portfolioUrl?: string | null;
   contactPhone?: string | null;
+  agencyPhone?: string | null;
+  pledgeUrl?: string | null;
   acceptsTerms?: boolean;
   acceptsPrivacy?: boolean;
 }
@@ -56,20 +62,109 @@ interface CustomerPayload extends BasePayload {
   marketingOptIn?: boolean;
 }
 
+
 export async function POST(req: NextRequest) {
-  console.log('[API] POST /api/register - Request received');
+  const requestId = Math.random().toString(36).substring(7);
+  console.log(`[API:${requestId}] POST /api/register - Started`);
   
   try {
+    // 모든 예외 상황에서 JSON만 반환하도록 보장
+      console.log(`[API:${requestId}] Parsing request body...`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let body: any;
+      const contentType = req.headers.get('content-type') || '';
 
-    console.log('[API] Parsing request body...');
-    const body: unknown = await req.json();
-    console.log('[API] Request body parsed successfully');
-    const { email, password, name } = body as BasePayload;
-    let { role } = body as BasePayload;
+      if (contentType.includes('multipart/form-data')) {
+        console.log(`[API:${requestId}] Handling multipart data...`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let formData: any;
+        
+        try {
+            // Enforce 30s timeout for Upload/Parsing
+            formData = await Promise.race([
+                req.formData(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('UPLOAD_TIMEOUT')), 30000))
+            ]);
+        } catch (parseErr) {
+             console.error(`[API:${requestId}] FormData parse failed:`, parseErr);
+             const msg = String(parseErr);
+             if (msg.includes('UPLOAD_TIMEOUT')) {
+                 return NextResponse.json({ error: '파일 업로드 시간이 초과되었습니다. (네트워크/파일크기 확인)' }, { status: 408 });
+             }
+             throw parseErr;
+        }
 
-    if (!email || !password || !name) {
-      return NextResponse.json({ error: '이메일/비밀번호/이름은 필수입니다.' }, { status: 400 });
-    }
+        body = {};
+        // Extract all form fields
+        const keys = ['role', 'email', 'password', 'name', 'licenseNumber', 'specialties', 
+                      'experienceYears', 'serviceAreas', 'serviceArea', 'officeAddress', 'introduction', 
+                      'portfolioUrl', 'contactPhone', 'agencyPhone', 'pledgeUrl', 'acceptsTerms', 'acceptsPrivacy',
+                      'businessLicense', 'pledgeFile', 'displayName', 'phone', 'birthDate', 'gender',
+                      'occupation', 'region', 'preferredCaseTypes', 'budgetMin', 'budgetMax',
+                      'urgencyLevel', 'securityQuestion', 'securityAnswer', 'marketingOptIn'];
+        
+        for (const key of keys) {
+          const value = formData.get(key);
+          if (value !== null) {
+            body[key] = value;
+          }
+        }
+        
+        console.log(`[API:${requestId}] FormData extracted. Files detected.`);
+        
+        // Check for File via duck-typing (since instanceof File might fail in some runtimes)
+        const isFile = (obj: any) => obj && typeof obj === 'object' && typeof obj.arrayBuffer === 'function';
+
+        const pendingBusinessLicense = isFile(body.businessLicense) ? body.businessLicense : null;
+        const pendingPledgeFile = isFile(body.pledgeFile) ? body.pledgeFile : null;
+        
+        // Pre-set empty data placeholders
+        if (pendingBusinessLicense) {
+            body.businessLicenseUrl = `/api/files/download?type=license`; 
+        }
+        if (pendingPledgeFile) {
+            body.pledgeUrl = `/api/files/download?type=pledge`;
+        }
+        
+        // Parse JSON strings back to objects
+        if (body.specialties && typeof body.specialties === 'string') {
+          body.specialties = JSON.parse(body.specialties);
+        }
+        if (body.serviceAreas && typeof body.serviceAreas === 'string') {
+          body.serviceAreas = JSON.parse(body.serviceAreas);
+        }
+        if (body.acceptsTerms) body.acceptsTerms = body.acceptsTerms === 'true';
+        if (body.acceptsPrivacy) body.acceptsPrivacy = body.acceptsPrivacy === 'true';
+        if (body.marketingOptIn) body.marketingOptIn = body.marketingOptIn === 'true';
+        if (body.experienceYears) body.experienceYears = Number(body.experienceYears);
+        if (body.budgetMin) body.budgetMin = Number(body.budgetMin);
+        if (body.budgetMax) body.budgetMax = Number(body.budgetMax);
+        
+        console.log(`[API:${requestId}] Body preparation complete.`);
+      } else {
+        body = await req.json();
+      }
+      
+      // [Added for JSON Base64 Support] Pre-set download URLs if base64 data is present
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((body as any).businessLicenseBase64 && !(body as any).businessLicenseUrl) {
+         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         (body as any).businessLicenseUrl = `/api/files/download?type=license`;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((body as any).pledgeFileBase64 && !(body as any).pledgeUrl) {
+         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         (body as any).pledgeUrl = `/api/files/download?type=pledge`;
+      }
+
+      console.log(`[API:${requestId}] Body parsed. Processing core logic...`);
+      // REMOVED heavy JSON.stringify logging to save memory/cpu with large files
+      
+      const { email, password, name } = body as BasePayload;
+      let { role } = body as BasePayload;
+      if (!email || !password || !name) {
+        return NextResponse.json({ error: '이메일/비밀번호/이름은 필수입니다.' }, { status: 400 });
+      }
 
     // 기본 역할 USER
     if (!role) role = 'USER';
@@ -77,15 +172,67 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '허용되지 않은 역할입니다.' }, { status: 400 });
     }
 
-  console.log('[API] Getting Prisma client...');
-  const prisma = await getPrismaClient();
-  console.log('[API] Prisma client obtained successfully');
+  console.log(`[API:${requestId}] Getting Prisma client...`);
+  
+  // Initialize Prisma Client with Timeout (Check for SSM Hangs)
+  let prisma;
+  try {
+    const initPromise = getPrismaClient();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('PRISMA_INIT_TIMEOUT')), 4000)
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    prisma = await Promise.race([initPromise, timeoutPromise]) as any;
+    console.log(`[API:${requestId}] Prisma client obtained.`);
+  } catch (initErr) {
+    console.error(`[API:${requestId}] Prisma Init Failed:`, initErr);
+    const msg = initErr instanceof Error ? initErr.message : String(initErr);
+    if (msg.includes('PRISMA_INIT_TIMEOUT')) {
+      return NextResponse.json({ 
+        error: '서버 초기화 시간이 초과되었습니다. (Prisma Init Timeout)',
+        details: 'AWS SSM 파라미터 가져오기 및 DB 클라이언트 생성 단계에서 응답이 없습니다. (네트워크/VPC 설정 확인 필요)'
+      }, { status: 504 });
+    }
+    return NextResponse.json({
+      error: '서버 내부 오류가 발생했습니다. (Prisma Init Failed)',
+      details: msg
+    }, { status: 500 });
+  }
 
+  // Check connectivity with a quick query and STRICT timeout
+  try {
+    const connectionPromise = prisma.$queryRaw`SELECT 1`;
+    const timeoutPromise = new Promise((_, reject) => 
+      // Increased DB timeout to 10s for initial handshake in cold start scenarios
+      setTimeout(() => reject(new Error('DB_CONNECTION_TIMEOUT')), 10000)
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await Promise.race([connectionPromise, timeoutPromise]) as any;
+    
+    console.log(`[API:${requestId}] DB Connection OK.`);
+  } catch (dbErr) {
+    console.error(`[API:${requestId}] DB Connection Failed:`, dbErr);
+    const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+    if (msg.includes('DB_CONNECTION_TIMEOUT')) {
+      return NextResponse.json({ 
+        error: '데이터베이스 연결 시간이 초과되었습니다. (DB Connection Timeout)',
+        details: '서버가 데이터베이스에 접근할 수 없습니다. 잠시 후 다시 시도하거나 관리자에게 문의하세요.'
+      }, { status: 503 });
+    }
+    return NextResponse.json({ 
+      error: '데이터베이스 연결에 실패했습니다.',
+      details: msg
+    }, { status: 500 });
+  }
+
+  console.log(`[API:${requestId}] Checking for existing user...`);
   const existingUser = await prisma.user.findFirst({ where: { email, deletedAt: null } });
     if (existingUser) {
+      console.log(`[API:${requestId}] User already exists.`);
       return NextResponse.json({ error: '이미 사용중인 이메일입니다.' }, { status: 409 });
     }
 
+  console.log(`[API:${requestId}] Hashing password...`);
   const hashedPassword = await hashPassword(password, 10);
 
     // 역할별 검증 & 데이터 구성
@@ -95,9 +242,12 @@ export async function POST(req: NextRequest) {
         licenseNumber,
         experienceYears,
         serviceArea,
+        serviceAreas,
+        officeAddress,
         introduction,
         portfolioUrl,
         contactPhone,
+        agencyPhone,
         acceptsTerms,
         acceptsPrivacy,
       } = body as InvestigatorPayload;
@@ -124,35 +274,148 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'experienceYears 는 0 이상의 숫자여야 합니다.' }, { status: 400 });
       }
 
+      const serviceAreaList = Array.isArray(serviceAreas) ? serviceAreas : [];
+      const sanitizedServiceAreas = serviceAreaList
+        .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+        .map((item) => item.trim());
+      const normalizedServiceArea =
+        typeof serviceArea === 'string' && serviceArea.trim().length > 0
+          ? serviceArea.trim()
+          : sanitizedServiceAreas.join(', ');
+
       const now = new Date();
-      // Prisma 타입 캐싱 지연으로 delegate 접근 인식 문제 발생 시 ts-ignore 처리
-      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const user = await tx.user.create({
-          data: { email, name, password: hashedPassword, role: 'INVESTIGATOR' },
-        });
-        const profile = await tx.investigatorProfile.create({
+      console.log(`[API:${requestId}] Starting Sequential Creation for INVESTIGATOR (No Transaction)...`);
+      
+      // 1. Create User
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let user: any;
+      try {
+        // Enforce 10s timeout for User Creation
+        user = await Promise.race([
+             prisma.user.create({
+                data: { email, name, password: hashedPassword, role: 'INVESTIGATOR' },
+             }),
+             new Promise((_, reject) => setTimeout(() => reject(new Error('USER_CREATE_TIMEOUT')), 10000))
+        ]);
+        console.log(`[API:${requestId}] User created: ${user.id}`);
+      } catch (userErr) {
+        console.error(`[API:${requestId}] User creation failed:`, userErr);
+        const msg = String(userErr);
+        if (msg.includes('USER_CREATE_TIMEOUT')) {
+            return NextResponse.json({ error: '사용자 정보 저장 시간이 초과되었습니다. (DB Write Timeout)' }, { status: 504 });
+        }
+        throw userErr;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const businessLicenseData = (body as any).businessLicenseData as string | undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pledgeData = (body as any).pledgeData as string | undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const businessLicenseUrlBase = (body as any).businessLicenseUrl;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pledgeUrlBase = (body as any).pledgeUrl;
+
+      // 2. Create Profile
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let profile: any;
+      try {
+        profile = await prisma.investigatorProfile.create({
           data: {
             userId: user.id,
             specialties: sanitizedSpecialties,
             licenseNumber: licenseNumber ?? null,
             experienceYears: years,
             contactPhone: contactPhone?.trim() ?? null,
-            serviceArea: serviceArea ?? null,
+            agencyPhone: agencyPhone?.trim() ?? null,
+            serviceArea: normalizedServiceArea || null,
+            officeAddress: officeAddress?.trim() ?? null,
             introduction: introduction ?? null,
             portfolioUrl: portfolioUrl ?? null,
+            // 파일 URL에는 userId를 쿼리 파라미터로 추가하여 다운로드 API에서 식별하도록 함
+            businessLicenseUrl: businessLicenseUrlBase ? `${businessLicenseUrlBase}&userId=${user.id}` : null,
+            pledgeUrl: pledgeUrlBase ? `${pledgeUrlBase}&userId=${user.id}` : null,
+            // Skip large blobs in initial create
             termsAcceptedAt: now,
             privacyAcceptedAt: now,
           },
         });
-        return { user, profile };
-      });
+        console.log(`[API:${requestId}] Profile created: ${profile.id}`);
+      } catch (profileErr) {
+        console.error(`[API:${requestId}] Profile creation failed. Rolling back user...`, profileErr);
+        // Compensation: Delete the orphan user
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await prisma.user.delete({ where: { id: user.id } }).catch((e: any) => console.error('Rollback failed:', e));
+        throw profileErr; // Re-throw to be handled by the outer catch
+      }
+
+      const result = { user, profile, businessLicenseData, pledgeData };
+
+      // Update large data separately if present (to avoid transaction lock/timeout issues)
+      // Retrieve pending files from local scope or body
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pendingBusinessLicense = (body as any).businessLicense instanceof File ? (body as any).businessLicense as File : null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pendingPledgeFile = (body as any).pledgeFile instanceof File ? (body as any).pledgeFile as File : null;
+
+      // [Added for JSON Base64 Support]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const preEncodedLicense = typeof (body as any).businessLicenseBase64 === 'string' ? (body as any).businessLicenseBase64 as string : null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const preEncodedPledge = typeof (body as any).pledgeFileBase64 === 'string' ? (body as any).pledgeFileBase64 as string : null;
+
+      if (pendingBusinessLicense || pendingPledgeFile || preEncodedLicense || preEncodedPledge) {
+        console.log(`[API:${requestId}] Updating LOB data (Deferred Processing)...`);
+        try {
+          // Process files to Base64 NOW
+          let businessLicenseData: string | undefined;
+          let pledgeData: string | undefined;
+          
+          if (pendingBusinessLicense) {
+             const buf = Buffer.from(await pendingBusinessLicense.arrayBuffer());
+             businessLicenseData = `data:${pendingBusinessLicense.type || 'application/octet-stream'};base64,${buf.toString('base64')}`;
+          } else if (preEncodedLicense) {
+             businessLicenseData = preEncodedLicense; 
+          }
+
+           if (pendingPledgeFile) {
+             const buf = Buffer.from(await pendingPledgeFile.arrayBuffer());
+             pledgeData = `data:${pendingPledgeFile.type || 'application/octet-stream'};base64,${buf.toString('base64')}`;
+          } else if (preEncodedPledge) {
+             pledgeData = preEncodedPledge;
+          }
+
+          // Force timeout for LOB update (5 seconds)
+          // If this times out, we continue without error
+          await Promise.race([
+            prisma.investigatorProfile.update({
+              where: { id: result.profile.id },
+              data: {
+                  businessLicenseData: businessLicenseData ?? undefined,
+                  pledgeData: pledgeData ?? undefined
+              }
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('LOB_UPDATE_TIMEOUT')), 5000))
+          ]);
+          console.log(`[API:${requestId}] LOB data updated.`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (lobErr: any) {
+           console.error(`[API:${requestId}] Failed to save file data (non-fatal):`, lobErr);
+           // We do NOT rollback user creation here, but user might need to re-upload documents later.
+        }
+      }
+      
+      console.log(`[API:${requestId}] Transaction Complete.`);
+      
       const { password: removedPassword, ...userSanitized } = result.user;
       void removedPassword;
+      const token = signToken({ userId: Number(result.user.id), role: result.user.role });
       return NextResponse.json(
         {
           ...userSanitized,
           investigator: result.profile,
           investigatorStatus: result.profile.status,
+          token,
         },
         { status: 201 },
       );
@@ -292,13 +555,9 @@ export async function POST(req: NextRequest) {
     void removedPassword;
     const token = signToken({ userId: Number(result.user.id), role: result.user.role });
     return NextResponse.json({ ...userWithoutPassword, customerProfile: result.profile, token }, { status: 201 });
-  } catch (error) {
-    console.error('[API] Registration error:', error);
-    console.error('[API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    
-    return NextResponse.json({ 
-      error: '서버 오류가 발생했습니다.',
-      details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : String(error) : undefined
-    }, { status: 500 });
+  } catch (fatal) {
+    // 정말로 빠져나가는 예외도 JSON으로 반환
+    console.error('[API] FATAL error in /api/register:', fatal);
+    return NextResponse.json({ error: '서버 내부 오류', details: process.env.NODE_ENV === 'development' ? (fatal instanceof Error ? fatal.message : String(fatal)) : undefined }, { status: 500 });
   }
 }

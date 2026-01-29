@@ -1544,22 +1544,7 @@ export default function TwinSimulationPage() {
                 </ul>
               </div>
 
-              <div className="rounded-3xl border border-white/20 bg-white/95 p-5 text-slate-900 shadow-inner">
-                <InvestigatorRecommendationsCard
-                  recommendations={recommendations}
-                  isLoading={isRecommendationsLoading}
-                  scenarioTitle={handoffContext?.summary?.caseTitle ?? result?.timeline?.[0]?.detail}
-                  matchButtonLabel={matchButtonLabel}
-                  isMatchDisabled={isMatchDisabled}
-                  onMatchNow={handleMatchNow}
-                />
-                {recommendationsError ? (
-                  <div className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-xs text-amber-700">
-                    <FiAlertTriangle className="mt-0.5 h-4 w-4" />
-                    <span>{recommendationsError}</span>
-                  </div>
-                ) : null}
-              </div>
+              {/* InvestigatorRecommendationsCard removed as per user request */}
             </div>
           </section>
         </main>

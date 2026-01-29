@@ -23,10 +23,17 @@ async function resolveConversationByExternalId(prismaClient: PrismaClient, exter
   return prismaClient.conversation.findUnique({ where: { externalId: cleaned } });
 }
 
-type ConversationWithMessages = Conversation & { messages?: Message[] };
+type ConversationWithMessages = Conversation & { messages?: Message[]; analysis?: any };
 
 function buildResponse(conversation: ConversationWithMessages | Conversation | null, messages: Message[] = []) {
   if (!conversation) return null;
+  
+  // Extract intakeSummary from analysis.suggestedNext if available
+  let intakeSummary = null;
+  if ('analysis' in conversation && conversation.analysis?.suggestedNext) {
+    intakeSummary = conversation.analysis.suggestedNext;
+  }
+
   return {
     conversation: {
       id: conversation.id,
@@ -36,6 +43,7 @@ function buildResponse(conversation: ConversationWithMessages | Conversation | n
       externalId: conversation.externalId,
       createdAt: conversation.createdAt,
       updatedAt: conversation.updatedAt,
+      intakeSummary, // Include in response
     },
     messages,
   };
@@ -48,8 +56,9 @@ export async function POST(req: NextRequest) {
     const question = sanitizeContent(payload?.question);
     const answer = sanitizeContent(payload?.answer);
     const requestedExternalId: string | null = typeof payload?.conversationId === 'string' ? payload.conversationId : null;
+    const intakeSummary = payload?.intakeSummary;
 
-    if (!question && !answer) {
+    if (!question && !answer && !intakeSummary) {
       return NextResponse.json({ error: '내용이 필요합니다' }, { status: 400 });
     }
 
@@ -65,13 +74,29 @@ export async function POST(req: NextRequest) {
       conversation = await prisma.conversation.create({
         data: {
           userId,
-          title: question || '새로운 대화',
+          title: question || (intakeSummary?.caseTitle) || '새로운 대화',
           externalId,
         },
       });
     }
 
-  const messagesToCreate: Array<{ conversationId: number; role: MessageRole; content: string }> = [];
+    // Save IntakeSummary to ConversationAnalysis.suggestedNext
+    if (intakeSummary) {
+      await prisma.conversationAnalysis.upsert({
+        where: { conversationId: conversation.id },
+        create: {
+          conversationId: conversation.id,
+          summary: intakeSummary.caseTitle || conversation.title,
+          suggestedNext: intakeSummary,
+        },
+        update: {
+          suggestedNext: intakeSummary,
+          summary: intakeSummary.caseTitle || undefined,
+        },
+      });
+    }
+
+    const messagesToCreate: Array<{ conversationId: number; role: MessageRole; content: string }> = [];
     if (question) {
       messagesToCreate.push({ conversationId: conversation.id, role: MessageRole.USER, content: question });
     }
@@ -89,6 +114,7 @@ export async function POST(req: NextRequest) {
         messages: {
           orderBy: { createdAt: 'asc' },
         },
+        analysis: true,
       },
     });
 
@@ -124,6 +150,7 @@ export async function GET(req: NextRequest) {
           messages: {
             orderBy: { createdAt: 'asc' },
           },
+          analysis: true,
         },
       });
 
@@ -142,6 +169,7 @@ export async function GET(req: NextRequest) {
         messages: {
           orderBy: { createdAt: 'asc' },
         },
+        analysis: true,
       },
     });
 

@@ -16,8 +16,8 @@ import { deriveTrendAlerts, recordRiskSignals } from "./riskTrendTracker";
 import { generateInvestigationFlow } from "./investigationFlowSimulator";
 
 const MESSAGE_SCHEMA = z.object({
-  role: z.enum(["user", "assistant"]),
-  content: z.string().min(1),
+  role: z.string(), // Allow 'system', 'data', etc. to prevent validation errors
+  content: z.string().optional(), // Allow empty content (e.g. tool calls)
 });
 
 const PAYLOAD_SCHEMA = z.object({
@@ -166,7 +166,7 @@ async function loadEnterpriseScenarioCorpus(): Promise<Array<{ id: string; text:
   }
 
   // Fallback to JSON corpus when DB is empty (local dev)
-  const filePath = path.join(process.cwd(), "prisma", "enterprise_scenarios.json");
+  const filePath = path.join(process.cwd(), "prisma", "investigator_scenarios.json");
   const raw = await fs.readFile(filePath, "utf8");
   const parsed = JSON.parse(raw) as unknown;
 

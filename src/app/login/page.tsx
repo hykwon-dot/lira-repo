@@ -1,6 +1,5 @@
+import { Suspense } from 'react';
 import LoginForm from './LoginForm';
-
-export const dynamic = 'force-dynamic';
 
 export default function LoginPage() {
   return (
@@ -10,7 +9,9 @@ export default function LoginPage() {
           <h1 className="text-3xl font-bold text-gray-800 mb-2">LIRA 로그인</h1>
           <p className="text-gray-600">전문 민간조사원 매칭 서비스</p>
         </div>
-        <LoginForm />
+        <Suspense fallback={<div>Loading...</div>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );

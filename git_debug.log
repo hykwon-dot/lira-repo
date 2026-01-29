@@ -1,0 +1,35 @@
+--- GIT STATUS --- 
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   .vscode/tasks.json
+	modified:   src/app/api/chat-gpt/route.ts
+	modified:   src/app/simulation/AIInsightsPanel.tsx
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   .vscode/tasks.json
+	modified:   src/app/simulation/ChatSimulation.tsx
+	modified:   src/app/simulation/twin/page.tsx
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	DEPLOY_TRIGGER.txt
+	debug_git.bat
+	git_debug.log
+
+--- GIT REMOTE --- 
+origin	https://github.com/hykwon-dot/lira-repo.git (fetch)
+origin	https://github.com/hykwon-dot/lira-repo.git (push)
+--- GIT LOG --- 
+commit 71dba73359d51a3ddf3175ad64f42c274bef9881
+Merge: edec709 b992137
+Author: hykwon-dot <hykown@lira365.com>
+Date:   Mon Jan 26 12:26:47 2026 +0900
+
+    Merge branch 'main' of https://github.com/hykwon-dot/lira-repo
+--- GIT PUSH --- 
+Everything up-to-date

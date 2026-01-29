@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -10,9 +11,9 @@ datasource db {
 
 model User {
   id                                 Int                          @id @default(autoincrement())
-  email                              String                       @unique
-  name                               String
-  password                           String
+  email                              String                       @unique @db.VarChar(255)
+  name                               String                       @db.VarChar(100)
+  password                           String                       @db.VarChar(255)
   role                               UserRole                     @default(USER)
   createdAt                          DateTime                     @default(now())
   updatedAt                          DateTime                     @updatedAt
@@ -39,7 +40,7 @@ model User {
 model InvestigatorProfile {
   id                Int                    @id @default(autoincrement())
   userId            Int                    @unique
-  licenseNumber     String?
+  licenseNumber     String?                @db.VarChar(50)
   experienceYears   Int                    @default(0)
   specialties       Json
   status            InvestigatorStatus     @default(PENDING)
@@ -50,12 +51,16 @@ model InvestigatorProfile {
   reviewNote        String?                @db.Text
   reviewedAt        DateTime?
   reviewedById      Int?
-  contactPhone      String?
-  serviceArea       String?
+  contactPhone      String?                @db.VarChar(20)
+  agencyPhone       String?                @db.VarChar(20)
+  serviceArea       String?                @db.VarChar(100)
+  officeAddress     String?                @db.VarChar(255)
   introduction      String?                @db.Text
-  portfolioUrl      String?
-  businessLicenseData String?            @db.LongText
-  pledgeData          String?            @db.LongText
+  portfolioUrl      String?                @db.Text
+  businessLicenseUrl String?               @db.Text
+  businessLicenseData String?               @db.LongText
+  pledgeUrl         String?                @db.Text
+  pledgeData        String?                 @db.LongText
   termsAcceptedAt   DateTime?
   privacyAcceptedAt DateTime?
   avatarUrl         String?                @db.LongText
@@ -96,11 +101,11 @@ model CustomerProfile {
 
 model Organization {
   id             Int                  @id @default(autoincrement())
-  name           String
-  businessNumber String?
-  contactName    String?
-  contactPhone   String?
-  sizeCode       String?
+  name           String               @db.VarChar(100)
+  businessNumber String?              @db.VarChar(50)
+  contactName    String?              @db.VarChar(100)
+  contactPhone   String?              @db.VarChar(20)
+  sizeCode       String?              @db.VarChar(20)
   note           String?              @db.Text
   ownerId        Int
   createdAt      DateTime             @default(now())
@@ -131,11 +136,11 @@ model OrganizationMember {
 model Conversation {
   id         Int                   @id @default(autoincrement())
   userId     Int
-  title      String
+  title      String                @db.VarChar(255)
   status     ConversationStatus    @default(ACTIVE)
   createdAt  DateTime              @default(now())
   updatedAt  DateTime              @updatedAt
-  externalId String?               @unique
+  externalId String?               @unique @db.VarChar(100)
   user       User                  @relation(fields: [userId], references: [id])
   analysis   ConversationAnalysis?
   messages   Message[]
@@ -167,17 +172,17 @@ model ConversationAnalysis {
 
 model Scenario {
   id                  Int                    @id @default(autoincrement())
-  title               String
+  title               String                 @db.VarChar(255)
   description         String                 @db.Text
-  category            String?
-  difficulty          String?                @default("중간")
-  image               String?
+  category            String?                @db.VarChar(50)
+  difficulty          String?                @default("중간") @db.VarChar(20)
+  image               String?                @db.Text
   overview            Json?
   spendTracking       Json?
   raciMatrix          Json?
   scheduleTemplate    Json?
-  riskLevel           String?
-  caseType            String?
+  riskLevel           String?                @db.VarChar(20)
+  caseType            String?                @db.VarChar(50)
   successRate         Int?                   @default(0)
   typicalDurationDays Int?
   budgetRange         Json?
@@ -196,15 +201,15 @@ model Phase {
   id             Int      @id @default(autoincrement())
   order          Int      @default(0)
   scenarioId     Int
-  phaseKey       String
-  name           String
+  phaseKey       String   @db.VarChar(100)
+  name           String   @db.VarChar(100)
   description    String?  @db.Text
   durationDays   Int
   scheduleOffset Int
   budget         Json
   phaseKPI       Json
   deliverables   Json
-  nextPhase      String?
+  nextPhase      String?  @db.VarChar(100)
   scenario       Scenario @relation(fields: [scenarioId], references: [id])
   risks          Risk[]
   tasks          Task[]
@@ -299,12 +304,12 @@ model InvestigationRequest {
   id             Int                          @id @default(autoincrement())
   userId         Int
   scenarioId     Int?
-  title          String
+  title          String                       @db.VarChar(255)
   details        String                       @db.Text
-  desiredOutcome String?
+  desiredOutcome String?                      @db.Text
   budgetMin      Int?
   budgetMax      Int?
-  status         String                       @default("MATCHING")
+  status         String                       @default("MATCHING") @db.VarChar(50)
   createdAt      DateTime                     @default(now())
   updatedAt      DateTime                     @updatedAt
   investigatorId Int?
@@ -427,6 +432,23 @@ model Notification {
   @@index([userId, readAt])
 }
 
+model Banner {
+  id        Int        @id @default(autoincrement())
+  title     String?
+  imageUrl  String
+  linkUrl   String?
+  type      BannerType @default(MAIN_LARGE)
+  isActive  Boolean    @default(true)
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+enum BannerType {
+  MAIN_LARGE
+  MAIN_SMALL
+}
+
 enum UserRole {
   USER
   INVESTIGATOR
@@ -492,25 +514,12 @@ enum SimulationEventType {
   NOTE_ADDED
 }
 
-
-model Banner {
-  id        Int      @id @default(autoincrement())
-  title     String
-  imageUrl  String?
-  linkUrl   String?
-  type      String?
-  isActive  Boolean  @default(true)
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model Award {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
-  description String?  @db.Text
+  description String?
   imageUrl    String?
   date        DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

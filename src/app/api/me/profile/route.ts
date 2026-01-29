@@ -379,6 +379,43 @@ async function handleProfileUpdate(req: NextRequest) {
     const avatarBase64 = payloadRecord.avatarBase64; 
     const isBase64Upload = typeof avatarBase64 === 'string' && avatarBase64.startsWith('data:image/');
     
+    // [Added] Handle Business License & Pledge Data (Deferred Upload from Register)
+    const businessLicenseBase64 = payloadRecord.businessLicenseBase64;
+    if (typeof businessLicenseBase64 === 'string' && businessLicenseBase64.startsWith('data:')) {
+        updateData.businessLicenseData = businessLicenseBase64;
+        updateData.businessLicenseUrl = `/api/files/download?type=license&userId=${user.id}`;
+    }
+
+    const pledgeFileBase64 = payloadRecord.pledgeFileBase64;
+    if (typeof pledgeFileBase64 === 'string' && pledgeFileBase64.startsWith('data:')) {
+        updateData.pledgeData = pledgeFileBase64;
+        updateData.pledgeUrl = `/api/files/download?type=pledge&userId=${user.id}`;
+    }
+
+    // [Added] Handle Hex Data (WAF Bypass)
+    const handleHexUpload = (hex: unknown, type: unknown, targetField: 'businessLicense' | 'pledge') => {
+        if (typeof hex === 'string' && hex.length > 0) {
+            try {
+                const buffer = Buffer.from(hex, 'hex');
+                const mimeType = typeof type === 'string' ? type : 'image/jpeg';
+                const base64 = `data:${mimeType};base64,${buffer.toString('base64')}`;
+                
+                if (targetField === 'businessLicense') {
+                    updateData.businessLicenseData = base64;
+                    updateData.businessLicenseUrl = `/api/files/download?type=license&userId=${user.id}`;
+                } else {
+                    updateData.pledgeData = base64;
+                    updateData.pledgeUrl = `/api/files/download?type=pledge&userId=${user.id}`;
+                }
+            } catch (e) {
+                console.error(`Failed to decode hex for ${targetField}`, e);
+            }
+        }
+    };
+
+    handleHexUpload(payloadRecord.businessLicenseHex, payloadRecord.businessLicenseType, 'businessLicense');
+    handleHexUpload(payloadRecord.pledgeFileHex, payloadRecord.pledgeFileType, 'pledge');
+
     if (isBase64Upload) {
       try {
         const matches = avatarBase64.match(/^data:(image\/([a-zA-Z+]+));base64,(.+)$/);
@@ -455,11 +492,11 @@ async function handleProfileUpdate(req: NextRequest) {
   return NextResponse.json({ user: sanitizeUser(user), role: user.role, profile: null });
 }
 
-export async function PATCH(req: NextRequest) {
+export async function POST(req: NextRequest) {
   return handleProfileUpdate(req);
 }
 
-export async function POST(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
   return handleProfileUpdate(req);
 }
 

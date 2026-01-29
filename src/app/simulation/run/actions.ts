@@ -3,6 +3,8 @@
 import { getPrismaClient } from '@/lib/prisma';
 import type { Scenario, Phase, Task, Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 // Re-exporting the Task type for client components to use.
 export type { Task };
@@ -15,11 +17,39 @@ export type PhaseWithTasks = Phase & {
   tasks: Task[];
 };
 
+async function loadScenarioFromJson(key: string) {
+  try {
+    const filePath = path.join(process.cwd(), 'prisma', 'investigator_scenarios.json');
+    const fileContent = await fs.readFile(filePath, 'utf8');
+    const data = JSON.parse(fileContent);
+    return data[key];
+  } catch (e) {
+    console.error("Failed to load scenario from JSON", e);
+    return null;
+  }
+}
+
 export async function getScenario(id: string): Promise<ScenarioWithPhases | null> {
   try {
     const prisma = await getPrismaClient();
-    const scenario = await prisma.scenario.findUnique({
-      where: { id: parseInt(id, 10) },
+    const numericId = parseInt(id, 10);
+    
+    if (!isNaN(numericId)) {
+      const scenario = await prisma.scenario.findUnique({
+        where: { id: numericId },
+        include: {
+          phases: {
+            orderBy: {
+              order: 'asc',
+            },
+          },
+        },
+      });
+      if (scenario) return scenario;
+    }
+
+    let scenarioByTitle = await prisma.scenario.findFirst({
+      where: { title: id },
       include: {
         phases: {
           orderBy: {
@@ -28,7 +58,71 @@ export async function getScenario(id: string): Promise<ScenarioWithPhases | null
         },
       },
     });
-    return scenario;
+
+    if (!scenarioByTitle) {
+      const jsonScenario = await loadScenarioFromJson(id);
+      if (jsonScenario) {
+        try {
+          const title = jsonScenario.title || id;
+          const overview = jsonScenario.overview || {};
+          
+          scenarioByTitle = await prisma.scenario.create({
+            data: {
+              title: title,
+              description: overview.objective || '',
+              difficulty: jsonScenario.difficulty || overview.difficulty || '보통',
+              overview: overview,
+              spendTracking: jsonScenario.spendTracking,
+              raciMatrix: jsonScenario.raciMatrix,
+              scheduleTemplate: jsonScenario.scheduleTemplate,
+              phases: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                create: (jsonScenario.phases || []).map((phase: any, idx: number) => ({
+                  phaseKey: phase.id || `phase-${idx + 1}`,
+                  name: phase.name,
+                  durationDays: phase.durationDays || 0,
+                  scheduleOffset: phase.scheduleOffset || 0,
+                  budget: phase.budget || {},
+                  phaseKPI: phase.phaseKPI || {},
+                  deliverables: phase.deliverables || [],
+                  order: idx,
+                  tasks: {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    create: (phase.tasks || []).map((task: any, tIdx: number) => ({
+                      taskKey: task.taskId || `task-${idx}-${tIdx}`,
+                      desc: task.desc || task.description || '',
+                      competency: task.competency || [],
+                      order: tIdx
+                    }))
+                  },
+                  risks: {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    create: (phase.risks || []).map((risk: any, rIdx: number) => ({
+                      riskKey: risk.riskId || `risk-${idx}-${rIdx}`,
+                      name: typeof risk === 'string' ? risk : (risk.name || 'Risk'),
+                      severity: typeof risk === 'string' ? 'M' : (risk.severity || 'M'),
+                      trigger: typeof risk === 'string' ? '' : (risk.trigger || ''),
+                      mitigation: typeof risk === 'string' ? '' : (risk.mitigation || '')
+                    }))
+                  }
+                }))
+              }
+            },
+            include: {
+              phases: {
+                orderBy: {
+                  order: 'asc',
+                },
+              },
+            },
+          });
+        } catch (createError) {
+          console.error("Failed to create scenario from JSON", createError);
+        }
+      }
+    }
+    
+    return scenarioByTitle;
   } catch (error) {
     console.error('Error fetching scenario:', error);
     return null;
