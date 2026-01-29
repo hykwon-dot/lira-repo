@@ -257,7 +257,8 @@ export default function InvestigatorsPage() {
                             src={inv.avatarUrl}
                             alt={`${inv.user?.name ?? "이름 미상"} 프로필 이미지`}
                             fill
-                            sizes="(max-width: 768px) 100vw, 33vw"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                            quality={100}
                             className="h-full w-full object-cover"
                             loading="lazy"
                           />
