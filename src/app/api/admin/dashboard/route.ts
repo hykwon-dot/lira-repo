@@ -10,6 +10,7 @@ function daysAgo(days: number) {
 export async function GET() {
   const prisma = await getPrismaClient();
 
+  try {
   const [
     totalUsers,
     newUsersWeek,
@@ -157,4 +158,11 @@ export async function GET() {
     activeInvestigators,
     recentCustomers,
   });
+  } catch (error) {
+    console.error('[Admin Dashboard API Error]', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unknown error occurred in dashboard API' },
+      { status: 500 }
+    );
+  }
 }

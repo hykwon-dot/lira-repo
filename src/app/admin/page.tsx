@@ -256,7 +256,20 @@ export default function AdminPage() {
           return;
         }
         if (!res.ok) {
-          throw new Error('대시보드 데이터를 불러오지 못했습니다.');
+          let errorMessage = '대시보드 데이터를 불러오지 못했습니다.';
+          try {
+            const errorData = await res.json();
+            if (errorData?.error) {
+              errorMessage += ` (${errorData.error})`;
+            } else if (res.statusText) {
+              errorMessage += ` (${res.status} ${res.statusText})`;
+            } else {
+               errorMessage += ` (Status: ${res.status})`;
+            }
+          } catch(e) {
+             errorMessage += ` (Status: ${res.status})`;
+          }
+          throw new Error(errorMessage);
         }
         const data = (await res.json()) as DashboardResponse;
         setDashboard(data);
