@@ -7,8 +7,8 @@ declare global {
   var prismaClientPromise: Promise<PrismaClient> | undefined;
 }
 
-// 폴백 DATABASE_URL
-const FALLBACK_DATABASE_URL = 'mysql://lira_user:asdasd11@lira-db.cluster-ctkse40gyfit.ap-northeast-2.rds.amazonaws.com:3306/lira?ssl={"rejectUnauthorized":false}';
+// 폴백 DATABASE_URL (Local Development Default)
+const FALLBACK_DATABASE_URL = 'mysql://lira_user:StrongPW123!@localhost:3306/lira';
 
 function getDatabaseUrl(): string {
   return process.env.DATABASE_URL || FALLBACK_DATABASE_URL;
