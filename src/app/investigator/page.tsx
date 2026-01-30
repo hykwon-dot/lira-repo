@@ -924,7 +924,7 @@ const InvestigatorDashboard = () => {
                     </div>
                     <div className="flex flex-1 flex-col gap-3 text-xs text-slate-500">
                       <p className="leading-relaxed">
-                        얼굴이 잘 드러나는 정사각형 이미지를 업로드해주세요. 지원 형식: JPG, PNG, WEBP, GIF, AVIF · 최대 용량 5MB.
+                        얼굴이 잘 드러나는 정사각형 이미지를 업로드해주세요. 지원 형식: JPG, PNG, WEBP, GIF, AVIF · 최대 용량 20MB.
                       </p>
                       <div className="flex flex-wrap gap-2">
                         <button
