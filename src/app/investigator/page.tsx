@@ -38,7 +38,7 @@ const TIMELINE_OPTIONS: Array<{ value: TimelineFormState["type"]; label: string 
   { value: "FINAL_REPORT", label: "최종 보고" },
 ];
 
-const AVATAR_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB (Synced with backend limit)
+const AVATAR_SIZE_LIMIT = 20 * 1024 * 1024; // 20MB (Synced with backend limit)
 const SUPPORTED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
 
 const statusKeyFromString = (value: string): CaseStatusKey => {
@@ -88,10 +88,10 @@ const compressImageToBase64 = async (file: File): Promise<string> => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         
-        // Increased to 2048px and 0.95 quality for maximum resolution (Retina/4K ready)
+        // Increased to 4096px and 0.99 quality for ULTRA high resolution (4K+)
         // The backend supports chunked upload or large payloads, so we prioritize quality.
-        const MAX_WIDTH = 2048;
-        const MAX_HEIGHT = 2048;
+        const MAX_WIDTH = 4096;
+        const MAX_HEIGHT = 4096;
         let width = img.width;
         let height = img.height;
 
@@ -111,8 +111,8 @@ const compressImageToBase64 = async (file: File): Promise<string> => {
         canvas.height = height;
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // Quality 0.95 -> Near original quality, very little compression artifacts
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+        // Quality 0.99 -> Virtually lossless
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.99);
         resolve(dataUrl);
       };
       img.onerror = reject;

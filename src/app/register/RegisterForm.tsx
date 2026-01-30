@@ -27,8 +27,8 @@ const compressImage = async (file: File): Promise<File> => {
         let width = img.width;
         let height = img.height;
 
-        // Max dimension: 2048px (High resolution for documents/evidence)
-        const MAX_DIMENSION = 2048;
+        // Max dimension: 4096px (Ultra High resolution for documents/evidence)
+        const MAX_DIMENSION = 4096;
         if (width > height) {
           if (width > MAX_DIMENSION) {
             height *= MAX_DIMENSION / width;
@@ -50,7 +50,7 @@ const compressImage = async (file: File): Promise<File> => {
         }
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Convert to blob (JPEG, quality 0.9 - high quality document scan)
+        // Convert to blob (JPEG, quality 0.98 - virtually lossless)
         canvas.toBlob((blob) => {
           if (!blob) {
              resolve(file);
@@ -62,7 +62,7 @@ const compressImage = async (file: File): Promise<File> => {
           });
           console.log(`[ImageCompression] ${file.name}: ${(file.size/1024).toFixed(1)}KB -> ${(newFile.size/1024).toFixed(1)}KB`);
           resolve(newFile);
-        }, 'image/jpeg', 0.9);
+        }, 'image/jpeg', 0.98);
       };
       img.onerror = () => resolve(file); // Return original on error
     };
@@ -295,30 +295,30 @@ export default function RegisterForm() {
         }
 
         // [File Size Check]
-        const MAX_PDF_SIZE = 3 * 1024 * 1024; // 3MB
+        const MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB
         if (businessLicenseFile && businessLicenseFile.type === 'application/pdf' && businessLicenseFile.size > MAX_PDF_SIZE) {
-            setError('사업자등록증 PDF 파일이 너무 큽니다. (3MB 이하로 줄이거나 이미지로 업로드해주세요)');
+            setError('사업자등록증 PDF 파일이 너무 큽니다. (20MB 이하로 줄이거나 이미지로 업로드해주세요)');
             setIsSubmitting(false);
             return;
         }
         if (pledgeFile && pledgeFile.type === 'application/pdf' && pledgeFile.size > MAX_PDF_SIZE) {
-            setError('윤리서약서 PDF 파일이 너무 큽니다. (3MB 이하로 줄이거나 이미지로 업로드해주세요)');
+            setError('윤리서약서 PDF 파일이 너무 큽니다. (20MB 이하로 줄이거나 이미지로 업로드해주세요)');
             setIsSubmitting(false);
             return;
         }
         if (termsFile && termsFile.type === 'application/pdf' && termsFile.size > MAX_PDF_SIZE) {
-            setError('이용약관 서약서 PDF 파일이 너무 큽니다. (3MB 이하로 줄이거나 이미지로 업로드해주세요)');
+            setError('이용약관 서약서 PDF 파일이 너무 큽니다. (20MB 이하로 줄이거나 이미지로 업로드해주세요)');
             setIsSubmitting(false);
             return;
         }
         if (idCardFile && idCardFile.type === 'application/pdf' && idCardFile.size > MAX_PDF_SIZE) {
-            setError('신분증 사본 PDF 파일이 너무 큽니다. (3MB 이하로 줄이거나 이미지로 업로드해주세요)');
+            setError('신분증 사본 PDF 파일이 너무 큽니다. (20MB 이하로 줄이거나 이미지로 업로드해주세요)');
             setIsSubmitting(false);
             return;
         }
-        const MAX_RAW_SIZE = 10 * 1024 * 1024;
+        const MAX_RAW_SIZE = 50 * 1024 * 1024; // 50MB
         if ((businessLicenseFile?.size || 0) > MAX_RAW_SIZE || (pledgeFile?.size || 0) > MAX_RAW_SIZE || (termsFile?.size || 0) > MAX_RAW_SIZE || (idCardFile?.size || 0) > MAX_RAW_SIZE) {
-             setError('파일 크기가 너무 큽니다. (10MB 이하 파일만 선택해주세요)');
+             setError('파일 크기가 너무 큽니다. (50MB 이하 파일만 선택해주세요)');
              setIsSubmitting(false);
              return;
         }
@@ -948,8 +948,8 @@ export default function RegisterForm() {
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(e) => {
                     const file = e.target.files?.[0] || null;
-                    if (file && file.size > 3 * 1024 * 1024) {
-                      alert('파일 용량은 3MB를 초과할 수 없습니다. (압축 또는 이미지 변환 후 업로드해주세요)');
+                    if (file && file.size > 20 * 1024 * 1024) {
+                      alert('파일 용량은 20MB를 초과할 수 없습니다. (압축 또는 이미지 변환 후 업로드해주세요)');
                       e.target.value = '';
                       setBusinessLicenseFile(null);
                       return;
@@ -959,7 +959,7 @@ export default function RegisterForm() {
                   className="lira-input"
                   required
                 />
-                <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 3MB)</span>
+                <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 20MB)</span>
               </label>
 
               <label className="lira-field">
@@ -969,8 +969,8 @@ export default function RegisterForm() {
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(e) => {
                     const file = e.target.files?.[0] || null;
-                    if (file && file.size > 3 * 1024 * 1024) {
-                      alert('파일 용량은 3MB를 초과할 수 없습니다. (압축 또는 이미지 변환 후 업로드해주세요)');
+                    if (file && file.size > 20 * 1024 * 1024) {
+                      alert('파일 용량은 20MB를 초과할 수 없습니다. (압축 또는 이미지 변환 후 업로드해주세요)');
                       e.target.value = '';
                       setIdCardFile(null);
                       return;
@@ -1021,8 +1021,8 @@ export default function RegisterForm() {
                       accept=".pdf,.jpg,.jpeg,.png"
                       onChange={(e) => {
                         const file = e.target.files?.[0] || null;
-                        if (file && file.size > 3 * 1024 * 1024) {
-                          alert('파일 용량은 3MB를 초과할 수 없습니다. (압축 또는 이미지 변환 후 업로드해주세요)');
+                        if (file && file.size > 20 * 1024 * 1024) {
+                          alert('파일 용량은 20MB를 초과할 수 없습니다. (압축 또는 이미지 변환 후 업로드해주세요)');
                           e.target.value = '';
                           setPledgeFile(null);
                           return;
@@ -1032,7 +1032,7 @@ export default function RegisterForm() {
                       className="lira-input"
                       required
                     />
-                    <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 3MB)</span>
+                    <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 20MB)</span>
                   </label>
                   <label className="lira-field">
                     서명된 서비스 이용 약관 업로드 (필수)
@@ -1041,8 +1041,8 @@ export default function RegisterForm() {
                       accept=".pdf,.jpg,.jpeg,.png"
                       onChange={(e) => {
                         const file = e.target.files?.[0] || null;
-                        if (file && file.size > 3 * 1024 * 1024) {
-                          alert('파일 용량은 3MB를 초과할 수 없습니다. (압축 또는 이미지 변환 후 업로드해주세요)');
+                        if (file && file.size > 20 * 1024 * 1024) {
+                          alert('파일 용량은 20MB를 초과할 수 없습니다. (압축 또는 이미지 변환 후 업로드해주세요)');
                           e.target.value = '';
                           setTermsFile(null);
                           return;
@@ -1052,7 +1052,7 @@ export default function RegisterForm() {
                       className="lira-input"
                       required
                     />
-                    <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 3MB)</span>
+                    <span className="text-xs text-slate-500 mt-1">PDF, JPG, PNG 형식 (최대 20MB)</span>
                   </label>
                 </div>
               </div>
