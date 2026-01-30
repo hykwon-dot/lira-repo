@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { CSSProperties, ElementType } from "react";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   FiAward,
@@ -22,6 +23,7 @@ export interface InvestigatorRecommendation {
   userId: number | null;
   name: string;
   email: string | null;
+  avatarUrl?: string | null;
   rating: number | null;
   successRate: number | null;
   experienceYears: number;
@@ -217,8 +219,18 @@ export const InvestigatorRecommendationsCard = ({
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 text-indigo-600">
-                      <FiUser className="h-5 w-5" />
+                    <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-indigo-100 bg-indigo-50 text-indigo-600">
+                      {rec.avatarUrl ? (
+                        <Image
+                          src={rec.avatarUrl}
+                          alt={rec.name}
+                          fill
+                          sizes="44px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <FiUser className="h-5 w-5" />
+                      )}
                     </span>
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">

@@ -127,6 +127,7 @@ export async function POST(req: NextRequest) {
           userId: inv.user?.id ?? null,
           name: inv.user?.name ?? "이름 미상",
           email: inv.user?.email ?? null,
+          avatarUrl: inv.avatarUrl ?? null,
           rating,
           successRate,
           experienceYears,
