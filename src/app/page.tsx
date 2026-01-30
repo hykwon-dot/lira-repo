@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from 'react';
 import { useUserStore } from "@/lib/userStore";
+import { AnimatePresence, motion } from "framer-motion";
 
 type Banner = {
   id: number;
@@ -69,7 +70,8 @@ const testimonials = [
 
 export default function Home() {
   const user = useUserStore((state) => state.user);
-  const [mainBanner, setMainBanner] = useState<Banner | null>(null);
+  const [mainBanners, setMainBanners] = useState<Banner[]>([]);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [subBanners, setSubBanners] = useState<Banner[]>([]);
   const [awards, setAwards] = useState<Award[]>([]);
 
@@ -85,9 +87,12 @@ export default function Home() {
         const awardsData = await awardsRes.json();
 
         if (bannersData.banners) {
-          const large = bannersData.banners.find((b: Banner) => b.type === 'MAIN_LARGE' && b.isActive);
+          const large = bannersData.banners
+            .filter((b: Banner) => b.type === 'MAIN_LARGE' && b.isActive)
+            .sort((a: Banner, b: Banner) => a.order - b.order);
           const small = bannersData.banners.filter((b: Banner) => b.type === 'MAIN_SMALL' && b.isActive);
-          setMainBanner(large || null);
+          
+          setMainBanners(large);
           setSubBanners(small);
         }
 
@@ -102,57 +107,125 @@ export default function Home() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (mainBanners.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentBannerIndex((prev) => (prev + 1) % mainBanners.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [mainBanners.length]);
+
+  const currentBanner = mainBanners[currentBannerIndex];
+
   return (
     <div className="min-h-screen flex flex-col text-gray-800">
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="relative h-[60vh] flex flex-col justify-center items-center text-center -mt-20">
-          <div 
-            className="absolute inset-0 bg-cover bg-center opacity-20" 
-            style={{ 
-              backgroundImage: `url('${mainBanner?.imageUrl || "https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=2574&auto=format&fit=crop"}')` 
-            }}
-          ></div>
-          <div className="container mx-auto px-4 relative text-center">
-            <h1 className="font-bold text-gray-900 mb-4 leading-tight break-keep">
-              {mainBanner?.title ? (
-                <span className="text-2xl md:text-4xl">{mainBanner.title}</span>
-              ) : (
-                <>
-                  <span className="block text-3xl md:text-5xl mb-6">
-                    AI를 통한 쉽고 간편한 민간조사 의뢰
-                  </span>
-                  <span className="block text-2xl md:text-4xl">
-                    이제 24시간 언제든지 맞춤형 민간조사원을 매칭받고,
-                    <br className="hidden md:block" />
-                    {' '}믿을 수 있는 전문가와 일을 진행할 수 있습니다.
-                  </span>
-                </>
-              )}
-            </h1>
-            <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed break-keep">
-              AI와 초기 상담을 통해 사건을 분석하고,
-              <br className="hidden md:block" />{' '}
-              경험이 풍부한 전문 민간조사원과 매칭을 받으세요.
-              <br className="hidden md:block" />{' '}
-              유사한 사건 사례를 참고하여 더 나은 결과를 얻으실 수 있습니다.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-               <Link href={mainBanner?.linkUrl || "/simulation"} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
-                {mainBanner ? '자세히 보기' : 'AI를 통해 상담해서 사건 맡기기'}
-              </Link>
-              {!mainBanner && (
-                <>
-                  <Link href={user ? "/scenario" : "/login"} className="bg-white hover:bg-gray-200 text-blue-600 font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105 border border-blue-600">
-                    나와 유사한 사건 찾기
-                  </Link>
-                  <Link href="/investigators" className="bg-gray-900 hover:bg-black text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
-                    탐정 명단 보기
-                  </Link>
-                </>
-              )}
+        <section className="relative h-[60vh] -mt-20 overflow-hidden bg-white">
+          <AnimatePresence mode="popLayout">
+            {mainBanners.length > 0 ? (
+              <motion.div
+                key={currentBanner.id}
+                initial={{ opacity: 0, x: 100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -100 }}
+                transition={{ duration: 0.8, ease: "easeInOut" }}
+                className="absolute inset-0 flex flex-col justify-center items-center text-center"
+              >
+                <div 
+                  className="absolute inset-0 bg-cover bg-center opacity-20" 
+                  style={{ 
+                    backgroundImage: `url('${currentBanner.imageUrl}')` 
+                  }}
+                ></div>
+                <div className="container mx-auto px-4 relative text-center z-10">
+                  <h1 className="font-bold text-gray-900 mb-4 leading-tight break-keep">
+                    {currentBanner.title ? (
+                      <span className="text-2xl md:text-4xl">{currentBanner.title}</span>
+                    ) : (
+                      <>
+                        <span className="block text-3xl md:text-5xl mb-6">
+                          AI를 통한 쉽고 간편한 민간조사 의뢰
+                        </span>
+                        <span className="block text-2xl md:text-4xl">
+                          이제 24시간 언제든지 맞춤형 민간조사원을 매칭받고,
+                          <br className="hidden md:block" />
+                          {' '}믿을 수 있는 전문가와 일을 진행할 수 있습니다.
+                        </span>
+                      </>
+                    )}
+                  </h1>
+                  <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed break-keep">
+                    AI와 초기 상담을 통해 사건을 분석하고,
+                    <br className="hidden md:block" />{' '}
+                    경험이 풍부한 전문 민간조사원과 매칭을 받으세요.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Link href={currentBanner.linkUrl || "/simulation"} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
+                      {currentBanner.title ? '자세히 보기' : 'AI를 통해 상담해서 사건 맡기기'}
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="absolute inset-0 flex flex-col justify-center items-center text-center">
+                <div 
+                  className="absolute inset-0 bg-cover bg-center opacity-20" 
+                  style={{ 
+                    backgroundImage: `url('https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=2574&auto=format&fit=crop')` 
+                  }}
+                ></div>
+                <div className="container mx-auto px-4 relative text-center z-10">
+                  <h1 className="font-bold text-gray-900 mb-4 leading-tight break-keep">
+                    <span className="block text-3xl md:text-5xl mb-6">
+                      AI를 통한 쉽고 간편한 민간조사 의뢰
+                    </span>
+                    <span className="block text-2xl md:text-4xl">
+                      이제 24시간 언제든지 맞춤형 민간조사원을 매칭받고,
+                      <br className="hidden md:block" />
+                      {' '}믿을 수 있는 전문가와 일을 진행할 수 있습니다.
+                    </span>
+                  </h1>
+                  <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed break-keep">
+                    AI와 초기 상담을 통해 사건을 분석하고,
+                    <br className="hidden md:block" />{' '}
+                    경험이 풍부한 전문 민간조사원과 매칭을 받으세요.
+                    <br className="hidden md:block" />{' '}
+                    유사한 사건 사례를 참고하여 더 나은 결과를 얻으실 수 있습니다.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Link href="/simulation" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
+                      AI를 통해 상담해서 사건 맡기기
+                    </Link>
+                    <Link href={user ? "/scenario" : "/login"} className="bg-white hover:bg-gray-200 text-blue-600 font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105 border border-blue-600">
+                      나와 유사한 사건 찾기
+                    </Link>
+                    <Link href="/investigators" className="bg-gray-900 hover:bg-black text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
+                      탐정 명단 보기
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+          </AnimatePresence>
+          
+          {/* Indicator Dots */}
+          {mainBanners.length > 1 && (
+            <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center gap-2">
+              {mainBanners.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentBannerIndex(idx)}
+                  className={`h-2.5 w-2.5 rounded-full transition-all ${
+                    idx === currentBannerIndex 
+                      ? "bg-blue-600 w-8" 
+                      : "bg-gray-300 hover:bg-gray-400"
+                  }`}
+                  aria-label={`Go to slide ${idx + 1}`}
+                />
+              ))}
             </div>
-          </div>
+          )}
         </section>
 
         {/* Sub Banners */}
