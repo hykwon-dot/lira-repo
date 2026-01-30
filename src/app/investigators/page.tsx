@@ -368,7 +368,7 @@ export default function InvestigatorsPage() {
                           </Link>
                           {inv.portfolioUrl && (
                             <Link
-                              href={inv.portfolioUrl}
+                              href={inv.portfolioUrl.startsWith('http') ? inv.portfolioUrl : `https://${inv.portfolioUrl}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="lira-button lira-button--secondary justify-center"
