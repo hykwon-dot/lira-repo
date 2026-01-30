@@ -27,7 +27,34 @@ export async function GET(req: NextRequest) {
     const [investigators, total] = await Promise.all([
       prisma.investigatorProfile.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          userId: true,
+          licenseNumber: true,
+          experienceYears: true,
+          specialties: true,
+          status: true,
+          ratingAverage: true,
+          successRate: true,
+          createdAt: true,
+          updatedAt: true,
+          reviewNote: true,
+          reviewedAt: true,
+          reviewedById: true,
+          contactPhone: true,
+          agencyPhone: true,
+          serviceArea: true,
+          officeAddress: true,
+          introduction: true,
+          portfolioUrl: true,
+          businessLicenseUrl: true,
+          pledgeUrl: true,
+          termsUrl: true,
+          idCardUrl: true,
+          termsAcceptedAt: true,
+          privacyAcceptedAt: true,
+          avatarUrl: true,
+          deletedAt: true,
           user: {
             select: {
               id: true,
