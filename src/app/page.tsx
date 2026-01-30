@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState, useEffect } from 'react';
 import { useUserStore } from "@/lib/userStore";
 import { AnimatePresence, motion } from "framer-motion";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 type Banner = {
   id: number;
@@ -68,12 +69,61 @@ const testimonials = [
   }
 ];
 
+// Carousel Animation Variants
+const slideVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? "100%" : "-100%",
+    opacity: 0,
+    zIndex: 0,
+  }),
+  center: {
+    zIndex: 1,
+    x: 0,
+    opacity: 1,
+  },
+  exit: (direction: number) => ({
+    zIndex: 0,
+    x: direction < 0 ? "100%" : "-100%",
+    opacity: 0,
+  }),
+};
+
 export default function Home() {
   const user = useUserStore((state) => state.user);
   const [mainBanners, setMainBanners] = useState<Banner[]>([]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
+
   const [subBanners, setSubBanners] = useState<Banner[]>([]);
   const [awards, setAwards] = useState<Award[]>([]);
+  const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [testimonialDirection, setTestimonialDirection] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(3);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setItemsPerPage(window.innerWidth < 768 ? 1 : 3);
+    };
+    handleResize(); // Initial check
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const paginate = (newDirection: number) => {
+    setDirection(newDirection);
+    setCurrentBannerIndex((prev) => (prev + newDirection + mainBanners.length) % mainBanners.length);
+  };
+  
+  const paginateTestimonial = (newDirection: number) => {
+    setTestimonialDirection(newDirection);
+    setTestimonialIndex((prev) => {
+      const nextIndex = prev + newDirection;
+      const maxIndex = Math.ceil(testimonials.length / itemsPerPage) - 1;
+      if (nextIndex < 0) return maxIndex;
+      if (nextIndex > maxIndex) return 0;
+      return nextIndex;
+    });
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -110,27 +160,50 @@ export default function Home() {
   useEffect(() => {
     if (mainBanners.length <= 1) return;
     const interval = setInterval(() => {
-      setCurrentBannerIndex((prev) => (prev + 1) % mainBanners.length);
+      paginate(1);
     }, 5000);
     return () => clearInterval(interval);
-  }, [mainBanners.length]);
+  }, [mainBanners.length]); // Dependencies simplified to length, paginate logic inside uses function update
+
+  useEffect(() => {
+    if (testimonials.length <= itemsPerPage) return;
+    const interval = setInterval(() => {
+      paginateTestimonial(1);
+    }, 6000); // Testimonial auto slide
+    return () => clearInterval(interval);
+  }, [itemsPerPage]);
 
   const currentBanner = mainBanners[currentBannerIndex];
+
+  // Logic to slice testimonials for current view
+  const visibleTestimonials = testimonials.slice(
+      testimonialIndex * itemsPerPage, 
+      (testimonialIndex + 1) * itemsPerPage
+  );
+  // Handle edge case where last page has fewer items, maybe fill from start? 
+  // For simplicity, just show what's available. 
+  // If we want infinite loop with 3 items, the slicing needs to wrap around.
+  // Implementing simpler page-based slide.
 
   return (
     <div className="min-h-screen flex flex-col text-gray-800">
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="relative h-[60vh] -mt-20 overflow-hidden bg-white">
-          <AnimatePresence mode="popLayout">
+        <section className="relative h-[60vh] -mt-20 overflow-hidden bg-white group">
+          <AnimatePresence initial={false} custom={direction}>
             {mainBanners.length > 0 ? (
               <motion.div
-                key={currentBanner.id}
-                initial={{ opacity: 0, x: 100 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -100 }}
-                transition={{ duration: 0.8, ease: "easeInOut" }}
-                className="absolute inset-0 flex flex-col justify-center items-center text-center"
+                key={currentBannerIndex}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "tween", duration: 0.5, ease: "easeInOut" },
+                  opacity: { duration: 0.3 }
+                }}
+                className="absolute inset-0 flex flex-col justify-center items-center text-center w-full h-full"
               >
                 <div 
                   className="absolute inset-0 bg-cover bg-center opacity-20" 
@@ -209,22 +282,42 @@ export default function Home() {
             )}
           </AnimatePresence>
           
-          {/* Indicator Dots */}
+          {/* Banner Controls */}
           {mainBanners.length > 1 && (
-            <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center gap-2">
-              {mainBanners.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentBannerIndex(idx)}
-                  className={`h-2.5 w-2.5 rounded-full transition-all ${
-                    idx === currentBannerIndex 
-                      ? "bg-blue-600 w-8" 
-                      : "bg-gray-300 hover:bg-gray-400"
-                  }`}
-                  aria-label={`Go to slide ${idx + 1}`}
-                />
-              ))}
-            </div>
+            <>
+              {/* Arrows */}
+              <button
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-3 rounded-full backdrop-blur-sm transition-all z-20 hidden group-hover:block"
+                onClick={() => paginate(-1)}
+              >
+                <FiChevronLeft size={32} />
+              </button>
+              <button
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-3 rounded-full backdrop-blur-sm transition-all z-20 hidden group-hover:block"
+                onClick={() => paginate(1)}
+              >
+                <FiChevronRight size={32} />
+              </button>
+
+              {/* Indicator Dots */}
+              <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center gap-2">
+                {mainBanners.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                        setDirection(idx > currentBannerIndex ? 1 : -1);
+                        setCurrentBannerIndex(idx);
+                    }}
+                    className={`h-2.5 w-2.5 rounded-full transition-all ${
+                      idx === currentBannerIndex 
+                        ? "bg-blue-600 w-8" 
+                        : "bg-gray-300 hover:bg-gray-400"
+                    }`}
+                    aria-label={`Go to slide ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </section>
 
@@ -337,41 +430,88 @@ export default function Home() {
           </div>
         </section>
 
-        {/* What Our Users Say - Scrolling Marquee */}
-        <section className="py-20 bg-white overflow-hidden">
-          <div className="container mx-auto px-4 mb-12">
-            <h2 className="text-3xl font-bold text-center">이용자 후기</h2>
-          </div>
-          
-          <div className="w-full">
-            <div className="flex animate-scroll gap-6 w-max hover:[animation-play-state:paused] px-4">
-              {/* First Set */}
-              {testimonials.map((testimonial) => (
-                <div key={`t-original-${testimonial.id}`} className="w-[350px] md:w-[400px] bg-gray-50 p-8 rounded-lg border border-gray-200 flex-shrink-0 shadow-sm hover:shadow-md transition-shadow">
-                  <p className="text-gray-600 mb-6 leading-relaxed line-clamp-3">&ldquo;{testimonial.content}&rdquo;</p>
-                  <div className="flex items-center">
-                    <Image src={testimonial.avatar} alt={testimonial.name} width={48} height={48} className="rounded-full mr-4 border border-gray-200" />
-                    <div>
-                      <p className="font-bold text-gray-900">{testimonial.name}</p>
-                      <p className="text-sm text-gray-500">{testimonial.role}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {/* Second Set (Duplicate) */}
-              {testimonials.map((testimonial) => (
-                <div key={`t-duplicate-${testimonial.id}`} className="w-[350px] md:w-[400px] bg-gray-50 p-8 rounded-lg border border-gray-200 flex-shrink-0 shadow-sm hover:shadow-md transition-shadow">
-                  <p className="text-gray-600 mb-6 leading-relaxed line-clamp-3">&ldquo;{testimonial.content}&rdquo;</p>
-                  <div className="flex items-center">
-                    <Image src={testimonial.avatar} alt={testimonial.name} width={48} height={48} className="rounded-full mr-4 border border-gray-200" />
-                    <div>
-                      <p className="font-bold text-gray-900">{testimonial.name}</p>
-                      <p className="text-sm text-gray-500">{testimonial.role}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+        {/* What Our Users Say - Sliding Carousel */}
+        <section className="py-20 bg-white overflow-hidden relative group/testimonials">
+          <div className="container mx-auto px-4 mb-4">
+            <h2 className="text-3xl font-bold text-center mb-12">이용자 후기</h2>
+            
+            <div className="relative min-h-[450px] md:min-h-[350px] overflow-hidden">
+              <AnimatePresence initial={false} custom={testimonialDirection}>
+                <motion.div
+                  key={testimonialIndex}
+                  custom={testimonialDirection}
+                  variants={slideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{
+                    x: { type: "tween", duration: 0.5, ease: "easeInOut" },
+                    opacity: { duration: 0.3 }
+                  }}
+                  className="absolute inset-0 grid grid-cols-1 md:grid-cols-3 gap-6 w-full"
+                >
+                  {visibleTestimonials.map((testimonial) => (
+                     <div key={testimonial.id} className="bg-gray-50 p-8 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
+                        <p className="text-gray-600 mb-6 leading-relaxed flex-grow line-clamp-4">
+                          &ldquo;{testimonial.content}&rdquo;
+                        </p>
+                        <div className="flex items-center mt-auto">
+                          <Image
+                            src={testimonial.avatar}
+                            alt={testimonial.name}
+                            width={48}
+                            height={48}
+                            className="rounded-full mr-4 border border-gray-200"
+                          />
+                          <div>
+                            <p className="font-bold text-gray-900">{testimonial.name}</p>
+                            <p className="text-sm text-gray-500">{testimonial.role}</p>
+                          </div>
+                        </div>
+                     </div>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
             </div>
+
+            {/* Testimonial Controls */}
+            {testimonials.length > itemsPerPage && (
+                <>
+                    <button
+                        className="absolute top-1/2 left-2 md:left-8 z-10 p-3 rounded-full bg-white/80 text-gray-800 shadow-lg hover:bg-white transition-all transform -translate-y-1/2 opacity-0 group-hover/testimonials:opacity-100 focus:opacity-100 disabled:opacity-30"
+                        onClick={() => paginateTestimonial(-1)}
+                        aria-label="Previous testimonial"
+                    >
+                        <FiChevronLeft size={24} />
+                    </button>
+                    <button
+                        className="absolute top-1/2 right-2 md:right-8 z-10 p-3 rounded-full bg-white/80 text-gray-800 shadow-lg hover:bg-white transition-all transform -translate-y-1/2 opacity-0 group-hover/testimonials:opacity-100 focus:opacity-100 disabled:opacity-30"
+                        onClick={() => paginateTestimonial(1)}
+                        aria-label="Next testimonial"
+                    >
+                        <FiChevronRight size={24} />
+                    </button>
+                    
+                     {/* Indicators */}
+                    <div className="flex justify-center gap-2 mt-8">
+                        {Array.from({ length: Math.ceil(testimonials.length / itemsPerPage) }).map((_, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => {
+                                setTestimonialDirection(idx > testimonialIndex ? 1 : -1);
+                                setTestimonialIndex(idx);
+                            }}
+                            className={`h-2.5 w-2.5 rounded-full transition-all ${
+                                idx === testimonialIndex 
+                                ? "bg-blue-600 w-8" 
+                                : "bg-gray-300 hover:bg-gray-400"
+                            }`}
+                            aria-label={`Go to testimonial page ${idx + 1}`}
+                        />
+                        ))}
+                    </div>
+                </>
+            )}
           </div>
         </section>
 
