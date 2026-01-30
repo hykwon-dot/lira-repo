@@ -60,6 +60,9 @@ export async function GET() {
           reviewNote: true,
           createdAt: true,
           contactPhone: true,
+          businessLicenseUrl: true,
+          pledgeUrl: true,
+          termsUrl: true,
           // businessLicenseData: true, // Optimizing payload size
           // pledgeData: true,          // Optimizing payload size
           // termsData: true,           // Optimizing payload size
@@ -125,6 +128,9 @@ export async function GET() {
           reviewNote: true,
           createdAt: true,
           contactPhone: true,
+          businessLicenseUrl: true,
+          pledgeUrl: true,
+          termsUrl: true,
           // businessLicenseData: true, // Optimizing payload size
           // pledgeData: true,          // Optimizing payload size
           // termsData: true,           // Optimizing payload size

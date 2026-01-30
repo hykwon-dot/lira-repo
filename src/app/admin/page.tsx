@@ -24,9 +24,12 @@ type Investigator = {
   reviewNote: string | null;
   createdAt: string;
   contactPhone: string | null;
-  businessLicenseData: string | null;
-  pledgeData: string | null;
-  termsData: string | null;
+  businessLicenseData?: string | null;
+  businessLicenseUrl?: string | null;
+  pledgeData?: string | null;
+  pledgeUrl?: string | null;
+  termsData?: string | null;
+  termsUrl?: string | null;
   user: {
     id: number;
     name: string | null;
@@ -730,45 +733,27 @@ export default function AdminPage() {
                         </div>
 
                         <div className="flex gap-2">
-                          {inv.businessLicenseData ? (
-                            <Link
-                              href={inv.businessLicenseData}
-                              target="_blank"
-                              className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
-                            >
-                              📄 사업자등록증
-                            </Link>
-                          ) : (
-                            <span className="flex-1 cursor-not-allowed rounded-xl bg-slate-50 py-2 text-center text-xs text-slate-300">
-                              사업자등록증 미첨부
-                            </span>
-                          )}
-                          {inv.pledgeData ? (
-                            <Link
-                              href={inv.pledgeData}
-                              target="_blank"
-                              className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
-                            >
-                              📝 서약서
-                            </Link>
-                          ) : (
-                            <span className="flex-1 cursor-not-allowed rounded-xl bg-slate-50 py-2 text-center text-xs text-slate-300">
-                              서약서 미첨부
-                            </span>
-                          )}
-                          {inv.termsData ? (
-                            <Link
-                              href={inv.termsData}
-                              target="_blank"
-                              className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
-                            >
-                              📋 이용약관
-                            </Link>
-                          ) : (
-                            <span className="flex-1 cursor-not-allowed rounded-xl bg-slate-50 py-2 text-center text-xs text-slate-300">
-                              이용약관 미첨부
-                            </span>
-                          )}
+                          <Link
+                            href={inv.businessLicenseUrl || `/api/admin/investigators/${inv.id}/documents?type=businessLicense`}
+                            target="_blank"
+                            className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
+                          >
+                            📄 사업자등록증
+                          </Link>
+                          <Link
+                            href={inv.pledgeUrl || `/api/admin/investigators/${inv.id}/documents?type=pledge`}
+                            target="_blank"
+                            className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
+                          >
+                            📝 서약서
+                          </Link>
+                          <Link
+                            href={inv.termsUrl || `/api/admin/investigators/${inv.id}/documents?type=terms`}
+                            target="_blank"
+                            className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
+                          >
+                            📋 이용약관
+                          </Link>
                         </div>
 
                         {specialties.length > 0 && (
