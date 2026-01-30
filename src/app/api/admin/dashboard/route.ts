@@ -60,9 +60,9 @@ export async function GET() {
           reviewNote: true,
           createdAt: true,
           contactPhone: true,
-          businessLicenseData: true,
-          pledgeData: true,
-          termsData: true,
+          // businessLicenseData: true, // Optimizing payload size
+          // pledgeData: true,          // Optimizing payload size
+          // termsData: true,           // Optimizing payload size
         user: {
           select: {
             id: true,
@@ -125,9 +125,9 @@ export async function GET() {
           reviewNote: true,
           createdAt: true,
           contactPhone: true,
-          businessLicenseData: true,
-          pledgeData: true,
-          termsData: true,
+          // businessLicenseData: true, // Optimizing payload size
+          // pledgeData: true,          // Optimizing payload size
+          // termsData: true,           // Optimizing payload size
         user: {
           select: {
             id: true,
