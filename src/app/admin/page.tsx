@@ -119,6 +119,35 @@ type StatCard = {
   accent: string;
 };
 
+const SPECIALTY_LABELS: Record<string, string> = {
+  // 현장 조사
+  FIELD_TAIL: '미행 및 감시',
+  MISSING_PERSON: '실종/가출인 찾기',
+  LOCATE: '소재 탐지',
+  
+  // 법률/기업
+  LEGAL_EVIDENCE: '소송 증거 수집',
+  LEGAL_SUPPORT: '법적 증거 수집', // Alias
+  CORPORATE_RISK: '기업 보안/횡령',
+  INTEL_PROPERTY: '지식재산권 침해',
+  CORPORATE: '기업 내부 조사', // Alias
+  
+  // 디지털/특수
+  DIGITAL_FORENSICS: '디지털 포렌식',
+  DIGITAL_FORENSIC: '디지털 포렌식', // Alias
+  CYBER_CRIME: '사이버 범죄',
+  BUG_SWEEP: '도청/몰카 탐지',
+  
+  // 가정/개인
+  INFIDELITY: '배우자 부정행위',
+  SCHOOL_VIOLENCE: '학교 폭력',
+  STALKING: '스토킹 피해',
+  BACKGROUND_CHECK: '신원 조회', // Alias
+  FRAUD_INVESTIGATION: '보험/사기 조사', // Alias
+};
+
+const getSpecialtyLabel = (key: string) => SPECIALTY_LABELS[key] || key;
+
 const REQUEST_STATUS_LABEL: Record<RequestStatus, string> = {
   OPEN: '신규 접수',
   UNDER_REVIEW: '검토 중',
@@ -976,12 +1005,12 @@ export default function AdminPage() {
                             <div className="flex flex-wrap gap-1">
                               {specialties.map((spec) => (
                                 <span key={spec} className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] text-slate-500">
-                                  #{spec}
+                                  #{getSpecialtyLabel(spec)}
                                 </span>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400">전문 분야 미등록</span>
+                            <span className="text-xs text-slate-400">네트워크</span>
                           )}
                         </td>
                         <td className="px-4 py-4 text-sm text-slate-600">{inv.contactPhone ?? '-'}</td>
@@ -1157,7 +1186,7 @@ export default function AdminPage() {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {chipList(selectedInvestigator.specialties).map((spec) => (
                     <span key={spec} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
-                      #{spec}
+                      #{getSpecialtyLabel(spec)}
                     </span>
                   ))}
                   {chipList(selectedInvestigator.specialties).length === 0 && <span className="text-sm text-slate-400">-</span>}
@@ -1183,14 +1212,19 @@ export default function AdminPage() {
                   ].map((doc) => {
                      // Determine the href
                      let href = '#';
-                     if (doc.url) {
+
+                     // If we have an ID and a type, prefer the API route for consistent serving
+                     // This handles base64 data via API streaming, avoiding browser URL length limits or security blocks
+                     if (doc.type && selectedInvestigator.id) {
+                        href = `/api/admin/investigators/${selectedInvestigator.id}/documents?type=${doc.type}`;
+                     } else if (doc.url) {
                        href = doc.url;
                      } else if (doc.data && doc.data.startsWith('data:')) {
+                       // Fallback for immediate preview if API is not possible (e.g. preview mode without ID)
                        href = doc.data;
-                     } else if (doc.type && selectedInvestigator.id) {
-                        href = `/api/admin/investigators/${selectedInvestigator.id}/documents?type=${doc.type}`;
                      }
                      
+                     // If still just hash, and no data, skip
                      if (href === '#' && !doc.url && !doc.data) return null;
 
                      return (
