@@ -24,12 +24,19 @@ type Investigator = {
   reviewNote: string | null;
   createdAt: string;
   contactPhone: string | null;
+  agencyPhone?: string | null;
+  officeAddress?: string | null;
+  serviceArea?: string | null;
+  introduction?: string | null;
+  portfolioUrl?: string | null;
   businessLicenseData?: string | null;
   businessLicenseUrl?: string | null;
   pledgeData?: string | null;
   pledgeUrl?: string | null;
   termsData?: string | null;
   termsUrl?: string | null;
+  idCardData?: string | null;
+  idCardUrl?: string | null;
   user: {
     id: number;
     name: string | null;
@@ -167,6 +174,7 @@ export default function AdminPage() {
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [removingInvestigatorId, setRemovingInvestigatorId] = useState<number | null>(null);
   const [removingCustomerId, setRemovingCustomerId] = useState<number | null>(null);
+  const [selectedInvestigator, setSelectedInvestigator] = useState<Investigator | null>(null);
   const { user, token, setUser, logout } = useUserStore();
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
@@ -702,6 +710,12 @@ export default function AdminPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <button
+                              onClick={() => setSelectedInvestigator(inv)}
+                              className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-4 py-1.5 text-xs font-semibold text-sky-600 shadow-sm transition hover:bg-sky-100"
+                            >
+                              상세보기
+                            </button>
+                            <button
                               onClick={() => handleApproveInvestigator(inv.id)}
                               disabled={approvingId === inv.id}
                               className="inline-flex items-center rounded-full bg-sky-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-300"
@@ -1059,6 +1073,143 @@ export default function AdminPage() {
           </div>
         </section>
       </div>
+
+      {selectedInvestigator && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+             onClick={() => setSelectedInvestigator(null)}>
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
+               onClick={(e) => e.stopPropagation()}>
+            <div className="mb-6 flex items-center justify-between border-b pb-4">
+              <div>
+                <h3 className="text-xl font-bold text-slate-800">조사원 상세 정보</h3>
+                <p className="text-sm text-slate-500">가입 신청 상세 내용 확인</p>
+              </div>
+              <button
+                onClick={() => setSelectedInvestigator(null)}
+                className="rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-slate-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold uppercase text-slate-500">이름</label>
+                  <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.user.name}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase text-slate-500">이메일</label>
+                  <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.user.email}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase text-slate-500">연락처</label>
+                  <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.contactPhone || '-'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase text-slate-500">사무실 번호</label>
+                  <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.agencyPhone || '-'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase text-slate-500">자격번호</label>
+                  <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.licenseNumber || '-'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase text-slate-500">경력</label>
+                  <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.experienceYears}년</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase text-slate-500">사무실 주소</label>
+                <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.officeAddress || '-'}</p>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase text-slate-500">활동 지역</label>
+                <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.serviceArea || '-'}</p>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase text-slate-500">전문 분야</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {chipList(selectedInvestigator.specialties).map((spec) => (
+                    <span key={spec} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
+                      #{spec}
+                    </span>
+                  ))}
+                  {chipList(selectedInvestigator.specialties).length === 0 && <span className="text-sm text-slate-400">-</span>}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase text-slate-500">소개</label>
+                <div className="mt-2 rounded-xl bg-slate-50 p-4 text-sm text-slate-700 whitespace-pre-wrap">
+                  {selectedInvestigator.introduction || '소개 없음'}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase text-slate-500">증빙 자료</label>
+                <div className="mt-2 grid grid-cols-2 gap-3">
+                  {[
+                    { label: '사업자등록증', url: selectedInvestigator.businessLicenseUrl, type: 'businessLicense', data: selectedInvestigator.businessLicenseData },
+                    { label: '보안서약서', url: selectedInvestigator.pledgeUrl, type: 'pledge', data: selectedInvestigator.pledgeData },
+                    { label: '비밀유지계약서', url: selectedInvestigator.termsUrl, type: 'terms', data: selectedInvestigator.termsData },
+                    { label: '신분증 사본', url: selectedInvestigator.idCardUrl, type: 'idCard', data: selectedInvestigator.idCardData },
+                    { label: '포트폴리오', url: selectedInvestigator.portfolioUrl, type: 'portfolio', data: null },
+                  ].map((doc) => {
+                     // Determine the href
+                     let href = '#';
+                     if (doc.url) {
+                       href = doc.url;
+                     } else if (doc.data && doc.data.startsWith('data:')) {
+                       href = doc.data;
+                     } else if (doc.type && selectedInvestigator.id) {
+                        href = `/api/admin/investigators/${selectedInvestigator.id}/documents?type=${doc.type}`;
+                     }
+                     
+                     if (href === '#' && !doc.url && !doc.data) return null;
+
+                     return (
+                      <Link
+                        key={doc.label}
+                        href={href}
+                        target="_blank"
+                        className="flex items-center justify-between rounded-xl border border-slate-200 p-3 transition hover:bg-slate-50 hover:border-slate-300"
+                      >
+                        <span className="text-sm font-medium text-slate-700">{doc.label}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 text-slate-400">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                        </svg>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  onClick={() => handleRemoveInvestigator(selectedInvestigator.id)}
+                  disabled={removingInvestigatorId === selectedInvestigator.id}
+                  className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-100 disabled:opacity-50"
+                >
+                  {removingInvestigatorId === selectedInvestigator.id ? '삭제 중...' : '가입 거절'}
+                </button>
+                <button
+                  onClick={() => handleApproveInvestigator(selectedInvestigator.id)}
+                  disabled={approvingId === selectedInvestigator.id}
+                  className="rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-sky-700 disabled:opacity-50"
+                >
+                  {approvingId === selectedInvestigator.id ? '승인 중...' : '가입 승인'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

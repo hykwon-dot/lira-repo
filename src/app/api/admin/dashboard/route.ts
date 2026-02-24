@@ -60,12 +60,19 @@ export async function GET() {
           reviewNote: true,
           createdAt: true,
           contactPhone: true,
+          agencyPhone: true,
+          officeAddress: true,
+          serviceArea: true, // Add serviceArea
+          introduction: true,
+          portfolioUrl: true,
           businessLicenseUrl: true,
+          businessLicenseData: true,
           pledgeUrl: true,
+          pledgeData: true,
           termsUrl: true,
-          // businessLicenseData: true, // Optimizing payload size
-          // pledgeData: true,          // Optimizing payload size
-          // termsData: true,           // Optimizing payload size
+          termsData: true,
+          idCardUrl: true,
+          idCardData: true,
         user: {
           select: {
             id: true,
