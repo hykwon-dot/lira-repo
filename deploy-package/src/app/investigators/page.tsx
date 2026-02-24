@@ -178,7 +178,7 @@ export default function InvestigatorsPage() {
                 Investigator Directory
               </span>
               <div className="space-y-3">
-                <h1 className="text-4xl font-bold tracking-tight text-[#101828] sm:text-5xl">신뢰할 수 있는 민간조사 네트워크</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-[#101828] sm:text-4xl">신뢰할 수 있는 민간조사 네트워크</h1>
                 <p className="text-base leading-relaxed text-slate-500">
                   승인 완료된 LIRA 민간조사원의 전문 역량과 성공 사례를 한눈에 비교하고, 사건 유형에 맞는 파트너를 선택하세요. 실시간 요청과 맞춤 추천을 통해 빠르게 협업을 시작할 수 있습니다.
                 </p>
