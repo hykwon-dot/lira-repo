@@ -78,6 +78,15 @@ type CustomerSummary = {
   id: number;
   displayName: string | null;
   phone: string | null;
+  birthDate: string | null;
+  gender: string | null;
+  occupation: string | null;
+  region: string | null;
+  budgetMin: number | null;
+  budgetMax: number | null;
+  urgencyLevel: string | null;
+  marketingOptIn: boolean;
+  preferredCaseTypes: unknown;
   createdAt: string;
   user: {
     id: number;
@@ -175,6 +184,7 @@ export default function AdminPage() {
   const [removingInvestigatorId, setRemovingInvestigatorId] = useState<number | null>(null);
   const [removingCustomerId, setRemovingCustomerId] = useState<number | null>(null);
   const [selectedInvestigator, setSelectedInvestigator] = useState<Investigator | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSummary | null>(null);
   const { user, token, setUser, logout } = useUserStore();
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
@@ -953,7 +963,12 @@ export default function AdminPage() {
                     return (
                       <tr key={inv.id} className="border-t border-slate-100">
                         <td className="px-4 py-4">
-                          <div className="font-semibold text-[#1a2340]">{inv.user.name ?? '이름 미기재'}</div>
+                          <div 
+                            className="inline-block cursor-pointer font-semibold text-[#1a2340] hover:text-sky-600 hover:underline"
+                            onClick={() => setSelectedInvestigator(inv)}
+                          >
+                            {inv.user.name ?? '이름 미기재'}
+                          </div>
                           <div className="text-xs text-slate-400">{inv.user.email}</div>
                         </td>
                         <td className="px-4 py-4">
@@ -1016,7 +1031,12 @@ export default function AdminPage() {
                   {dashboard?.recentCustomers.map((customer) => (
                     <tr key={customer.id} className="border-t border-slate-100">
                       <td className="px-4 py-4">
-                        <div className="font-semibold text-[#1a2340]">{customer.displayName || customer.user.name || '이름 미기재'}</div>
+                        <div 
+                          className="inline-block cursor-pointer font-semibold text-[#1a2340] hover:text-sky-600 hover:underline"
+                          onClick={() => setSelectedCustomer(customer)}
+                        >
+                          {customer.displayName || customer.user.name || '이름 미기재'}
+                        </div>
                         <div className="text-xs text-slate-400">{customer.user.email}</div>
                       </td>
                       <td className="px-4 py-4 text-sm text-slate-600">{customer.phone ?? '-'}</td>
@@ -1204,6 +1224,114 @@ export default function AdminPage() {
                   className="rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-sky-700 disabled:opacity-50"
                 >
                   {approvingId === selectedInvestigator.id ? '승인 중...' : '가입 승인'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+             onClick={() => setSelectedCustomer(null)}>
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
+               onClick={(e) => e.stopPropagation()}>
+            <div className="mb-6 flex items-center justify-between border-b pb-4">
+              <div>
+                <h3 className="text-xl font-bold text-slate-800">고객 상세 정보</h3>
+                <p className="text-sm text-slate-500">가입 고객 상세 내용 확인</p>
+              </div>
+              <button
+                onClick={() => setSelectedCustomer(null)}
+                className="rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-slate-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold uppercase text-slate-500">이름</label>
+                  <p className="mt-1 font-medium text-slate-900">{selectedCustomer.user.name}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase text-slate-500">이메일</label>
+                  <p className="mt-1 font-medium text-slate-900">{selectedCustomer.user.email}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase text-slate-500">닉네임</label>
+                  <p className="mt-1 font-medium text-slate-900">{selectedCustomer.displayName || '-'}</p>
+                </div>
+                <div>
+                   <label className="text-xs font-semibold uppercase text-slate-500">연락처</label>
+                   <p className="mt-1 font-medium text-slate-900">{selectedCustomer.phone || '-'}</p>
+                </div>
+                <div>
+                   <label className="text-xs font-semibold uppercase text-slate-500">생년월일</label>
+                   <p className="mt-1 font-medium text-slate-900">
+                     {selectedCustomer.birthDate ? new Date(selectedCustomer.birthDate).toLocaleDateString() : '-'}
+                   </p>
+                </div>
+                <div>
+                   <label className="text-xs font-semibold uppercase text-slate-500">성별</label>
+                   <p className="mt-1 font-medium text-slate-900">{selectedCustomer.gender || '-'}</p>
+                </div>
+                <div>
+                   <label className="text-xs font-semibold uppercase text-slate-500">직업</label>
+                   <p className="mt-1 font-medium text-slate-900">{selectedCustomer.occupation || '-'}</p>
+                </div>
+                <div>
+                   <label className="text-xs font-semibold uppercase text-slate-500">지역</label>
+                   <p className="mt-1 font-medium text-slate-900">{selectedCustomer.region || '-'}</p>
+                </div>
+                <div>
+                   <label className="text-xs font-semibold uppercase text-slate-500">예산 범위</label>
+                   <p className="mt-1 font-medium text-slate-900">
+                     {typeof selectedCustomer.budgetMin === 'number' ? `${formatNumber(selectedCustomer.budgetMin)}원` : '0원'} ~ {typeof selectedCustomer.budgetMax === 'number' ? `${formatNumber(selectedCustomer.budgetMax)}원` : '무제한'}
+                   </p>
+                </div>
+                 <div>
+                   <label className="text-xs font-semibold uppercase text-slate-500">긴급도</label>
+                   <p className="mt-1 font-medium text-slate-900">{selectedCustomer.urgencyLevel || '-'}</p>
+                </div>
+                <div>
+                   <label className="text-xs font-semibold uppercase text-slate-500">마케팅 수신 동의</label>
+                   <p className="mt-1 font-medium text-slate-900">{selectedCustomer.marketingOptIn ? '동의함' : '동의 안 함'}</p>
+                </div>
+                <div>
+                   <label className="text-xs font-semibold uppercase text-slate-500">가입일</label>
+                   <p className="mt-1 font-medium text-slate-900">{new Date(selectedCustomer.createdAt).toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase text-slate-500">선호 사건 유형</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {chipList(selectedCustomer.preferredCaseTypes).map((type) => (
+                    <span key={type} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
+                      #{type}
+                    </span>
+                  ))}
+                  {chipList(selectedCustomer.preferredCaseTypes).length === 0 && <span className="text-sm text-slate-400">-</span>}
+                </div>
+              </div>
+
+               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  onClick={() => handleRemoveCustomer(selectedCustomer.id)}
+                  disabled={removingCustomerId === selectedCustomer.id}
+                  className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-100 disabled:opacity-50"
+                >
+                  {removingCustomerId === selectedCustomer.id ? '삭제 중...' : '계정 삭제'}
+                </button>
+                <button
+                  onClick={() => setSelectedCustomer(null)}
+                  className="rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-200"
+                >
+                  닫기
                 </button>
               </div>
             </div>

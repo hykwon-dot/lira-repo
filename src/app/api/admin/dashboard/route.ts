@@ -135,12 +135,19 @@ export async function GET() {
           reviewNote: true,
           createdAt: true,
           contactPhone: true,
+          agencyPhone: true,
+          officeAddress: true,
+          serviceArea: true,
+          introduction: true,
+          portfolioUrl: true,
           businessLicenseUrl: true,
+          businessLicenseData: true,
           pledgeUrl: true,
+          pledgeData: true,
           termsUrl: true,
-          // businessLicenseData: true, // Optimizing payload size
-          // pledgeData: true,          // Optimizing payload size
-          // termsData: true,           // Optimizing payload size
+          termsData: true,
+          idCardUrl: true,
+          idCardData: true,
         user: {
           select: {
             id: true,
@@ -161,6 +168,15 @@ export async function GET() {
         id: true,
         displayName: true,
         phone: true,
+        birthDate: true,
+        gender: true,
+        occupation: true,
+        region: true,
+        budgetMin: true,
+        budgetMax: true,
+        urgencyLevel: true,
+        marketingOptIn: true,
+        preferredCaseTypes: true,
         createdAt: true,
         user: {
           select: {
