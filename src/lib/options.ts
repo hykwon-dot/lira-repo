@@ -69,4 +69,5 @@ export const INVESTIGATOR_REGION_OPTIONS = [
   { value: 'GYEONGBUK', label: '경북' },
   { value: 'GYEONGNAM', label: '경남' },
   { value: 'JEJU', label: '제주' },
+  { value: 'NATIONWIDE', label: '전국' },
 ];
