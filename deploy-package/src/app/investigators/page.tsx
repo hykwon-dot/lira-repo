@@ -5,6 +5,7 @@ import Link from "next/link";
 import { InvestigatorStatus } from "@prisma/client";
 import { Star } from "lucide-react";
 import { useEffect, useState } from "react";
+import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS } from "@/lib/options";
 
 type InvestigatorRecord = {
   id: number;
@@ -71,20 +72,44 @@ function getInitials(name: string | null | undefined) {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
+const specialtyMap = new Map<string, string>();
+INVESTIGATOR_SPECIALTY_GROUPS.forEach(group => {
+  group.options.forEach(opt => {
+    specialtyMap.set(opt.value, opt.label);
+  });
+});
+
+const regionMap = new Map<string, string>();
+INVESTIGATOR_REGION_OPTIONS.forEach(opt => {
+  regionMap.set(opt.value, opt.label);
+});
+
+function translateRegion(regionString: string | null): string {
+  if (!regionString) return "정보 없음";
+  return regionString.split(',').map(r => {
+    const trimmed = r.trim();
+    return regionMap.get(trimmed) || trimmed;
+  }).join(', ');
+}
+
 function formatSpecialties(specialties: unknown): string[] {
   if (Array.isArray(specialties)) {
     return specialties.map((item) => {
-      if (typeof item === "string") return item;
-      if (item && typeof item === "object" && "label" in item) {
-        return String((item as Record<string, unknown>).label ?? "");
+      let val = "";
+      if (typeof item === "string") val = item;
+      else if (item && typeof item === "object" && "label" in item) {
+        val = String((item as Record<string, unknown>).label ?? "");
+      } else {
+        val = JSON.stringify(item);
       }
-      return JSON.stringify(item);
+      return specialtyMap.get(val) || val;
     });
   }
   if (specialties && typeof specialties === "object") {
-    return Object.values(specialties as Record<string, unknown>).map((value) =>
-      typeof value === "string" ? value : JSON.stringify(value)
-    );
+    return Object.values(specialties as Record<string, unknown>).map((value) => {
+      const val = typeof value === "string" ? value : JSON.stringify(value);
+      return specialtyMap.get(val) || val;
+    });
   }
   return [];
 }
@@ -334,7 +359,7 @@ export default function InvestigatorsPage() {
                         <div className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
                           <dt className="text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-400">활동 지역</dt>
                           <dd className="mt-2 text-sm font-semibold text-[#101828]">
-                            {inv.serviceArea ?? "정보 없음"}
+                            {translateRegion(inv.serviceArea)}
                           </dd>
                         </div>
                       </dl>

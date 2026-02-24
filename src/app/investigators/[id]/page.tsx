@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Star, MapPin, Award, CheckCircle2, MessageCircle } from "lucide-react";
+import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS } from "@/lib/options";
 
 async function getInvestigator(id: string) {
   const prisma = await getPrismaClient();
@@ -32,15 +33,27 @@ async function getInvestigator(id: string) {
   });
 }
 
+const specialtyMap = new Map<string, string>();
+INVESTIGATOR_SPECIALTY_GROUPS.forEach(group => {
+  group.options.forEach(opt => {
+    specialtyMap.set(opt.value, opt.label);
+  });
+});
+
+const regionMap = new Map<string, string>();
+INVESTIGATOR_REGION_OPTIONS.forEach(opt => {
+  regionMap.set(opt.value, opt.label);
+});
+
+function translateRegion(regionString: string | null): string {
+  if (!regionString) return "정보 없음";
+  return regionString.split(',').map(r => {
+    const trimmed = r.trim();
+    return regionMap.get(trimmed) || trimmed;
+  }).join(', ');
+}
+
 function formatSpecialties(specialties: unknown): string[] {
-    const SPECIALTY_MAPPING: Record<string, string> = {
-        'INFIDELITY': '배우자/가정 이슈',
-        'MISSING_PERSON': '실종 및 추적',
-        'CORPORATE': '기업 내부 조사',
-        'DIGITAL_FORENSICS': '디지털 포렌식',
-        'BACKGROUND_CHECK': '신원 조회',
-    };
-  
     let items: string[] = [];
     if (Array.isArray(specialties)) {
       items = specialties.map((item) => {
@@ -56,7 +69,7 @@ function formatSpecialties(specialties: unknown): string[] {
       );
     }
     
-    return items.map(item => SPECIALTY_MAPPING[item] || item);
+    return items.map(item => specialtyMap.get(item) || item);
 }
 
 export default async function InvestigatorDetailPage({ params }: { params: { id: string } }) {
@@ -114,7 +127,7 @@ export default async function InvestigatorDetailPage({ params }: { params: { id:
                         <div className="flex flex-wrap gap-4 text-sm text-slate-600">
                              <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
                                  <MapPin className="w-4 h-4 text-slate-400" />
-                                 <span>{investigator.serviceArea || "활동 지역 미정"}</span>
+                                 <span>{translateRegion(investigator.serviceArea)}</span>
                              </div>
                              <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
                                  <Award className="w-4 h-4 text-slate-400" />
