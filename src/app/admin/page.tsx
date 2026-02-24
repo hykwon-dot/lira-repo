@@ -6,6 +6,7 @@ import ScenarioAdmin from './ScenarioAdmin';
 import AdminFeedback from './AdminFeedback';
 import Image from 'next/image';
 import Link from 'next/link';
+import { INVESTIGATOR_REGION_OPTIONS } from '@/lib/options';
 
 type RequestStatus =
   | 'OPEN'
@@ -147,6 +148,11 @@ const SPECIALTY_LABELS: Record<string, string> = {
 };
 
 const getSpecialtyLabel = (key: string) => SPECIALTY_LABELS[key] || key;
+
+const getRegionLabel = (key: string) => {
+  const option = INVESTIGATOR_REGION_OPTIONS.find((opt) => opt.value === key);
+  return option ? option.label : key;
+};
 
 const REQUEST_STATUS_LABEL: Record<RequestStatus, string> = {
   OPEN: '신규 접수',
@@ -1178,7 +1184,7 @@ export default function AdminPage() {
 
               <div>
                 <label className="text-xs font-semibold uppercase text-slate-500">활동 지역</label>
-                <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.serviceArea || '-'}</p>
+                <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.serviceArea ? getRegionLabel(selectedInvestigator.serviceArea) : '-'}</p>
               </div>
 
               <div>
@@ -1210,12 +1216,16 @@ export default function AdminPage() {
                     { label: '신분증 사본', url: selectedInvestigator.idCardUrl, type: 'idCard', data: selectedInvestigator.idCardData },
                     { label: '포트폴리오', url: selectedInvestigator.portfolioUrl, type: 'portfolio', data: null },
                   ].map((doc) => {
+                     // Determine if we have any source
+                     const hasSource = !!(doc.url || doc.data);
+                     
                      // Determine the href
                      let href = '#';
 
                      // If we have an ID and a type, prefer the API route for consistent serving
-                     // This handles base64 data via API streaming, avoiding browser URL length limits or security blocks
-                     if (doc.type && selectedInvestigator.id) {
+                     // especially if there IS a source (url OR data)
+                     // If no source, we keep href '#' and disable the link
+                     if (hasSource && doc.type && selectedInvestigator.id) {
                         href = `/api/admin/investigators/${selectedInvestigator.id}/documents?type=${doc.type}`;
                      } else if (doc.url) {
                        href = doc.url;
@@ -1224,20 +1234,29 @@ export default function AdminPage() {
                        href = doc.data;
                      }
                      
-                     // If still just hash, and no data, skip
-                     if (href === '#' && !doc.url && !doc.data) return null;
-
                      return (
                       <Link
                         key={doc.label}
                         href={href}
-                        target="_blank"
-                        className="flex items-center justify-between rounded-xl border border-slate-200 p-3 transition hover:bg-slate-50 hover:border-slate-300"
+                        target={hasSource ? "_blank" : undefined}
+                        className={`flex items-center justify-between rounded-xl border p-3 transition ${
+                          hasSource 
+                            ? 'border-slate-200 hover:bg-slate-50 hover:border-slate-300 cursor-pointer' 
+                            : 'border-slate-100 bg-slate-50 cursor-not-allowed opacity-60'
+                        }`}
+                        onClick={(e) => !hasSource && e.preventDefault()}
                       >
-                        <span className="text-sm font-medium text-slate-700">{doc.label}</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 text-slate-400">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                        </svg>
+                        <span className="text-sm font-medium text-slate-700">
+                          {doc.label}
+                          {!hasSource && <span className="ml-2 text-xs text-rose-500 font-normal">(미제출)</span>}
+                        </span>
+                        {hasSource ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 text-slate-400">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                          </svg>
+                        ) : (
+                          <span className="text-xs text-slate-400">X</span>
+                        )}
                       </Link>
                     );
                   })}
