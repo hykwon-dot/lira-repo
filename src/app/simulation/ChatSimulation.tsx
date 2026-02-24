@@ -813,18 +813,6 @@ export const ChatSimulation = () => {
 
   const handleSendMessage = useCallback(
     async (rawInput: string) => {
-      // 2주 만료 체크 - AI 대화 기능 비활성화
-      const buildTimestamp = process.env.NEXT_PUBLIC_BUILD_TIME || '2025-12-11T00:00:00+09:00';
-      const buildDate = new Date(buildTimestamp);
-      const expiryDate = new Date(buildDate);
-      expiryDate.setDate(expiryDate.getDate() + 14);
-      const now = new Date();
-      
-      if (now > expiryDate) {
-        // 만료됨 - 조용히 에러 발생
-        throw new Error('Service expired');
-      }
-
       const content = rawInput.trim();
       if ((!content && !selectedFile) || isAssistantThinking) return;
 
