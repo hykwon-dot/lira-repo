@@ -19,6 +19,32 @@ import {
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import type { AiRealtimeInsights } from "@/lib/ai/types";
+import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS, INVESTIGATOR_SPECIALTIES } from "@/lib/options";
+
+// --- Translation Helpers ---
+const specialtyMap = new Map<string, string>();
+INVESTIGATOR_SPECIALTY_GROUPS.forEach(group => {
+  group.options.forEach(opt => {
+    specialtyMap.set(opt.value, opt.label);
+  });
+});
+INVESTIGATOR_SPECIALTIES.forEach(opt => {
+  if (!specialtyMap.has(opt.value)) {
+    specialtyMap.set(opt.value, opt.label);
+  }
+});
+
+const regionMap = new Map<string, string>();
+INVESTIGATOR_REGION_OPTIONS.forEach(opt => {
+  regionMap.set(opt.value, opt.label);
+});
+regionMap.set("JEONB", "전북");
+regionMap.set("JB", "전북");
+
+function translateCode(code: string): string {
+    return specialtyMap.get(code) || regionMap.get(code) || code;
+}
+// ---------------------------
 
 interface AIInsightsPanelProps {
   insights: AiRealtimeInsights | null;
@@ -176,7 +202,7 @@ export function AIInsightsPanel({
                                 <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-50">
                                     {item.relatedSignals.map(sig => (
                                         <span key={sig} className="inline-flex items-center bg-slate-50 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-500">
-                                            #{sig}
+                                            #{translateCode(sig)}
                                         </span>
                                     ))}
                                 </div>

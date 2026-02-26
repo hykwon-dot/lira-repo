@@ -16,6 +16,36 @@ import {
   FiCompass,
   FiX,
 } from "react-icons/fi";
+import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS, INVESTIGATOR_SPECIALTIES } from "@/lib/options";
+
+// --- Translation Helpers ---
+const specialtyMap = new Map<string, string>();
+INVESTIGATOR_SPECIALTY_GROUPS.forEach(group => {
+  group.options.forEach(opt => {
+    specialtyMap.set(opt.value, opt.label);
+  });
+});
+INVESTIGATOR_SPECIALTIES.forEach(opt => {
+  if (!specialtyMap.has(opt.value)) {
+    specialtyMap.set(opt.value, opt.label);
+  }
+});
+
+const regionMap = new Map<string, string>();
+INVESTIGATOR_REGION_OPTIONS.forEach(opt => {
+  regionMap.set(opt.value, opt.label);
+});
+regionMap.set("JEONB", "전북");
+regionMap.set("JB", "전북");
+
+function translateRegion(regionString: string | null): string {
+  if (!regionString) return "";
+  return regionString.split(',').map(r => {
+    const trimmed = r.trim();
+    return regionMap.get(trimmed) || trimmed;
+  }).join(', ');
+}
+// ---------------------------
 
 export interface InvestigatorRecommendation {
   id: number;
@@ -269,7 +299,7 @@ export const InvestigatorRecommendationsCard = ({
                   {rec.serviceArea ? (
                     <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
                       <FiMapPin className="h-3 w-3" />
-                      {rec.serviceArea}
+                      {translateRegion(rec.serviceArea)}
                     </span>
                   ) : null}
                   {topSpecialties.map((specialty) => (
@@ -277,7 +307,7 @@ export const InvestigatorRecommendationsCard = ({
                       key={`${rec.id}-${specialty}`}
                       className="inline-flex items-center gap-1 rounded-full border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-indigo-600"
                     >
-                      #{specialty}
+                      #{specialtyMap.get(specialty) || specialty}
                     </span>
                   ))}
                   {moreSpecialtyCount > 0 ? (
