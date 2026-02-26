@@ -7,6 +7,7 @@ import { CASE_STATUS_META, CaseStatusKey } from "@/lib/investigationWorkflow";
 import { extractTimelinePayloadText, getTimelineMeta } from "@/lib/timelineMeta";
 import { useUserStore } from "@/lib/userStore";
 import { Star } from "lucide-react";
+import { translateCode, translateList } from "@/lib/translationHelper";
 
 interface TimelineEntry {
   id: number;
@@ -78,26 +79,22 @@ const formatTime = (iso: string) => {
 };
 
 const toSpecialtyList = (value: unknown): string[] => {
+  let items: string[] = [];
   if (Array.isArray(value)) {
-    return value.map((item) => {
+    items = value.map((item) => {
       if (typeof item === "string") return item;
       if (item && typeof item === "object") {
-        if ("label" in item) {
-          return String((item as Record<string, unknown>).label ?? "");
-        }
-        if ("value" in item) {
-          return String((item as Record<string, unknown>).value ?? "");
-        }
+         if ("value" in item) return String((item as Record<string, unknown>).value ?? "");
+         if ("label" in item) return String((item as Record<string, unknown>).label ?? "");
       }
       return JSON.stringify(item);
     });
-  }
-  if (value && typeof value === "object") {
-    return Object.values(value as Record<string, unknown>).map((item) =>
+  } else if (value && typeof value === "object") {
+    items = Object.values(value as Record<string, unknown>).map((item) =>
       typeof item === "string" ? item : JSON.stringify(item),
     );
   }
-  return [];
+  return items.map(item => translateCode(item));
 };
 
 export default function InvestigationRequestDetailPage() {
@@ -380,7 +377,7 @@ export default function InvestigationRequestDetailPage() {
                       <p className="text-base font-semibold text-slate-800">{request.investigator.user.name}</p>
                       <p>{request.investigator.user.email}</p>
                       {request.investigator.contactPhone && <p>☎ {request.investigator.contactPhone}</p>}
-                      {request.investigator.serviceArea && <p>활동 지역: {request.investigator.serviceArea}</p>}
+                      {request.investigator.serviceArea && <p>활동 지역: {translateList(request.investigator.serviceArea)}</p>}
                       <div className="mt-3">
                         <p className="text-xs font-semibold text-slate-500">전문 분야</p>
                         <div className="mt-2 flex flex-wrap gap-2">

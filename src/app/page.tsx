@@ -25,49 +25,19 @@ type Award = {
   date: string;
 };
 
+type Testimonial = {
+  id: number;
+  name: string;
+  role: string | null;
+  content: string;
+  avatarUrl: string | null;
+};
+
 const CustomArrow = () => (
   <svg width="50" height="30" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M0 35 H60 V15 L100 50 L60 85 V65 H0 Z" fill="#4F81BD" stroke="#385D8A" strokeWidth="3"/>
   </svg>
 );
-
-const testimonials = [
-  {
-    id: 1,
-    name: "이서연",
-    role: "개인 의뢰인",
-    content: "LIRA의 AI 상담을 통해 복잡한 사건을 명확히 정리할 수 있었고, 매칭된 전문가의 도움으로 만족스러운 결과를 얻었습니다.",
-    avatar: "https://i.pravatar.cc/150?u=sarah"
-  },
-  {
-    id: 2,
-    name: "김민수",
-    role: "기업 담당자",
-    content: "24시간 언제든지 상담받을 수 있어서 편리했고, 전문가의 체계적인 조사로 문제를 해결할 수 있었습니다.",
-    avatar: "https://i.pravatar.cc/150?u=david"
-  },
-  {
-    id: 3,
-    name: "박지영",
-    role: "법무팀 팀장",
-    content: "유사한 사건 사례를 참고할 수 있어서 도움이 되었고, 전문가의 경험과 노하우가 문제 해결에 큰 도움이 되었습니다.",
-    avatar: "https://i.pravatar.cc/150?u=emily"
-  },
-  {
-    id: 4,
-    name: "최준호",
-    role: "스타트업 CEO",
-    content: "기업 리스크 관리를 위해 의뢰했는데, 보안 유지와 신속한 일처리에 매우 감명받았습니다. 앞으로도 계속 이용할 예정입니다.",
-    avatar: "https://i.pravatar.cc/150?u=junho"
-  },
-  {
-    id: 5,
-    name: "정하은",
-    role: "프리랜서",
-    content: "처음 이용해보는 서비스라 걱정이 많았는데, 매니저님의 친절한 안내 덕분에 안심하고 진행할 수 있었습니다.",
-    avatar: "https://i.pravatar.cc/150?u=haeun"
-  }
-];
 
 // Carousel Animation Variants
 const slideVariants = {
@@ -96,13 +66,22 @@ export default function Home() {
 
   const [subBanners, setSubBanners] = useState<Banner[]>([]);
   const [awards, setAwards] = useState<Award[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [testimonialIndex, setTestimonialIndex] = useState(0);
   const [testimonialDirection, setTestimonialDirection] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(3);
+  const [itemsPerPage, setItemsPerPage] = useState(4);
+  const [selectedTestimonial, setSelectedTestimonial] = useState<Testimonial | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
-      setItemsPerPage(window.innerWidth < 768 ? 1 : 3);
+      const width = window.innerWidth;
+      if (width < 640) {
+        setItemsPerPage(1);
+      } else if (width < 1024) {
+        setItemsPerPage(2);
+      } else {
+        setItemsPerPage(4);
+      }
     };
     handleResize(); // Initial check
     window.addEventListener('resize', handleResize);
@@ -128,13 +107,15 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [bannersRes, awardsRes] = await Promise.all([
+        const [bannersRes, awardsRes, testimonialsRes] = await Promise.all([
           fetch('/api/banners'),
-          fetch('/api/awards')
+          fetch('/api/awards'),
+          fetch('/api/testimonials'),
         ]);
         
         const bannersData = await bannersRes.json();
         const awardsData = await awardsRes.json();
+        const testimonialsData = await testimonialsRes.json().catch(() => ({}));
 
         if (bannersData.banners) {
           const large = bannersData.banners
@@ -148,6 +129,10 @@ export default function Home() {
 
         if (awardsData.awards) {
           setAwards(awardsData.awards);
+        }
+
+        if (testimonialsData.testimonials) {
+          setTestimonials(testimonialsData.testimonials);
         }
       } catch (error) {
         console.error('Failed to fetch home data', error);
@@ -171,14 +156,14 @@ export default function Home() {
       paginateTestimonial(1);
     }, 6000); // Testimonial auto slide
     return () => clearInterval(interval);
-  }, [itemsPerPage]);
+  }, [itemsPerPage, testimonials.length]);
 
   const currentBanner = mainBanners[currentBannerIndex];
 
   // Logic to slice testimonials for current view
   const visibleTestimonials = testimonials.slice(
-      testimonialIndex * itemsPerPage, 
-      (testimonialIndex + 1) * itemsPerPage
+    testimonialIndex * itemsPerPage,
+    (testimonialIndex + 1) * itemsPerPage
   );
   // Handle edge case where last page has fewer items, maybe fill from start? 
   // For simplicity, just show what's available. 
@@ -435,82 +420,105 @@ export default function Home() {
           <div className="container mx-auto px-4 mb-4">
             <h2 className="text-3xl font-bold text-center mb-12">이용자 후기</h2>
             
-            <div className="relative min-h-[450px] md:min-h-[350px] overflow-hidden">
-              <AnimatePresence initial={false} custom={testimonialDirection}>
-                <motion.div
-                  key={testimonialIndex}
-                  custom={testimonialDirection}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{
-                    x: { type: "tween", duration: 0.5, ease: "easeInOut" },
-                    opacity: { duration: 0.3 }
-                  }}
-                  className="absolute inset-0 grid grid-cols-1 md:grid-cols-3 gap-6 w-full"
-                >
-                  {visibleTestimonials.map((testimonial) => (
-                     <div key={testimonial.id} className="bg-gray-50 p-8 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
-                        <p className="text-gray-600 mb-6 leading-relaxed flex-grow line-clamp-4">
-                          &ldquo;{testimonial.content}&rdquo;
-                        </p>
-                        <div className="flex items-center mt-auto">
-                          <Image
-                            src={testimonial.avatar}
-                            alt={testimonial.name}
-                            width={48}
-                            height={48}
-                            className="rounded-full mr-4 border border-gray-200"
-                          />
-                          <div>
-                            <p className="font-bold text-gray-900">{testimonial.name}</p>
-                            <p className="text-sm text-gray-500">{testimonial.role}</p>
+            {testimonials.length === 0 ? (
+              <p className="text-center text-sm text-gray-500">등록된 이용자 후기가 없습니다.</p>
+            ) : (
+              <>
+                <div className="relative min-h-[360px] md:min-h-[300px] overflow-hidden">
+                  <AnimatePresence initial={false} custom={testimonialDirection}>
+                    <motion.div
+                      key={testimonialIndex}
+                      custom={testimonialDirection}
+                      variants={slideVariants}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={{
+                        x: { type: "tween", duration: 0.5, ease: "easeInOut" },
+                        opacity: { duration: 0.3 }
+                      }}
+                      className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full"
+                    >
+                      {visibleTestimonials.map((testimonial) => {
+                        const avatarSrc =
+                          testimonial.avatarUrl ||
+                          `https://i.pravatar.cc/150?u=${encodeURIComponent(testimonial.name)}`;
+                        return (
+                          <div
+                            key={testimonial.id}
+                            className="bg-gray-50 p-5 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col"
+                          >
+                            <p className="text-gray-600 mb-4 leading-relaxed flex-grow line-clamp-5">
+                              &ldquo;{testimonial.content}&rdquo;
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTestimonial(testimonial)}
+                              className="self-start text-xs text-blue-600 hover:text-blue-800 mb-3"
+                            >
+                              전체 보기
+                            </button>
+                            <div className="flex items-center mt-auto">
+                              <Image
+                                src={avatarSrc}
+                                alt={testimonial.name}
+                                width={44}
+                                height={44}
+                                className="rounded-full mr-3 border border-gray-200 object-cover"
+                              />
+                              <div>
+                                <p className="font-bold text-gray-900 text-sm">{testimonial.name}</p>
+                                {testimonial.role && (
+                                  <p className="text-xs text-gray-500">{testimonial.role}</p>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                     </div>
-                  ))}
-                </motion.div>
-              </AnimatePresence>
-            </div>
+                        );
+                      })}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
 
-            {/* Testimonial Controls */}
-            {testimonials.length > itemsPerPage && (
-                <>
+                {/* Testimonial Controls */}
+                {testimonials.length > itemsPerPage && (
+                  <>
                     <button
-                        className="absolute top-1/2 left-2 md:left-8 z-10 p-3 rounded-full bg-white/80 text-gray-800 shadow-lg hover:bg-white transition-all transform -translate-y-1/2 opacity-0 group-hover/testimonials:opacity-100 focus:opacity-100 disabled:opacity-30"
-                        onClick={() => paginateTestimonial(-1)}
-                        aria-label="Previous testimonial"
+                      className="absolute top-1/2 left-2 md:left-8 z-10 p-3 rounded-full bg-white/80 text-gray-800 shadow-lg hover:bg-white transition-all transform -translate-y-1/2 opacity-0 group-hover/testimonials:opacity-100 focus:opacity-100 disabled:opacity-30"
+                      onClick={() => paginateTestimonial(-1)}
+                      aria-label="Previous testimonial"
                     >
-                        <FiChevronLeft size={24} />
+                      <FiChevronLeft size={24} />
                     </button>
                     <button
-                        className="absolute top-1/2 right-2 md:right-8 z-10 p-3 rounded-full bg-white/80 text-gray-800 shadow-lg hover:bg-white transition-all transform -translate-y-1/2 opacity-0 group-hover/testimonials:opacity-100 focus:opacity-100 disabled:opacity-30"
-                        onClick={() => paginateTestimonial(1)}
-                        aria-label="Next testimonial"
+                      className="absolute top-1/2 right-2 md:right-8 z-10 p-3 rounded-full bg-white/80 text-gray-800 shadow-lg hover:bg-white transition-all transform -translate-y-1/2 opacity-0 group-hover/testimonials:opacity-100 focus:opacity-100 disabled:opacity-30"
+                      onClick={() => paginateTestimonial(1)}
+                      aria-label="Next testimonial"
                     >
-                        <FiChevronRight size={24} />
+                      <FiChevronRight size={24} />
                     </button>
-                    
-                     {/* Indicators */}
+
+                    {/* Indicators */}
                     <div className="flex justify-center gap-2 mt-8">
-                        {Array.from({ length: Math.ceil(testimonials.length / itemsPerPage) }).map((_, idx) => (
+                      {Array.from({ length: Math.ceil(testimonials.length / itemsPerPage) }).map((_, idx) => (
                         <button
-                            key={idx}
-                            onClick={() => {
-                                setTestimonialDirection(idx > testimonialIndex ? 1 : -1);
-                                setTestimonialIndex(idx);
-                            }}
-                            className={`h-2.5 w-2.5 rounded-full transition-all ${
-                                idx === testimonialIndex 
-                                ? "bg-blue-600 w-8" 
-                                : "bg-gray-300 hover:bg-gray-400"
-                            }`}
-                            aria-label={`Go to testimonial page ${idx + 1}`}
+                          key={idx}
+                          onClick={() => {
+                            setTestimonialDirection(idx > testimonialIndex ? 1 : -1);
+                            setTestimonialIndex(idx);
+                          }}
+                          className={`h-2.5 w-2.5 rounded-full transition-all ${
+                            idx === testimonialIndex
+                              ? "bg-blue-600 w-8"
+                              : "bg-gray-300 hover:bg-gray-400"
+                          }`}
+                          aria-label={`Go to testimonial page ${idx + 1}`}
                         />
-                        ))}
+                      ))}
                     </div>
-                </>
+                  </>
+                )}
+              </>
             )}
           </div>
         </section>
@@ -548,6 +556,48 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      {/* Testimonial Full View Modal */}
+      <AnimatePresence>
+        {selectedTestimonial && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white max-w-xl w-full mx-4 rounded-lg shadow-xl p-6 relative"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "tween", duration: 0.2 }}
+            >
+              <button
+                type="button"
+                onClick={() => setSelectedTestimonial(null)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-sm"
+              >
+                닫기
+              </button>
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 rounded-full bg-gray-200 mr-3 flex items-center justify-center text-xs font-semibold text-gray-600">
+                  {selectedTestimonial.name.charAt(0)}
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 text-sm">{selectedTestimonial.name}</p>
+                  {selectedTestimonial.role && (
+                    <p className="text-xs text-gray-500">{selectedTestimonial.role}</p>
+                  )}
+                </div>
+              </div>
+              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                {selectedTestimonial.content}
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

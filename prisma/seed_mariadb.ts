@@ -200,6 +200,63 @@ async function main() {
     await prisma.scenario.create({ data: s });
   }
 
+  // 기본 이용자 후기 (조사 업무 관련)
+  const testimonialSeeds = [
+    {
+      name: '법무법인 J&K 실무팀장',
+      role: '기업 내부조사 의뢰인',
+      content:
+        '지속적으로 발생하던 자금 누수가 어디에서 시작됐는지 전혀 감을 잡지 못하고 있었는데, LIRA 조사팀에서 ERP 로그와 법인카드 사용 내역을 정밀 분석해 횡령 구조를 단계별로 정리해 주었습니다. 덕분에 이사회 보고와 형사 고소를 한 번에 정리할 수 있었고, 실제로 은닉된 자산을 환수하는 데까지 이어졌습니다.',
+      avatarUrl: null,
+      isVisible: true,
+      order: 1,
+    },
+    {
+      name: 'A전자 정보보안팀장',
+      role: '기술 유출 사건 담당자',
+      content:
+        '신제품 설계도 일부가 외부로 빠져나간 정황만 있을 뿐, 내부에서는 정확한 유출 경로를 특정하지 못하고 있었습니다. LIRA는 보안 로그와 실제 동선, 경쟁사 접촉 정황까지 종합해 유출 루트를 시각화해 주었고, 수사기관과 공조해 증거를 확보하는 과정도 끝까지 함께 해 주었습니다. 단순 자문이 아니라 실무를 이해하는 파트너라는 느낌이었습니다.',
+      avatarUrl: null,
+      isVisible: true,
+      order: 2,
+    },
+    {
+      name: '스타트업 공동창업자 B',
+      role: '공동창업자 배임 의심 사건',
+      content:
+        '공동창업자의 자금 전용과 경쟁사와의 이중 계약 의혹으로 팀이 거의 해체 직전이었습니다. LIRA의 조사원 분들이 투자계약서, 정관, 실제 자금 흐름을 하나씩 짚어 주셔서 무엇을 근거로 어떤 조치를 해야 하는지 명확해졌습니다. 감정적으로만 소송을 고민하던 단계에서, 객관적인 자료를 기반으로 협상 전략을 세울 수 있었습니다.',
+      avatarUrl: null,
+      isVisible: true,
+      order: 3,
+    },
+    {
+      name: '김OO',
+      role: '배우자 외도 증거 수집 의뢰인',
+      content:
+        '혼자 추측만 반복하다가 심리적으로 한계에 다다랐을 때 LIRA를 찾았습니다. 조사 과정에서 법적으로 허용되는 선을 명확히 설명해 주셨고, 실제로 법정에서 활용 가능한 수준의 자료만 선별해서 채증해 주셔서 이혼 소송을 준비하는 데 큰 도움이 되었습니다. 조사 중에도 진행 상황을 단계별로 공유해 주셔서 불안감이 훨씬 줄었습니다.',
+      avatarUrl: null,
+      isVisible: true,
+      order: 4,
+    },
+    {
+      name: '중견기업 인사팀 C',
+      role: '입사 예정자 배경조사 의뢰',
+      content:
+        '임원급 채용 과정에서 제출된 경력과 실제 이력이 맞지 않는 정황이 있어 LIRA에 배경조사를 의뢰했습니다. 단순 이력 검증을 넘어, 과거 재직 기업에서의 분쟁 이력과 평판, 실제 프로젝트 참여 정도까지 정리된 리포트를 받아볼 수 있었고, 덕분에 큰 리스크를 사전에 피할 수 있었습니다.',
+      avatarUrl: null,
+      isVisible: true,
+      order: 5,
+    },
+  ];
+
+  for (const t of testimonialSeeds) {
+    await (prisma as any).testimonial.upsert({
+      where: { id: 0 },
+      update: {},
+      create: t,
+    });
+  }
+
   // --- Success Cases Generator (Massive Data Seeding - Enhanced V2) ---
   console.log('[MariaDB Seed] Generating Success Scenarios (Detailed V2)...');
   

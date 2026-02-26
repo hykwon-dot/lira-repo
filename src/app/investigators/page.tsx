@@ -7,7 +7,8 @@ import { Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS, INVESTIGATOR_SPECIALTIES } from "@/lib/options";
 import InvestigatorDetailModal from "./InvestigatorDetailModal";
-import { createPortal } from "react-dom"; // Actually, let's just use createPortal inside the component if possible, or use standard modal logic.
+import { createPortal } from "react-dom";
+import { translateCode, translateList } from "@/lib/translationHelper";
 
 type InvestigatorRecord = {
   id: number;
@@ -74,53 +75,38 @@ function getInitials(name: string | null | undefined) {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
-const specialtyMap = new Map<string, string>();
-INVESTIGATOR_SPECIALTY_GROUPS.forEach(group => {
-  group.options.forEach(opt => {
-    specialtyMap.set(opt.value, opt.label);
-  });
-});
-INVESTIGATOR_SPECIALTIES.forEach(opt => {
-  if (!specialtyMap.has(opt.value)) {
-    specialtyMap.set(opt.value, opt.label);
-  }
-});
-
-const regionMap = new Map<string, string>();
-INVESTIGATOR_REGION_OPTIONS.forEach(opt => {
-  regionMap.set(opt.value, opt.label);
-});
-regionMap.set("JEONB", "전북");
-regionMap.set("JB", "전북");
+// Replaced local maps with shared translationHelper usage
+// formatSpecialties and translateRegion are kept but updated to use shared helpers.
 
 function translateRegion(regionString: string | null): string {
   if (!regionString) return "정보 없음";
-  return regionString.split(',').map(r => {
-    const trimmed = r.trim();
-    return regionMap.get(trimmed) || trimmed;
-  }).join(', ');
+  // Use translateList from helper
+  return translateList(regionString);
 }
 
 function formatSpecialties(specialties: unknown): string[] {
+  let items: string[] = [];
   if (Array.isArray(specialties)) {
-    return specialties.map((item) => {
+    items = specialties.map((item) => {
       let val = "";
       if (typeof item === "string") val = item;
-      else if (item && typeof item === "object" && "label" in item) {
-        val = String((item as Record<string, unknown>).label ?? "");
+      else if (item && typeof item === "object") {
+         // Prefer value for translation lookup, fallback to label
+         if ("value" in item) val = String((item as Record<string, unknown>).value ?? "");
+         else if ("label" in item) val = String((item as Record<string, unknown>).label ?? "");
+         else val = JSON.stringify(item);
       } else {
         val = JSON.stringify(item);
       }
-      return specialtyMap.get(val) || val;
+      return val;
     });
+  } else if (specialties && typeof specialties === "object") {
+    items = Object.values(specialties as Record<string, unknown>).map((value) =>
+      typeof value === "string" ? value : JSON.stringify(value)
+    );
   }
-  if (specialties && typeof specialties === "object") {
-    return Object.values(specialties as Record<string, unknown>).map((value) => {
-      const val = typeof value === "string" ? value : JSON.stringify(value);
-      return specialtyMap.get(val) || val;
-    });
-  }
-  return [];
+  
+  return items.map(item => translateCode(item));
 }
 
 export default function InvestigatorsPage() {

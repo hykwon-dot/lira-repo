@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useUserStore } from "@/lib/userStore";
 import { CASE_STATUS_META } from "@/lib/investigationWorkflow";
 import type { IntakeSummary } from "@/app/simulation/types";
+import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS, INVESTIGATOR_SPECIALTIES } from "@/lib/options";
+import { translateCode, translateList } from "@/lib/translationHelper";
 
 type InvestigatorSummary = {
   id: number;
@@ -309,7 +311,7 @@ export default function RequestComposer({ investigator, scenarios }: RequestComp
                 <p className="mt-2 text-sm text-slate-500">☎ {investigator.contactPhone}</p>
               )}
               {investigator.serviceArea && (
-                <p className="mt-2 text-sm text-slate-500">주요 활동 지역: {investigator.serviceArea}</p>
+                <p className="mt-2 text-sm text-slate-500">주요 활동 지역: {translateList(investigator.serviceArea)}</p>
               )}
               {typeof investigator.experienceYears === "number" && (
                 <p className="mt-2 text-sm text-slate-500">현장 경력: {investigator.experienceYears}년</p>
@@ -324,7 +326,7 @@ export default function RequestComposer({ investigator, scenarios }: RequestComp
                       key={`${investigator.id}-specialty-${idx}`}
                       className="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700"
                     >
-                      {item}
+                      {translateCode(item)}
                     </span>
                   ))
                 ) : (

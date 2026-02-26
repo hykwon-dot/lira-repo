@@ -7,6 +7,7 @@ import AdminFeedback from './AdminFeedback';
 import Image from 'next/image';
 import Link from 'next/link';
 import { INVESTIGATOR_REGION_OPTIONS } from '@/lib/options';
+import { translateCode } from '@/lib/translationHelper';
 
 type RequestStatus =
   | 'OPEN'
@@ -118,40 +119,6 @@ type StatCard = {
   value: string;
   description: string;
   accent: string;
-};
-
-const SPECIALTY_LABELS: Record<string, string> = {
-  // 현장 조사
-  FIELD_TAIL: '미행 및 감시',
-  MISSING_PERSON: '실종/가출인 찾기',
-  LOCATE: '소재 탐지',
-  
-  // 법률/기업
-  LEGAL_EVIDENCE: '소송 증거 수집',
-  LEGAL_SUPPORT: '법적 증거 수집', // Alias
-  CORPORATE_RISK: '기업 보안/횡령',
-  INTEL_PROPERTY: '지식재산권 침해',
-  CORPORATE: '기업 내부 조사', // Alias
-  
-  // 디지털/특수
-  DIGITAL_FORENSICS: '디지털 포렌식',
-  DIGITAL_FORENSIC: '디지털 포렌식', // Alias
-  CYBER_CRIME: '사이버 범죄',
-  BUG_SWEEP: '도청/몰카 탐지',
-  
-  // 가정/개인
-  INFIDELITY: '배우자 부정행위',
-  SCHOOL_VIOLENCE: '학교 폭력',
-  STALKING: '스토킹 피해',
-  BACKGROUND_CHECK: '신원 조회', // Alias
-  FRAUD_INVESTIGATION: '보험/사기 조사', // Alias
-};
-
-const getSpecialtyLabel = (key: string) => SPECIALTY_LABELS[key] || key;
-
-const getRegionLabel = (key: string) => {
-  const option = INVESTIGATOR_REGION_OPTIONS.find((opt) => opt.value === key);
-  return option ? option.label : key;
 };
 
 const REQUEST_STATUS_LABEL: Record<RequestStatus, string> = {
@@ -390,6 +357,24 @@ export default function AdminPage() {
       setApprovingId(null);
     }
   };
+
+  const managementLinks: { href: string; title: string; description: string }[] = [
+    {
+      href: '/admin/banners',
+      title: '메인 배너 관리',
+      description: '메인 화면 상단 배너와 하단 서브 배너를 등록/수정합니다.',
+    },
+    {
+      href: '/admin/awards',
+      title: '수상 내역 관리',
+      description: '수상 및 인증 내역을 관리하여 신뢰도를 높이세요.',
+    },
+    {
+      href: '/admin/testimonials',
+      title: '이용자 후기 관리',
+      description: '메인 페이지에 노출되는 이용자 후기를 등록·수정·노출/비노출 설정합니다.',
+    },
+  ];
 
   const handleRequestStatusChange = async (id: number, status: RequestStatus) => {
     if (!dashboard) return;
@@ -687,33 +672,37 @@ export default function AdminPage() {
               ))}
         </section>
 
-        <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <Link href="/admin/banners" className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-slate-800">배너 관리</h3>
-                <p className="text-sm text-slate-500">메인 페이지 배너 및 프로모션 관리</p>
+        <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {managementLinks.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-md"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">{item.title}</h3>
+                  <p className="text-sm text-slate-500">{item.description}</p>
+                </div>
+                <div className="rounded-full bg-slate-50 p-3 text-slate-600 group-hover:bg-slate-100">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="h-6 w-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4.5 12h15m0 0L15 6m4.5 6L15 18"
+                    />
+                  </svg>
+                </div>
               </div>
-              <div className="rounded-full bg-blue-50 p-3 text-blue-600 group-hover:bg-blue-100">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                </svg>
-              </div>
-            </div>
-          </Link>
-          <Link href="/admin/awards" className="group relative overflow-hidden rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-slate-800">수상 내역 관리</h3>
-                <p className="text-sm text-slate-500">수상 실적 및 인증 내역 관리</p>
-              </div>
-              <div className="rounded-full bg-amber-50 p-3 text-amber-600 group-hover:bg-amber-100">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0V5.625a2.25 2.25 0 11-4.5 0v9.75m0-9.75a2.25 2.25 0 012.25-2.25h.008c.621 0 1.125.504 1.125 1.125m0 0v1.125m-2.25 0h2.25" />
-                </svg>
-              </div>
-            </div>
-          </Link>
+            </Link>
+          ))}
         </section>
 
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
@@ -822,7 +811,7 @@ export default function AdminPage() {
                                 key={spec}
                                 className="rounded-full bg-slate-100 px-3 py-1 text-[0.65rem] text-slate-600"
                               >
-                                #{spec}
+                                #{translateCode(spec)}
                               </span>
                             ))}
                           </div>
@@ -848,7 +837,7 @@ export default function AdminPage() {
                       <span className="text-xs text-slate-400">{formatDate(scenario.createdAt)}</span>
                     </div>
                     <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
-                      {scenario.category && <span className="rounded-full bg-slate-100 px-3 py-1">{scenario.category}</span>}
+                      {scenario.category && <span className="rounded-full bg-slate-100 px-3 py-1">{translateCode(scenario.category)}</span>}
                       {scenario.difficulty && (
                         <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-600">
                           난이도 {scenario.difficulty}
@@ -919,7 +908,7 @@ export default function AdminPage() {
                               <span className="font-medium text-slate-600">{request.scenario.title}</span>
                               {request.scenario.category && (
                                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem]">
-                                  {request.scenario.category}
+                                  {translateCode(request.scenario.category)}
                                 </span>
                               )}
                             </div>
@@ -1011,7 +1000,7 @@ export default function AdminPage() {
                             <div className="flex flex-wrap gap-1">
                               {specialties.map((spec) => (
                                 <span key={spec} className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] text-slate-500">
-                                  #{getSpecialtyLabel(spec)}
+                                  #{translateCode(spec)}
                                 </span>
                               ))}
                             </div>
@@ -1184,7 +1173,7 @@ export default function AdminPage() {
 
               <div>
                 <label className="text-xs font-semibold uppercase text-slate-500">활동 지역</label>
-                <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.serviceArea ? getRegionLabel(selectedInvestigator.serviceArea) : '-'}</p>
+                <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.serviceArea ? translateCode(selectedInvestigator.serviceArea) : '-'}</p>
               </div>
 
               <div>
@@ -1192,7 +1181,7 @@ export default function AdminPage() {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {chipList(selectedInvestigator.specialties).map((spec) => (
                     <span key={spec} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
-                      #{getSpecialtyLabel(spec)}
+                      #{translateCode(spec)}
                     </span>
                   ))}
                   {chipList(selectedInvestigator.specialties).length === 0 && <span className="text-sm text-slate-400">-</span>}
@@ -1365,7 +1354,7 @@ export default function AdminPage() {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {chipList(selectedCustomer.preferredCaseTypes).map((type) => (
                     <span key={type} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
-                      #{type}
+                      #{translateCode(type)}
                     </span>
                   ))}
                   {chipList(selectedCustomer.preferredCaseTypes).length === 0 && <span className="text-sm text-slate-400">-</span>}

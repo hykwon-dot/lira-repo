@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Star, MapPin, Award, CheckCircle2, MessageCircle } from "lucide-react";
 import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS } from "@/lib/options";
+import { translateCode, translateList } from "@/lib/translationHelper";
 
 async function getInvestigator(id: string) {
   const prisma = await getPrismaClient();
@@ -33,33 +34,22 @@ async function getInvestigator(id: string) {
   });
 }
 
-const specialtyMap = new Map<string, string>();
-INVESTIGATOR_SPECIALTY_GROUPS.forEach(group => {
-  group.options.forEach(opt => {
-    specialtyMap.set(opt.value, opt.label);
-  });
-});
-
-const regionMap = new Map<string, string>();
-INVESTIGATOR_REGION_OPTIONS.forEach(opt => {
-  regionMap.set(opt.value, opt.label);
-});
-
 function translateRegion(regionString: string | null): string {
   if (!regionString) return "정보 없음";
-  return regionString.split(',').map(r => {
-    const trimmed = r.trim();
-    return regionMap.get(trimmed) || trimmed;
-  }).join(', ');
+  // Use shared translateList
+  return translateList(regionString);
 }
+
 
 function formatSpecialties(specialties: unknown): string[] {
     let items: string[] = [];
     if (Array.isArray(specialties)) {
       items = specialties.map((item) => {
         if (typeof item === "string") return item;
-        if (item && typeof item === "object" && "label" in item) {
-          return String((item as Record<string, unknown>).label ?? "");
+        if (item && typeof item === "object") {
+            // Prefer value
+            if ("value" in item) return String((item as Record<string, unknown>).value ?? "");
+            if ("label" in item) return String((item as Record<string, unknown>).label ?? "");
         }
         return JSON.stringify(item);
       });
@@ -69,7 +59,7 @@ function formatSpecialties(specialties: unknown): string[] {
       );
     }
     
-    return items.map(item => specialtyMap.get(item) || item);
+    return items.map(item => translateCode(item));
 }
 
 export default async function InvestigatorDetailPage({ params }: { params: { id: string } }) {

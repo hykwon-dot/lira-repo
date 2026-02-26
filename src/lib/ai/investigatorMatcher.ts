@@ -131,6 +131,8 @@ const presenceScore = (values: Array<string | null | number | undefined>): numbe
   return present / Math.max(1, values.length);
 };
 
+import { translateCode, translateList } from "@/lib/translationHelper";
+
 const computeAlignment = (profile: InvestigatorProfileForMatch, context: InvestigatorMatchContext) => {
   const keywords = deriveCaseKeywords(context);
   const riskKeywords = deriveRiskKeywords(context.insights);
@@ -159,7 +161,7 @@ const computeAlignment = (profile: InvestigatorProfileForMatch, context: Investi
   const keywordHighlight = matchedTokens.size
     ? `전문 분야가 사건 키워드 ${Array.from(matchedTokens)
         .slice(0, 3)
-        .map((token) => `"${token}"`)
+        .map((token) => `"${translateCode(token)}"`)
         .join(", ")}${matchedTokens.size > 3 ? " 등" : ""}과(와) 일치`
     : null;
 
@@ -168,7 +170,7 @@ const computeAlignment = (profile: InvestigatorProfileForMatch, context: Investi
     profile.ratingAverage ? `평균 평점 ${profile.ratingAverage.toFixed(1)}점` : null,
     profile.successRate ? `사건 성공률 ${profile.successRate.toFixed(1)}%` : null,
     profile.experienceYears > 0 ? `${profile.experienceYears}년 현장 경험` : null,
-    profile.serviceArea ? `${profile.serviceArea} 지역 대응 가능` : null,
+    profile.serviceArea ? `${translateList(profile.serviceArea)} 지역 대응 가능` : null,
   ].filter((entry): entry is string => Boolean(entry));
 
   const confidence = clamp(
