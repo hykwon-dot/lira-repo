@@ -6,6 +6,8 @@ import { InvestigatorStatus } from "@prisma/client";
 import { Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS } from "@/lib/options";
+import InvestigatorDetailModal from "./InvestigatorDetailModal";
+import { createPortal } from "react-dom"; // Actually, let's just use createPortal inside the component if possible, or use standard modal logic.
 
 type InvestigatorRecord = {
   id: number;
@@ -119,6 +121,15 @@ export default function InvestigatorsPage() {
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  
+  const [selectedInvestigator, setSelectedInvestigator] = useState<InvestigatorRecord | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openDetailModal = (inv: InvestigatorRecord) => {
+    setSelectedInvestigator(inv);
+    setIsModalOpen(true);
+  };
+
 
   useEffect(() => {
     async function fetchInvestigators() {
@@ -273,10 +284,14 @@ export default function InvestigatorsPage() {
                 const initials = getInitials(inv.user?.name);
                 const updatedAt = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date(inv.updatedAt));
 
+
+                const serviceAreaText = translateRegion(inv.serviceArea);
+                
                 return (
-                  <article key={inv.id} className="flex h-full flex-col rounded-[32px] border border-slate-100 bg-white/90 shadow-[0_18px_40px_-28px_rgba(30,64,175,0.45)]">
-                    <div className="relative overflow-hidden">
-                      <div className="relative aspect-square w-full overflow-hidden">
+                  <article key={inv.id} className="flex h-full flex-col rounded-[32px] border border-slate-100 bg-white/90 shadow-[0_18px_40px_-28px_rgba(30,64,175,0.45)] transition-all hover:shadow-lg">
+                    {/* Image Section - Reduced to ~66% width and centered */}
+                    <div className="relative pt-6 pb-2 px-6">
+                      <div className="relative mx-auto aspect-square w-2/3 overflow-hidden rounded-2xl shadow-sm">
                         {inv.avatarUrl ? (
                           <Image
                             src={inv.avatarUrl}
@@ -289,121 +304,128 @@ export default function InvestigatorsPage() {
                           />
                         ) : (
                           <div
-                            className={`flex aspect-square w-full items-center justify-center bg-gradient-to-br ${getAvatarGradient(inv.id)} text-4xl font-semibold uppercase tracking-wide text-white`}
+                            className={`flex aspect-square w-full items-center justify-center bg-gradient-to-br ${getAvatarGradient(inv.id)} text-3xl font-semibold uppercase tracking-wide text-white`}
                             aria-hidden
                           >
                             {initials}
                           </div>
                         )}
                       </div>
-                      <span className={`absolute right-4 top-4 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${statusColor[status]}`}>
+                      <span className={`absolute right-6 top-6 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${statusColor[status]}`}>
                         {statusLabel[status]}
                       </span>
                     </div>
 
-                    <div className="flex grow flex-col gap-6 p-6">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate text-lg font-semibold text-[#101828]">{inv.user?.name ?? "이름 미상"}</p>
-                            <p className="truncate text-xs text-slate-500">{inv.user?.email}</p>
-                            {inv.contactPhone && (
-                              <p className="mt-1 text-xs text-slate-500">☎ {inv.contactPhone}</p>
-                            )}
-                          </div>
+                    <div className="flex grow flex-col gap-6 p-6 pt-2">
+                      <div className="flex flex-col gap-2 text-center">
+                        <div className="min-w-0">
+                          <p className="truncate text-lg font-bold text-[#101828]">{inv.user?.name ?? "이름 미상"}</p>
+                          <p className="truncate text-xs text-slate-500">{inv.user?.email}</p>
+                          {inv.contactPhone && (
+                            <p className="mt-1 text-xs text-slate-500">☎ {inv.contactPhone}</p>
+                          )}
                         </div>
-                        {inv.introduction && (
-                          <p className="text-sm leading-relaxed text-slate-600 line-clamp-3">{inv.introduction}</p>
-                        )}
+                        
+                        {/* Introduction - Max 5 lines */}
+                        <div className="relative mt-2 min-h-[5em]">
+                          {inv.introduction ? (
+                            <>
+                              <p className="text-sm leading-relaxed text-slate-600 line-clamp-5 text-left">
+                                {inv.introduction}
+                              </p>
+                              {inv.introduction.length > 100 && (
+                                <button 
+                                  onClick={() => openDetailModal(inv)}
+                                  className="mt-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center justify-center w-full"
+                                >
+                                  더보기
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-sm text-slate-400 italic text-left">소개글이 없습니다.</p>
+                          )}
+                        </div>
                       </div>
 
-                      <dl className="grid grid-cols-2 gap-4 text-xs text-slate-600">
-                        <div className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
-                          <dt className="text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-400">경력</dt>
-                          <dd className="mt-2 text-sm font-semibold text-[#101828]">
-                            {inv.experienceYears ? `${inv.experienceYears}년` : "정보 없음"}
+                      <dl className="grid grid-cols-2 gap-3 text-xs text-slate-600">
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-3 text-center">
+                          <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">경력</dt>
+                          <dd className="mt-1 text-sm font-bold text-[#101828]">
+                            {inv.experienceYears ? `${inv.experienceYears}년` : "-"}
                           </dd>
                         </div>
-                        <div className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
-                          <dt className="text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-400">평균 평점</dt>
-                          <dd className="mt-2 text-sm font-semibold text-[#101828]">
-                            {inv.ratingAverage ? (
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1 text-amber-500">
-                                  {Array.from({ length: 5 }).map((_, idx) => {
-                                    const filled = Number(inv.ratingAverage) >= idx + 1;
-                                    return (
-                                      <Star
-                                        key={`${inv.id}-rating-${idx}`}
-                                        className={`h-4 w-4 ${filled ? "fill-current" : "fill-transparent"}`}
-                                        strokeWidth={1.5}
-                                      />
-                                    );
-                                  })}
-                                </div>
-                                <span>
-                                  {Number(inv.ratingAverage).toFixed(1)}
-                                  <span className="ml-1 text-xs font-medium text-slate-400">/ 5.0</span>
-                                </span>
-                              </div>
-                            ) : (
-                              "데이터 없음"
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-3 text-center">
+                          <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">평점</dt>
+                          <dd className="mt-1 text-sm font-bold text-[#101828] flex justify-center items-center gap-1">
+                             {inv.ratingAverage ? Number(inv.ratingAverage).toFixed(1) : "-"}
+                             {inv.ratingAverage && <Star className="w-3 h-3 fill-amber-400 text-amber-400" />}
+                          </dd>
+                        </div>
+                        
+                        {/* Service Area - Max 3 lines */}
+                        <div className="col-span-2 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 text-left group relative">
+                          <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex justify-between items-center">
+                            활동 지역
+                            {serviceAreaText.length > 30 && (
+                               <button onClick={() => openDetailModal(inv)} className="text-[10px] text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity">전체보기</button>
                             )}
+                          </dt>
+                          <dd className="text-xs font-medium text-[#101828] leading-relaxed line-clamp-3">
+                            {serviceAreaText}
                           </dd>
                         </div>
-                        <div className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
-                          <dt className="text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-400">성공률</dt>
-                          <dd className="mt-2 text-sm font-semibold text-[#101828]">
-                            {inv.successRate ? `${Number(inv.successRate).toFixed(1)}%` : "데이터 없음"}
-                          </dd>
-                        </div>
-                        <div className="rounded-3xl border border-slate-100 bg-slate-50/70 p-4">
-                          <dt className="text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-400">활동 지역</dt>
-                          <dd className="mt-2 text-sm font-semibold text-[#101828]">
-                            {translateRegion(inv.serviceArea)}
-                          </dd>
+
+                        {/* Specialties - Max 3 lines */}
+                        <div className="col-span-2 space-y-2 pt-2">
+                           <div className="flex justify-between items-center">
+                              <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">전문 분야</dt>
+                              {specialties.length > 3 && (
+                                <button onClick={() => openDetailModal(inv)} className="text-[10px] text-indigo-500 hover:text-indigo-700">
+                                   +{specialties.length - 3} 더보기
+                                </button>
+                              )}
+                           </div>
+                           <dd className="flex flex-wrap gap-1.5 h-[4.5em] overflow-hidden content-start">
+                             {specialties.length > 0 ? (
+                               specialties.slice(0, 6).map((item, idx) => (
+                                 <span
+                                   key={`${inv.id}-spec-${idx}`}
+                                   className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600 border border-slate-200"
+                                 >
+                                   {item}
+                                 </span>
+                               ))
+                             ) : (
+                               <span className="text-[11px] text-slate-400">등록된 전문 분야 없음</span>
+                             )}
+                           </dd>
                         </div>
                       </dl>
 
-                      <div className="space-y-3 text-xs text-slate-500">
-                        <div>
-                          <dt className="text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-400">전문 분야</dt>
-                          <dd className="mt-2 flex flex-wrap gap-2">
-                            {specialties.length > 0 ? (
-                              specialties.map((item, idx) => (
-                                <span
-                                  key={`${inv.id}-spec-${idx}`}
-                                  className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-700"
-                                >
-                                  {item}
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-[11px] text-slate-400">등록된 전문 분야 정보가 없습니다.</span>
-                            )}
-                          </dd>
-                        </div>
-
-                        <div className="flex flex-col gap-2">
+                      <div className="mt-auto flex flex-col gap-2 pt-4 border-t border-slate-100/50">
+                        <Link
+                          href={`/investigation-requests/new?investigatorId=${inv.id}`}
+                          className="lira-button lira-button--primary justify-center w-full py-3"
+                        >
+                          사건 의뢰하기
+                        </Link>
+                        {inv.portfolioUrl && (
                           <Link
-                            href={`/investigation-requests/new?investigatorId=${inv.id}`}
-                            className="lira-button lira-button--primary justify-center"
+                            href={inv.portfolioUrl.startsWith('http') ? inv.portfolioUrl : `https://${inv.portfolioUrl}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="lira-button lira-button--secondary justify-center w-full py-2 text-xs"
                           >
-                            사건 의뢰하기 ↗
+                            포트폴리오
                           </Link>
-                          {inv.portfolioUrl && (
-                            <Link
-                              href={inv.portfolioUrl.startsWith('http') ? inv.portfolioUrl : `https://${inv.portfolioUrl}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="lira-button lira-button--secondary justify-center"
-                            >
-                              포트폴리오 보기 ↗
-                            </Link>
-                          )}
-                        </div>
-
-                        <p className="text-[11px] text-slate-400">최근 업데이트: {updatedAt}</p>
+                        )}
+                        <button 
+                           onClick={() => openDetailModal(inv)}
+                           className="text-xs text-slate-400 hover:text-slate-600 underline decoration-slate-300 underline-offset-2 text-center mt-1"
+                        >
+                           상세 프로필 보기
+                        </button>
                       </div>
                     </div>
                   </article>
@@ -412,7 +434,17 @@ export default function InvestigatorsPage() {
             </div>
           )}
         </section>
+        
+        {/* Modal */}
+        <InvestigatorDetailModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          investigator={selectedInvestigator}
+          formatSpecialties={formatSpecialties}
+          translateRegion={translateRegion}
+        />
       </div>
     </div>
   );
 }
+

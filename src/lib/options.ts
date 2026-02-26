@@ -1,9 +1,11 @@
 export const CASE_TYPE_OPTIONS = [
-  { value: 'INFIDELITY', label: '배우자/가정 이슈' },
+  { value: 'INFIDELITY', label: '개인사례' },
   { value: 'MISSING_PERSON', label: '실종 및 추적' },
   { value: 'CORPORATE', label: '기업 내부 조사' },
   { value: 'DIGITAL_FORENSICS', label: '디지털 포렌식' },
   { value: 'BACKGROUND_CHECK', label: '신원 조회' },
+  { value: 'INDUSTRIAL_ESPIONAGE', label: '산업 스파이/기밀 유출' },
+  { value: 'IP_LEAK', label: '지적 재산권 침해' },
 ] as const;
 
 export const INVESTIGATOR_SPECIALTIES = [

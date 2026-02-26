@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { FiHome, FiChevronRight, FiPlayCircle } from 'react-icons/fi';
 import { PhaseCard } from './PhaseCard';
 import type { ScenarioWithDetails } from './types';
+import { CASE_TYPE_OPTIONS } from '@/lib/options';
 
 interface ScenarioPlaybookProps {
   scenario: ScenarioWithDetails;
@@ -28,6 +29,7 @@ export default function ScenarioPlaybook({ scenario }: ScenarioPlaybookProps) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const overview = (scenario.overview as any) || {};
+  const caseTypeLabel = CASE_TYPE_OPTIONS.find(opt => opt.value === overview.caseType)?.label || overview.caseType || scenario.category || 'CASE REPORT';
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans p-4 md:p-8">
@@ -47,7 +49,7 @@ export default function ScenarioPlaybook({ scenario }: ScenarioPlaybookProps) {
              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                 <div className="lg:col-span-2">
                     <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-4 border border-blue-100">
-                      {overview.caseType || scenario.category || 'CASE REPORT'}
+                      {caseTypeLabel}
                     </span>
                     <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 mb-4 leading-tight">
                         {scenario.title}

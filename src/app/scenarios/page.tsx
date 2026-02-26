@@ -2,6 +2,7 @@ import { getPrismaClient } from '@/lib/prisma';
 import ScenarioLibrary from '@/app/scenarios/ScenarioLibrary';
 import { ScenarioSummary } from '@/app/scenarios/types';
 import type { Scenario, Phase } from '@prisma/client';
+import { CASE_TYPE_OPTIONS } from '@/lib/options';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,9 @@ async function getScenarios(): Promise<ScenarioSummary[]> {
     // Overview field type assertion
     const overview = (scenario.overview as any) || {};
     
+    // Map caseType to Korean label
+    const industryLabel = CASE_TYPE_OPTIONS.find(opt => opt.value === overview.caseType)?.label || overview.caseType || '일반 조사';
+    
     // Create Phase summary format
     const phases = scenario.phases.map((phase) => ({
        id: String(phase.id),
@@ -32,7 +36,7 @@ async function getScenarios(): Promise<ScenarioSummary[]> {
     return {
       id: String(scenario.id),
       title: scenario.title,
-      industry: overview.caseType || '일반 조사',
+      industry: industryLabel,
       description: scenario.description || overview.objective || '',
       difficulty: scenario.difficulty || '보통',
       totalDurationDays: phases.reduce((acc, p) => acc + p.durationDays, 0),
