@@ -5,7 +5,7 @@ import Link from "next/link";
 import { InvestigatorStatus } from "@prisma/client";
 import { Star } from "lucide-react";
 import { useEffect, useState } from "react";
-import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS } from "@/lib/options";
+import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS, INVESTIGATOR_SPECIALTIES } from "@/lib/options";
 import InvestigatorDetailModal from "./InvestigatorDetailModal";
 import { createPortal } from "react-dom"; // Actually, let's just use createPortal inside the component if possible, or use standard modal logic.
 
@@ -80,11 +80,18 @@ INVESTIGATOR_SPECIALTY_GROUPS.forEach(group => {
     specialtyMap.set(opt.value, opt.label);
   });
 });
+INVESTIGATOR_SPECIALTIES.forEach(opt => {
+  if (!specialtyMap.has(opt.value)) {
+    specialtyMap.set(opt.value, opt.label);
+  }
+});
 
 const regionMap = new Map<string, string>();
 INVESTIGATOR_REGION_OPTIONS.forEach(opt => {
   regionMap.set(opt.value, opt.label);
 });
+regionMap.set("JEONB", "전북");
+regionMap.set("JB", "전북");
 
 function translateRegion(regionString: string | null): string {
   if (!regionString) return "정보 없음";
