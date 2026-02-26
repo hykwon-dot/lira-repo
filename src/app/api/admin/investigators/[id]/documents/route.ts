@@ -4,6 +4,58 @@ import { getPrismaClient } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+export async function POST(
+  req: NextRequest, 
+  { params }: { params: { id: string } }
+) {
+  const resolvedParams = await Promise.resolve(params);
+  const id = parseInt(resolvedParams.id);
+
+  if (isNaN(id)) {
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+  }
+
+  try {
+    const body = await req.json();
+    const { type, data } = body; 
+    // data: "data:image/png;base64,..."
+
+    if (!type || !['businessLicense', 'pledge', 'terms', 'idCard'].includes(type)) {
+      return NextResponse.json({ error: 'Invalid document type' }, { status: 400 });
+    }
+
+    if (!data) {
+      return NextResponse.json({ error: 'No data provided' }, { status: 400 });
+    }
+
+    const prisma = await getPrismaClient();
+
+    // Mapping type to field names
+    const dataField = `${type}Data`;
+    const urlField = `${type}Url`;
+    
+    // Construct the internal API URL for viewing this document
+    // In production, you might want to upload to S3 and store that URL instead.
+    // For now, we point to our own GET route.
+    const viewUrl = `/api/admin/investigators/${id}/documents?type=${type}`;
+
+    await prisma.investigatorProfile.update({
+      where: { id },
+      data: {
+        [dataField]: data,
+        [urlField]: viewUrl,
+        updatedAt: new Date(),
+      }
+    });
+
+    return NextResponse.json({ success: true, url: viewUrl });
+
+  } catch (error) {
+    console.error(`[API] Failed to upload document for investigator ${id}:`, error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
 export async function GET(
   req: NextRequest, 
   { params }: { params: { id: string } }
