@@ -13,6 +13,38 @@ import type {
   InvestigationRequestSummary,
   RequestStatus,
 } from "@/types/investigation";
+import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS, INVESTIGATOR_SPECIALTIES } from "@/lib/options";
+
+// --- Translation Helpers ---
+const specialtyMap = new Map<string, string>();
+INVESTIGATOR_SPECIALTY_GROUPS.forEach(group => {
+  group.options.forEach(opt => {
+    specialtyMap.set(opt.value, opt.label);
+  });
+});
+INVESTIGATOR_SPECIALTIES.forEach(opt => {
+  if (!specialtyMap.has(opt.value)) {
+    specialtyMap.set(opt.value, opt.label);
+  }
+});
+
+const regionMap = new Map<string, string>();
+INVESTIGATOR_REGION_OPTIONS.forEach(opt => {
+  regionMap.set(opt.value, opt.label);
+});
+regionMap.set("JEONB", "전북");
+regionMap.set("JB", "전북");
+
+function translateCode(code: string): string {
+  const trimmed = code.trim();
+  return specialtyMap.get(trimmed) || regionMap.get(trimmed) || trimmed;
+}
+
+function translateList(text: string | null | undefined): string {
+    if (!text) return "";
+    return text.split(',').map(item => translateCode(item)).join(', ');
+}
+// ---------------------------
 
 interface Toast {
   id: number;
@@ -49,22 +81,23 @@ const toSpecialtyTags = (value: unknown): string[] => {
   if (Array.isArray(value)) {
     return value
       .map((entry) => {
-        if (typeof entry === "string") return entry;
+        let val = "";
+        if (typeof entry === "string") val = entry;
         if (entry && typeof entry === "object") {
           if ("label" in entry) {
-            return String((entry as Record<string, unknown>).label ?? "");
+            val = String((entry as Record<string, unknown>).label ?? "");
           }
           if ("value" in entry) {
-            return String((entry as Record<string, unknown>).value ?? "");
+            val = String((entry as Record<string, unknown>).value ?? "");
           }
         }
-        return JSON.stringify(entry);
+        return specialtyMap.get(val.trim()) || val || JSON.stringify(entry);
       })
       .filter((item) => item.trim().length > 0);
   }
   if (value && typeof value === "object") {
     return Object.values(value as Record<string, unknown>).map((entry) =>
-      typeof entry === "string" ? entry : JSON.stringify(entry),
+      typeof entry === "string" ? specialtyMap.get(entry) || entry : JSON.stringify(entry),
     );
   }
   return [];
@@ -1048,7 +1081,7 @@ const InvestigatorDashboard = () => {
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-slate-700">{investigatorDisplayName}</p>
                 <p className="mt-1 text-xs text-slate-500">
-                  {profile?.serviceArea ? `활동 지역 · ${profile.serviceArea}` : "활동 지역 정보를 추가해주세요."}
+                  {profile?.serviceArea ? `활동 지역 · ${translateList(profile.serviceArea)}` : "활동 지역 정보를 추가해주세요."}
                 </p>
                 {profile?.contactPhone && (
                   <p className="mt-1 text-xs text-slate-400">☎ {profile.contactPhone}</p>

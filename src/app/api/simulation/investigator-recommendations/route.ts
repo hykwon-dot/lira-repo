@@ -1,6 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPrismaClient } from "@/lib/prisma";
 import { InvestigatorStatus } from "@prisma/client";
+import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS, INVESTIGATOR_SPECIALTIES } from "@/lib/options";
+
+// --- Translation Helpers ---
+const specialtyMap = new Map<string, string>();
+INVESTIGATOR_SPECIALTY_GROUPS.forEach(group => {
+  group.options.forEach(opt => {
+    specialtyMap.set(opt.value, opt.label);
+  });
+});
+INVESTIGATOR_SPECIALTIES.forEach(opt => {
+  if (!specialtyMap.has(opt.value)) {
+    specialtyMap.set(opt.value, opt.label);
+  }
+});
+
+const regionMap = new Map<string, string>();
+INVESTIGATOR_REGION_OPTIONS.forEach(opt => {
+  regionMap.set(opt.value, opt.label);
+});
+regionMap.set("JEONB", "전북");
+regionMap.set("JB", "전북");
+
+function translateCode(code: string): string {
+  const trimmed = code.trim();
+  return specialtyMap.get(trimmed) || regionMap.get(trimmed) || trimmed;
+}
+
+function translateList(text: string | null): string {
+    if (!text) return "";
+    return text.split(',').map(item => translateCode(item)).join(', ');
+}
+// ---------------------------
 
 function toStringArray(value: unknown): string[] {
   if (!value) return [];
@@ -101,7 +133,9 @@ export async function POST(req: NextRequest) {
             .join(", ");
           reasonParts.push(`시나리오 핵심 키워드 ${displayKeywords}${matchedKeywords.size > 3 ? " 등" : ""}과(와) 맞는 전문 분야를 보유`);
         } else if (specialties.length > 0) {
-          reasonParts.push(`전문 분야: ${specialties.slice(0, 3).join(", ")}`);
+          // Translate specialties for display
+          const displaySpecialties = specialties.slice(0, 3).map(translateCode).join(", ");
+          reasonParts.push(`전문 분야: ${displaySpecialties}`);
         }
 
         if (rating) {
@@ -114,7 +148,8 @@ export async function POST(req: NextRequest) {
           reasonParts.push(`사건 성공률 ${successRate.toFixed(1)}%`);
         }
         if (inv.serviceArea) {
-          reasonParts.push(`${inv.serviceArea} 지역 대응 가능`);
+          // Translate service area for display
+          reasonParts.push(`${translateList(inv.serviceArea)} 지역 대응 가능`);
         }
 
         const reason = reasonParts.length > 0
@@ -131,8 +166,8 @@ export async function POST(req: NextRequest) {
           rating,
           successRate,
           experienceYears,
-          serviceArea: inv.serviceArea ?? null,
-          specialties,
+          serviceArea: inv.serviceArea ? translateList(inv.serviceArea) : null,
+          specialties: specialties.map(translateCode), // Return translated specialties in array too if frontend uses it directly
           reason,
           score: totalScore,
         };
