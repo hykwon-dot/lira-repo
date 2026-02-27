@@ -177,6 +177,7 @@ export default function AdminBannersPage() {
               )}
             </div>
           </form>
+          <p className="text-sm text-gray-500">권장 이미지 크기: 400x225 (16:9 비율)</p>
         </div>
 
         <div className="md:col-span-2 space-y-4">

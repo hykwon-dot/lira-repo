@@ -321,8 +321,13 @@ export default function Home() {
                     className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0"
                   >
                     <div className="aspect-w-16 aspect-h-9 bg-gray-200 h-72">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={banner.imageUrl} alt={banner.title || 'Banner'} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" />
+                      <Image
+                        src={banner.imageUrl}
+                        alt={banner.title || 'Banner'}
+                        width={400}
+                        height={225}
+                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
                     {banner.title && (
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
@@ -341,8 +346,13 @@ export default function Home() {
                     className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0"
                   >
                     <div className="aspect-w-16 aspect-h-9 bg-gray-200 h-72">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={banner.imageUrl} alt={banner.title || 'Banner'} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" />
+                      <Image
+                        src={banner.imageUrl}
+                        alt={banner.title || 'Banner'}
+                        width={400}
+                        height={225}
+                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
                     {banner.title && (
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
