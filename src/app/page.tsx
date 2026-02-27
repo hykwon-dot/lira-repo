@@ -320,13 +320,14 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0"
                   >
-                    <div className="aspect-video bg-gray-200">
+                    <div className="relative aspect-video bg-gray-200 w-full overflow-hidden">
                       <Image
                         src={banner.imageUrl}
                         alt={banner.title || 'Banner'}
-                        width={400}
-                        height={225}
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                        fill
+                        sizes="(max-width: 768px) 300px, 400px"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        unoptimized={banner.imageUrl.includes('http')} // 외부 링크 최적화 실패 방지
                       />
                     </div>
                     {banner.title && (
@@ -345,13 +346,14 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0"
                   >
-                    <div className="aspect-video bg-gray-200">
+                    <div className="relative aspect-video bg-gray-200 w-full overflow-hidden">
                       <Image
                         src={banner.imageUrl}
                         alt={banner.title || 'Banner'}
-                        width={400}
-                        height={225}
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                        fill
+                        sizes="(max-width: 768px) 300px, 400px"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        unoptimized={banner.imageUrl.includes('http')} // 외부 링크 최적화 실패 방지
                       />
                     </div>
                     {banner.title && (
