@@ -318,16 +318,17 @@ export default function Home() {
                     href={banner.linkUrl || '#'} 
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0"
+                    className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0 bg-white"
                   >
-                    <div className="relative aspect-video bg-gray-200 w-full overflow-hidden">
+                    <div className="relative aspect-video w-full overflow-hidden flex items-center justify-center">
                       <Image
                         src={banner.imageUrl}
                         alt={banner.title || 'Banner'}
                         fill
                         sizes="(max-width: 768px) 300px, 400px"
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        unoptimized={banner.imageUrl.includes('http')} // 외부 링크 최적화 실패 방지
+                        style={{ objectFit: 'contain' }}
+                        className="group-hover:scale-105 transition-transform duration-300 p-2"
+                        unoptimized={banner.imageUrl.includes('http')}
                       />
                     </div>
                     {banner.title && (
@@ -344,16 +345,17 @@ export default function Home() {
                     href={banner.linkUrl || '#'} 
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0"
+                    className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0 bg-white"
                   >
-                    <div className="relative aspect-video bg-gray-200 w-full overflow-hidden">
+                    <div className="relative aspect-video w-full overflow-hidden flex items-center justify-center">
                       <Image
                         src={banner.imageUrl}
                         alt={banner.title || 'Banner'}
                         fill
                         sizes="(max-width: 768px) 300px, 400px"
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        unoptimized={banner.imageUrl.includes('http')} // 외부 링크 최적화 실패 방지
+                        style={{ objectFit: 'contain' }}
+                        className="group-hover:scale-105 transition-transform duration-300 p-2"
+                        unoptimized={banner.imageUrl.includes('http')}
                       />
                     </div>
                     {banner.title && (
