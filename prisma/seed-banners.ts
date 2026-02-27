@@ -21,24 +21,48 @@ async function main() {
     },
   });
 
-  // Create Sub Banners
+  // Create Sub Banners (5 items as requested)
   await prisma.banner.createMany({
     data: [
       {
-        title: '기업 조사 솔루션',
-        imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop',
-        linkUrl: '/enterprise',
+        title: '법률정보조사원 (LIRA)',
+        imageUrl: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=2000&auto=format&fit=crop', // Law/investigation
+        linkUrl: '/lira-info',
         type: 'MAIN_SMALL',
         isActive: true,
         order: 1,
       },
       {
-        title: '개인 신변 보호',
-        imageUrl: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?q=80&w=2070&auto=format&fit=crop',
-        linkUrl: '/personal',
+        title: 'Mobile 별품몰',
+        imageUrl: 'https://images.unsplash.com/photo-1512428559087-560fa0db7f5e?q=80&w=2000&auto=format&fit=crop', // Mobile shopping
+        linkUrl: '/mobile-mall',
         type: 'MAIN_SMALL',
         isActive: true,
         order: 2,
+      },
+      {
+        title: '법률정보조사원 (유튜브)',
+        imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=2000&auto=format&fit=crop', // Youtube/Video
+        linkUrl: '/youtube-channel',
+        type: 'MAIN_SMALL',
+        isActive: true,
+        order: 3,
+      },
+      {
+        title: '(주) 갓생솔루션',
+        imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2000&auto=format&fit=crop', // Business solution
+        linkUrl: '/godsang',
+        type: 'MAIN_SMALL',
+        isActive: true,
+        order: 4,
+      },
+      {
+        title: '법률정보조사원 (모두의 탐정)',
+        imageUrl: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?q=80&w=2000&auto=format&fit=crop', // Detective/magnifying glass
+        linkUrl: '/everyone-detective',
+        type: 'MAIN_SMALL',
+        isActive: true,
+        order: 5,
       },
     ],
   });
@@ -61,7 +85,7 @@ async function main() {
     ],
   });
 
-  console.log('Seeding completed.');
+  console.log('Seeding completed with 5 sub-banners.');
 }
 
 main()
