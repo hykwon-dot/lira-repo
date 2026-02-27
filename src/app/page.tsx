@@ -320,7 +320,7 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0"
                   >
-                    <div className="aspect-w-16 aspect-h-9 bg-gray-200 h-72">
+                    <div className="aspect-video bg-gray-200">
                       <Image
                         src={banner.imageUrl}
                         alt={banner.title || 'Banner'}
@@ -345,7 +345,7 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0"
                   >
-                    <div className="aspect-w-16 aspect-h-9 bg-gray-200 h-72">
+                    <div className="aspect-video bg-gray-200">
                       <Image
                         src={banner.imageUrl}
                         alt={banner.title || 'Banner'}

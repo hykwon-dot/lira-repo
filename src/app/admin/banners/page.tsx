@@ -177,7 +177,14 @@ export default function AdminBannersPage() {
               )}
             </div>
           </form>
-          <p className="text-sm text-gray-500">권장 이미지 크기: 400x225 (16:9 비율)</p>
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+            <h3 className="text-sm font-bold text-blue-800 mb-2">💡 배너 이미지 최적화 안내</h3>
+            <ul className="text-xs text-blue-700 space-y-1 list-disc pl-4">
+              <li><strong>메인 (큰 배너):</strong> 권장 사이즈 1920x1080px (가로가 넓은 고해상도 이미지)</li>
+              <li><strong>서브 (작은 배너):</strong> 권장 사이즈 800x450px (16:9 비율, 최소 400x225px 이상)</li>
+              <li>이미지 용량은 가급적 1MB 이하로 압축하여 등록해주세요.</li>
+            </ul>
+          </div>
         </div>
 
         <div className="md:col-span-2 space-y-4">
