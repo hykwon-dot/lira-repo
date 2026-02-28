@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,41 +9,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
+    // Convert file to Base64 Data URI
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    const mimeType = file.type || 'application/octet-stream';
+    const base64Data = buffer.toString("base64");
+    const dataUri = `data:${mimeType};base64,${base64Data}`;
 
-    // Create unique filename
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    // Sanitize filename: replace spaces and non-alphanumeric chars (except ._-) with -
-    const originalName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-').toLowerCase();
-    const filename = `${uniqueSuffix}-${originalName}`;
-    
-    // Directory path
-    const uploadDir = join(process.cwd(), "public", "uploads");
-    
-    // Ensure uploads directory exists
-    try {
-      if (!existsSync(uploadDir)) {
-        await mkdir(uploadDir, { recursive: true });
-        console.log(`Created upload directory: ${uploadDir}`);
-      }
-    } catch (mkdirError) {
-       console.error(`Failed to create directory: ${uploadDir}`, mkdirError);
-       // Attempt to continue, maybe it exists but access check failed or race condition
-    }
-
-    const filePath = join(uploadDir, filename);
-    await writeFile(filePath, buffer);
-
-    // In Next.js dev server, public files are served directly.
-    // In production, serving uploaded files from disk might require extra config or a custom server depending on deployment.
-    // For now assuming a filesystem-based deployment or local dev.
-    const fileUrl = `/uploads/${filename}`;
-    
-    console.log(`File uploaded successfully: ${filePath}`);
-    return NextResponse.json({ url: fileUrl });
+    // Return the Data URI directly. 
+    // The frontend will receive this and save it to the database 'imageUrl' field.
+    return NextResponse.json({ url: dataUri });
   } catch (error: any) {
-    console.error("Upload error details:", error);
-    return NextResponse.json({ error: "Failed to upload file: " + (error.message || String(error)) }, { status: 500 });
+    console.error("Upload processing error:", error);
+    return NextResponse.json({ error: "Failed to process file: " + (error.message || String(error)) }, { status: 500 });
   }
 }
