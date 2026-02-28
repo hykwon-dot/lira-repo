@@ -439,7 +439,7 @@ model Notification {
 model Banner {
   id        Int        @id @default(autoincrement())
   title     String?
-  imageUrl  String
+  imageUrl  String     @db.LongText
   linkUrl   String?
   type      BannerType @default(MAIN_LARGE)
   isActive  Boolean    @default(true)
