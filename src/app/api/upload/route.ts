@@ -25,8 +25,14 @@ export async function POST(req: NextRequest) {
     const uploadDir = join(process.cwd(), "public", "uploads");
     
     // Ensure uploads directory exists
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
+    try {
+      if (!existsSync(uploadDir)) {
+        await mkdir(uploadDir, { recursive: true });
+        console.log(`Created upload directory: ${uploadDir}`);
+      }
+    } catch (mkdirError) {
+       console.error(`Failed to create directory: ${uploadDir}`, mkdirError);
+       // Attempt to continue, maybe it exists but access check failed or race condition
     }
 
     const filePath = join(uploadDir, filename);
