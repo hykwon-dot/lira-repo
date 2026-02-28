@@ -22,6 +22,7 @@ export default function AdminBannersPage() {
     order: 0,
   });
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchBanners();
@@ -36,6 +37,34 @@ export default function AdminBannersPage() {
       console.error('Failed to fetch banners', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    setUploading(true);
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!res.ok) {
+        throw new Error('Upload failed');
+      }
+      
+      const data = await res.json();
+      setFormData(prev => ({ ...prev, imageUrl: data.url }));
+    } catch (error) {
+      console.error('Failed to upload file', error);
+      alert('파일 업로드에 실패했습니다.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -113,13 +142,24 @@ export default function AdminBannersPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">이미지 URL</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={formData.imageUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-xs"
+                  placeholder="URL 입력 또는 파일 업로드"
+                  required
+                />
+              </div>
               <input
-                type="text"
-                value={formData.imageUrl || ''}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2"
-                required
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                disabled={uploading}
               />
+              {uploading && <p className="text-xs text-blue-500 mt-1">업로드 중...</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">링크 URL</label>
