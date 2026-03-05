@@ -617,12 +617,15 @@ async function main() {
   }
 
   // --- Banner Seeding ---
-  console.log('[MariaDB Seed] Seeding banners and awards...');
-  await prisma.banner.deleteMany();
-  await prisma.award.deleteMany();
+  // Commented out to prevent overriding existing banners in production
+  const bannerCount = await prisma.banner.count();
+  if (bannerCount === 0) {
+    console.log('[MariaDB Seed] Seeding banners and awards...');
+    // await prisma.banner.deleteMany(); // Do not delete existing
+    // await prisma.award.deleteMany(); // Do not delete existing
 
-  // Create Main Banner
-  await prisma.banner.create({
+    // Create Main Banner
+    await prisma.banner.create({
     data: {
       title: 'AI 민간조사 매칭 플랫폼 LIRA',
       imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
@@ -697,6 +700,7 @@ async function main() {
     ],
   });
   console.log('[MariaDB Seed] Banner seeding completed.');
+  } // End if bannerCount === 0
   // --- End Banner Seeding ---
 
   console.log('[MariaDB Seed] 완료 (공통 패스워드=' + rawPass + '):', {
