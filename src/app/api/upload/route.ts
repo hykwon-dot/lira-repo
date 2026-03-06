@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { uploadToS3 } from "@/lib/s3";
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,16 +10,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    // Convert file to Base64 Data URI
+    // Convert file to Buffer for S3 upload
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const mimeType = file.type || 'application/octet-stream';
-    const base64Data = buffer.toString("base64");
-    const dataUri = `data:${mimeType};base64,${base64Data}`;
+    const fileName = file.name || `upload_${Date.now()}`;
 
-    // Return the Data URI directly. 
-    // The frontend will receive this and save it to the database 'imageUrl' field.
-    return NextResponse.json({ url: dataUri });
+    // Upload to S3 (Folder: public)
+    const s3Url = await uploadToS3(buffer, fileName, "public", mimeType, true);
+
+    // Return the S3 URL
+    return NextResponse.json({ url: s3Url });
   } catch (error: any) {
     console.error("Upload processing error:", error);
     return NextResponse.json({ error: "Failed to process file: " + (error.message || String(error)) }, { status: 500 });

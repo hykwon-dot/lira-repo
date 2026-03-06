@@ -5,12 +5,12 @@ import { InvestigatorStatus } from '@prisma/client';
 import type { Prisma, User, InvestigatorProfile } from '@prisma/client';
 import path from 'path';
 import { promises as fs } from 'fs';
-// import { randomUUID } from 'crypto';
+import { uploadBase64ToS3, uploadToS3 } from '@/lib/s3';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const AVATAR_MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const AVATAR_MAX_SIZE = 10 * 1024 * 1024; // Increased to 10MB for S3
 const ALLOWED_IMAGE_TYPES = new Map<string, string>([
   ['image/jpeg', '.jpg'],
   ['image/png', '.png'],
@@ -21,16 +21,6 @@ const ALLOWED_IMAGE_TYPES = new Map<string, string>([
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
-
-// function getInvestigatorUploadsDir() {
-//   return path.join(process.cwd(), 'public', 'uploads', 'investigators');
-// }
-
-// async function ensureUploadsDir() {
-//   const dir = getInvestigatorUploadsDir();
-//   await fs.mkdir(dir, { recursive: true });
-//   return dir;
-// }
 
 async function deleteLocalAvatar(avatarUrl: string | null | undefined) {
   if (!avatarUrl || !avatarUrl.startsWith('/uploads/investigators/')) {
@@ -97,6 +87,10 @@ export async function GET(req: NextRequest) {
         introduction: profile.introduction,
         portfolioUrl: profile.portfolioUrl,
         avatarUrl: profile.avatarUrl,
+        businessLicenseUrl: profile.businessLicenseUrl,
+        pledgeUrl: profile.pledgeUrl,
+        termsUrl: profile.termsUrl,
+        idCardUrl: profile.idCardUrl,
         termsAcceptedAt: serializeDate(profile.termsAcceptedAt ?? null),
         privacyAcceptedAt: serializeDate(profile.privacyAcceptedAt ?? null),
         updatedAt: serializeDate(profile.updatedAt),
@@ -253,7 +247,6 @@ async function handleProfileUpdate(req: NextRequest) {
   const { user } = auth;
   const prisma = await getPrismaClient();
 
-  // Handle both JSON and FormData
   const contentType = req.headers.get('content-type') || '';
   let payloadRecord: Record<string, unknown> = {};
 
@@ -267,10 +260,7 @@ async function handleProfileUpdate(req: NextRequest) {
   } else if (contentType.includes('multipart/form-data')) {
     try {
       const formData = await req.formData();
-      // Convert FormData to object for text fields
       formData.forEach((value, key) => {
-        // Handle specialties as array from comma string if needed, but usually individual handling is better
-        // For simplicity, we just copy strings. Arrays (like specialties) might need JSON parsing if sent as string.
         if (key === 'specialties' && typeof value === 'string') {
              try {
                  payloadRecord[key] = JSON.parse(value);
@@ -282,47 +272,19 @@ async function handleProfileUpdate(req: NextRequest) {
         }
       });
       
-      // Handle file separately
       const file = formData.get('avatarFile');
       if (file && file instanceof Blob) {
            const buffer = Buffer.from(await file.arrayBuffer());
            const mimeType = file.type;
-           
-           if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
-                // Try to infer from validation or accept it if it's typical image
-           }
-           
-           // Convert to Base64 for DB storage
-           const base64String = `data:${mimeType};base64,${buffer.toString('base64')}`;
-           payloadRecord['avatarBase64'] = base64String;
+           const s3Url = await uploadToS3(buffer, `avatar_${user.id}`, "profiles", mimeType, true);
+           payloadRecord['avatarUrl'] = s3Url;
       }
     } catch (e) {
       console.error('FormData parsing failed', e);
       return NextResponse.json({ error: 'FORM_DATA_ERROR' }, { status: 400 });
     }
-  } else if (contentType.startsWith('image/') || contentType.includes('application/octet-stream')) {
-    // Handle Raw Binary Upload (WAF Bypass)
-    try {
-      const arrayBuffer = await req.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      // Default to jpeg if octet-stream, otherwise use provided type
-      const mimeType = contentType.includes('application/octet-stream') ? 'image/jpeg' : contentType;
-
-      if (buffer.length > AVATAR_MAX_SIZE) {
-          console.warn('[AVATAR_SKIP] Too large');
-      } else {
-          const base64String = `data:${mimeType};base64,${buffer.toString('base64')}`;
-          payloadRecord['avatarBase64'] = base64String;
-          // Set sentinel to indicate this is only an avatar update
-          payloadRecord['is_raw_avatar_upload'] = true;
-      }
-    } catch (e) {
-      console.error('Binary upload failed', e);
-       return NextResponse.json({ error: 'BINARY_UPLOAD_ERROR' }, { status: 400 });
-    }
-  } else {
-    // Fallback or empty body
   }
+
   if (user.role === 'INVESTIGATOR') {
     const existingProfile = await prisma.investigatorProfile.findUnique({
       where: { userId: user.id },
@@ -332,11 +294,7 @@ async function handleProfileUpdate(req: NextRequest) {
     }
 
     const updateData: Record<string, unknown> = {};
-    let uploadedAvatarUrl: string | null = null;
-    let requestedAvatarRemoval = false;
 
-
-    // 1. Handle Text Fields
     const setNullableString = (field: string) => {
       const val = payloadRecord[field];
       if (typeof val === 'string') {
@@ -360,142 +318,88 @@ async function handleProfileUpdate(req: NextRequest) {
       }
     }
 
-    // Handle specialties
     const specialtiesRaw = payloadRecord.specialties;
     const normalizedSpecialties = normalizeSpecialties(specialtiesRaw);
     if (normalizedSpecialties) {
       updateData.specialties = normalizedSpecialties;
     } else if (Array.isArray(specialtiesRaw) && specialtiesRaw.length === 0) {
-      updateData.specialties = []; // clearing
+      updateData.specialties = [];
     }
 
-    // 2. Handle Avatar
     if (payloadRecord.removeAvatar === true || payloadRecord.removeAvatar === 'true') {
       updateData.avatarUrl = null;
-      requestedAvatarRemoval = true;
     }
     
-    // Check for Base64 upload
+    // Direct S3 Upload for Base64 (Avatar)
     const avatarBase64 = payloadRecord.avatarBase64; 
-    const isBase64Upload = typeof avatarBase64 === 'string' && avatarBase64.startsWith('data:image/');
-    
-    // [Added] Handle Business License & Pledge Data (Deferred Upload from Register)
+    if (typeof avatarBase64 === 'string' && avatarBase64.startsWith('data:image/')) {
+        updateData.avatarUrl = await uploadBase64ToS3(avatarBase64, `avatar_${user.id}`, "profiles", true);
+    }
+
+    // Direct S3 Upload for Documents
     const businessLicenseBase64 = payloadRecord.businessLicenseBase64;
     if (typeof businessLicenseBase64 === 'string' && businessLicenseBase64.startsWith('data:')) {
-        updateData.businessLicenseData = businessLicenseBase64;
-        updateData.businessLicenseUrl = `/api/files/download?type=license&userId=${user.id}`;
+        updateData.businessLicenseUrl = await uploadBase64ToS3(businessLicenseBase64, `license_${user.id}`, "documents", false);
     }
 
     const pledgeFileBase64 = payloadRecord.pledgeFileBase64;
     if (typeof pledgeFileBase64 === 'string' && pledgeFileBase64.startsWith('data:')) {
-        updateData.pledgeData = pledgeFileBase64;
-        updateData.pledgeUrl = `/api/files/download?type=pledge&userId=${user.id}`;
+        updateData.pledgeUrl = await uploadBase64ToS3(pledgeFileBase64, `pledge_${user.id}`, "documents", false);
     }
 
-    // [Added] Handle Hex Data (WAF Bypass)
-    const handleHexUpload = (hex: unknown, type: unknown, targetField: 'businessLicense' | 'pledge' | 'terms' | 'idCard') => {
+    // Handle Hex Data (WAF Bypass) - Convert to S3
+    const handleHexUploadToS3 = async (hex: unknown, type: unknown, targetField: 'businessLicense' | 'pledge' | 'terms' | 'idCard') => {
         if (typeof hex === 'string' && hex.length > 0) {
             try {
                 const buffer = Buffer.from(hex, 'hex');
                 const mimeType = typeof type === 'string' ? type : 'image/jpeg';
-                const base64 = `data:${mimeType};base64,${buffer.toString('base64')}`;
+                const s3Url = await uploadToS3(buffer, `${targetField}_${user.id}`, "documents", mimeType, false);
                 
-                if (targetField === 'businessLicense') {
-                    updateData.businessLicenseData = base64;
-                    updateData.businessLicenseUrl = `/api/files/download?type=license&userId=${user.id}`;
-                } else if (targetField === 'pledge') {
-                    updateData.pledgeData = base64;
-                    updateData.pledgeUrl = `/api/files/download?type=pledge&userId=${user.id}`;
-                } else if (targetField === 'terms') {
-                    updateData.termsData = base64;
-                    updateData.termsUrl = `/api/files/download?type=terms&userId=${user.id}`;
-                } else if (targetField === 'idCard') {
-                    updateData.idCardData = base64;
-                    updateData.idCardUrl = `/api/files/download?type=idcard&userId=${user.id}`;
-                }
+                if (targetField === 'businessLicense') updateData.businessLicenseUrl = s3Url;
+                else if (targetField === 'pledge') updateData.pledgeUrl = s3Url;
+                else if (targetField === 'terms') updateData.termsUrl = s3Url;
+                else if (targetField === 'idCard') updateData.idCardUrl = s3Url;
             } catch (e) {
-                console.error(`Failed to decode hex for ${targetField}`, e);
+                console.error(`Failed to upload hex for ${targetField} to S3`, e);
             }
         }
     };
 
-    handleHexUpload(payloadRecord.businessLicenseHex, payloadRecord.businessLicenseType, 'businessLicense');
-    handleHexUpload(payloadRecord.pledgeFileHex, payloadRecord.pledgeFileType, 'pledge');
-    handleHexUpload(payloadRecord.termsFileHex, payloadRecord.termsFileType, 'terms');
-    handleHexUpload(payloadRecord.idCardFileHex, payloadRecord.idCardFileType, 'idCard');
+    await handleHexUploadToS3(payloadRecord.businessLicenseHex, payloadRecord.businessLicenseType, 'businessLicense');
+    await handleHexUploadToS3(payloadRecord.pledgeFileHex, payloadRecord.pledgeFileType, 'pledge');
+    await handleHexUploadToS3(payloadRecord.termsFileHex, payloadRecord.termsFileType, 'terms');
+    await handleHexUploadToS3(payloadRecord.idCardFileHex, payloadRecord.idCardFileType, 'idCard');
 
-
-    if (isBase64Upload) {
-      try {
-        const matches = avatarBase64.match(/^data:(image\/([a-zA-Z+]+));base64,(.+)$/);
-        
-        if (matches && matches.length === 4) {
-          const mimeType = matches[1];
-          const base64Data = matches[3];
-          const buffer = Buffer.from(base64Data, 'base64');
-          
-          if (buffer.length > AVATAR_MAX_SIZE) {
-             console.warn('[AVATAR_SKIP] Too large');
-          } else if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
-             console.warn('[AVATAR_SKIP] Unsupported type', mimeType);
-          } else {
-             // 2025-XX-XX: Use DB Storage for Base64 (Serverless workaround)
-             // Instead of writing to file (volatile), save the full Base64 string to DB.
-             updateData.avatarUrl = avatarBase64;
-             uploadedAvatarUrl = avatarBase64; 
-             requestedAvatarRemoval = false;
-          }
-        }
-      } catch (error) {
-        console.warn('[AVATAR_UPLOAD_SKIPPED] Base64 write failed', error);
-      }
+    if (payloadRecord.avatarUrl) {
+        updateData.avatarUrl = payloadRecord.avatarUrl;
     }
 
-    // 3. Finalize Update
     const hasChanges = Object.keys(updateData).length > 0;
     if (!hasChanges) {
-       // Return success (idempotent)
-       const currentProfile = {
-            ...existingProfile,
-            termsAcceptedAt: serializeDate(existingProfile.termsAcceptedAt ?? null),
-            privacyAcceptedAt: serializeDate(existingProfile.privacyAcceptedAt ?? null),
-            updatedAt: serializeDate(existingProfile.updatedAt),
-            createdAt: serializeDate(existingProfile.createdAt),
-        };
-        return NextResponse.json({
-          message: 'PROFILE_UPDATED',
-          profile: currentProfile,
-          warning: (isBase64Upload && !uploadedAvatarUrl) ? 'IMAGE_UPLOAD_SYSTEM_LIMIT' : null,
+       return NextResponse.json({
+          message: 'NO_CHANGES',
+          profile: existingProfile,
           investigatorStatus: existingProfile.status as InvestigatorStatus,
         });
     }
 
     updateData.updatedAt = new Date();
 
-    let updatedProfile: InvestigatorProfile;
     try {
-      updatedProfile = await prisma.investigatorProfile.update({
+      const updatedProfile = await prisma.investigatorProfile.update({
         where: { userId: user.id },
         data: updateData as Prisma.InvestigatorProfileUpdateInput,
       });
+      
+      return NextResponse.json({
+        message: 'PROFILE_UPDATED',
+        profile: updatedProfile,
+        investigatorStatus: updatedProfile.status as InvestigatorStatus,
+      });
     } catch (error) {
       console.error('[PROFILE_UPDATE_DB_ERROR]', error);
-      if (uploadedAvatarUrl) await deleteLocalAvatar(uploadedAvatarUrl);
       return NextResponse.json({ error: 'DB_UPDATE_FAILED', details: (error as Error).message }, { status: 500 });
     }
-
-    if (uploadedAvatarUrl && existingProfile.avatarUrl && existingProfile.avatarUrl !== uploadedAvatarUrl && !existingProfile.avatarUrl.startsWith('data:')) {
-      await deleteLocalAvatar(existingProfile.avatarUrl);
-    } else if (requestedAvatarRemoval && !uploadedAvatarUrl && existingProfile.avatarUrl && !updatedProfile.avatarUrl && !existingProfile.avatarUrl.startsWith('data:')) {
-      await deleteLocalAvatar(existingProfile.avatarUrl);
-    }
-
-    return NextResponse.json({
-      message: 'PROFILE_UPDATED',
-      profile: updatedProfile,
-      warning: (isBase64Upload && !uploadedAvatarUrl) ? 'IMAGE_UPLOAD_SYSTEM_LIMIT' : null,
-      investigatorStatus: updatedProfile.status as InvestigatorStatus,
-    });
   }
   
   return NextResponse.json({ user: sanitizeUser(user), role: user.role, profile: null });
