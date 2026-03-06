@@ -121,10 +121,9 @@ const compressImageToBase64 = async (file: File): Promise<string> => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         
-        // Increased to 4096px and 0.99 quality for ULTRA high resolution (4K+)
-        // The backend supports chunked upload or large payloads, so we prioritize quality.
-        const MAX_WIDTH = 4096;
-        const MAX_HEIGHT = 4096;
+        // Lowered to 2048px and 0.7 quality to avoid 413 Payload Too Large errors
+        const MAX_WIDTH = 2048;
+        const MAX_HEIGHT = 2048;
         let width = img.width;
         let height = img.height;
 
@@ -144,8 +143,8 @@ const compressImageToBase64 = async (file: File): Promise<string> => {
         canvas.height = height;
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // Quality 0.99 -> Virtually lossless
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.99);
+        // Quality 0.7 -> Good balance between quality and size
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
         resolve(dataUrl);
       };
       img.onerror = reject;
