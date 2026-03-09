@@ -9,6 +9,10 @@ frontend:
       commands:
         - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
         - echo "DATABASE_URL=$DATABASE_URL" >> .env
+        - echo "LIRA_AWS_REGION=$LIRA_AWS_REGION" >> .env
+        - echo "LIRA_AWS_ACCESS_KEY_ID=$LIRA_AWS_ACCESS_KEY_ID" >> .env
+        - echo "LIRA_AWS_SECRET_ACCESS_KEY=$LIRA_AWS_SECRET_ACCESS_KEY" >> .env
+        - echo "LIRA_AWS_S3_BUCKET_NAME=$LIRA_AWS_S3_BUCKET_NAME" >> .env
         - npm run build
         - npx prisma db push --accept-data-loss
         # - npm run db:seed  <-- Removed to prevent data reset on deployment
