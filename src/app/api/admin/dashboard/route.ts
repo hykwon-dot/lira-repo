@@ -66,13 +66,9 @@ export async function GET() {
           introduction: true,
           portfolioUrl: true,
           businessLicenseUrl: true,
-          businessLicenseData: true,
           pledgeUrl: true,
-          pledgeData: true,
           termsUrl: true,
-          termsData: true,
           idCardUrl: true,
-          idCardData: true,
         user: {
           select: {
             id: true,
