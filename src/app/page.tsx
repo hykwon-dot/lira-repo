@@ -124,10 +124,25 @@ export default function Home() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Combine Default Banner with DB Banners
+  const allMainSlides = [
+    { 
+      id: -1, // Unique ID for default slide
+      imageUrl: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=2574&auto=format&fit=crop',
+      title: null,
+      linkUrl: null,
+      clickAction: 'LINK' as const,
+      targetId: null,
+      isActive: true,
+      order: -1,
+      type: 'MAIN_LARGE' as const
+    },
+    ...mainBanners
+  ];
+
   const paginate = (newDirection: number) => {
-    if (mainBanners.length === 0) return;
     setDirection(newDirection);
-    setCurrentBannerIndex((prev) => (prev + newDirection + mainBanners.length) % mainBanners.length);
+    setCurrentBannerIndex((prev) => (prev + newDirection + allMainSlides.length) % allMainSlides.length);
   };
   
   const paginateTestimonial = (newDirection: number) => {
@@ -180,12 +195,12 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (mainBanners.length <= 1) return;
+    if (allMainSlides.length <= 1) return;
     const interval = setInterval(() => {
       paginate(1);
     }, 5000);
     return () => clearInterval(interval);
-  }, [mainBanners.length]); 
+  }, [allMainSlides.length]); 
 
   useEffect(() => {
     if (testimonials.length <= itemsPerPage) return;
@@ -217,7 +232,7 @@ export default function Home() {
     }
   };
 
-  const currentBanner = mainBanners[currentBannerIndex];
+  const currentSlide = allMainSlides[currentBannerIndex];
 
   const visibleTestimonials = testimonials.slice(
     testimonialIndex * itemsPerPage,
@@ -236,91 +251,86 @@ export default function Home() {
       <main className="flex-1">
         <section className="relative h-[60vh] -mt-20 overflow-hidden bg-white group">
           <AnimatePresence initial={false} custom={direction}>
-            {mainBanners.length > 0 ? (
-              <motion.div
-                key={currentBannerIndex}
-                custom={direction}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{
-                  x: { type: "tween", duration: 0.5, ease: "easeInOut" },
-                  opacity: { duration: 0.3 }
+            <motion.div
+              key={currentBannerIndex}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: "tween", duration: 0.5, ease: "easeInOut" },
+                opacity: { duration: 0.3 }
+              }}
+              className="absolute inset-0 flex flex-col justify-center items-center text-center w-full h-full"
+            >
+              <div 
+                className="absolute inset-0 bg-cover bg-center opacity-20" 
+                style={{ 
+                  backgroundImage: `url('${currentSlide?.imageUrl}')` 
                 }}
-                className="absolute inset-0 flex flex-col justify-center items-center text-center w-full h-full"
-              >
-                <div 
-                  className="absolute inset-0 bg-cover bg-center opacity-20" 
-                  style={{ 
-                    backgroundImage: `url('${currentBanner.imageUrl}')` 
-                  }}
-                ></div>
-                <div className="container mx-auto px-4 relative text-center z-10">
-                  <h1 className="font-bold text-gray-900 mb-4 leading-tight break-keep">
-                    {currentBanner.title ? (
-                      <span className="text-2xl md:text-4xl">{currentBanner.title}</span>
-                    ) : (
-                      <>
-                        <span className="block text-3xl md:text-5xl mb-6">
-                          AI를 통한 쉽고 간편한 민간조사 의뢰
-                        </span>
-                        <span className="block text-2xl md:text-4xl">
-                          이제 24시간 언제든지 맞춤형 민간조사원을 매칭받고,
-                          <br className="hidden md:block" />
-                          {' '}믿을 수 있는 전문가와 일을 진행할 수 있습니다.
-                        </span>
-                      </>
-                    )}
-                  </h1>
-                  <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed break-keep">
-                    AI와 초기 상담을 통해 사건을 분석하고,
-                    <br className="hidden md:block" />{' '}
-                    경험이 풍부한 전문 민간조사원과 매칭을 받으세요.
-                  </p>
-                  <div className="flex justify-center">
-                    <button 
-                        onClick={() => handleBannerClick(currentBanner)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105"
-                    >
-                      {currentBanner.title ? '자세히 보기' : 'AI를 통해 상담해서 사건 맡기기'}
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ) : (
-              <div className="absolute inset-0 flex flex-col justify-center items-center text-center">
-                <div 
-                  className="absolute inset-0 bg-cover bg-center opacity-20" 
-                  style={{ 
-                    backgroundImage: `url('https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=2574&auto=format&fit=crop')` 
-                  }}
-                ></div>
-                <div className="container mx-auto px-4 relative text-center z-10">
-                  <h1 className="font-bold text-gray-900 mb-4 leading-tight break-keep">
-                    <span className="block text-3xl md:text-5xl mb-6">
-                      AI를 통한 쉽고 간편한 민간조사 의뢰
-                    </span>
-                    <span className="block text-2xl md:text-4xl">
-                      이제 24시간 언제든지 맞춤형 민간조사원을 매칭받고,
-                      <br className="hidden md:block" />
-                      {' '}믿을 수 있는 전문가와 일을 진행할 수 있습니다.
-                    </span>
-                  </h1>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link href="/simulation" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
-                      AI를 통해 상담해서 사건 맡기기
-                    </Link>
-                    <Link href={user ? "/scenario" : "/login"} className="bg-white hover:bg-gray-200 text-blue-600 font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105 border border-blue-600">
-                      나와 유사한 사건 찾기
-                    </Link>
-                  </div>
-                </div>
+              ></div>
+              <div className="container mx-auto px-4 relative text-center z-10">
+                {currentSlide?.id === -1 ? (
+                  // Case 1: Default Intro Banner
+                  <>
+                    <h1 className="font-bold text-gray-900 mb-4 leading-tight break-keep">
+                      <span className="block text-3xl md:text-5xl mb-6">
+                        AI를 통한 쉽고 간편한 민간조사 의뢰
+                      </span>
+                      <span className="block text-2xl md:text-4xl">
+                        이제 24시간 언제든지 맞춤형 민간조사원을 매칭받고,
+                        <br className="hidden md:block" />
+                        {' '}믿을 수 있는 전문가와 일을 진행할 수 있습니다.
+                      </span>
+                    </h1>
+                    <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed break-keep">
+                      AI와 초기 상담을 통해 사건을 분석하고,
+                      <br className="hidden md:block" />{' '}
+                      경험이 풍부한 전문 민간조사원과 매칭을 받으세요.
+                      <br className="hidden md:block" />{' '}
+                      유사한 사건 사례를 참고하여 더 나은 결과를 얻으실 수 있습니다.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      <Link href="/simulation" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
+                        AI를 통해 상담해서 사건 맡기기
+                      </Link>
+                      <Link href={user ? "/scenario" : "/login"} className="bg-white hover:bg-gray-200 text-blue-600 font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105 border border-blue-600">
+                        나와 유사한 사건 찾기
+                      </Link>
+                      <Link href="/investigators" className="bg-gray-900 hover:bg-black text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
+                        탐정 명단 보기
+                      </Link>
+                    </div>
+                  </>
+                ) : (
+                  // Case 2: Admin Registered Banners
+                  <>
+                    <h1 className="font-bold text-gray-900 mb-4 leading-tight break-keep">
+                      {currentSlide?.title ? (
+                        <span className="text-2xl md:text-4xl">{currentSlide.title}</span>
+                      ) : (
+                        <span className="text-2xl md:text-4xl">LIRA와 함께 사건을 해결하세요</span>
+                      )}
+                    </h1>
+                    <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed break-keep">
+                      검증된 민간조사원들이 당신의 사건을 해결하기 위해 대기 중입니다.
+                    </p>
+                    <div className="flex justify-center">
+                      <button 
+                          onClick={() => handleBannerClick(currentSlide as Banner)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105"
+                      >
+                        {currentSlide?.clickAction === 'INVESTIGATOR' ? '프로필 보기' : '자세히 보기'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
-            )}
+            </motion.div>
           </AnimatePresence>
           
-          {mainBanners.length > 1 && (
+          {allMainSlides.length > 1 && (
             <>
               <button
                 className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-3 rounded-full backdrop-blur-sm transition-all z-20 hidden group-hover:block"
@@ -334,6 +344,24 @@ export default function Home() {
               >
                 <FiChevronRight size={32} />
               </button>
+
+              <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center gap-2">
+                {allMainSlides.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                        setDirection(idx > currentBannerIndex ? 1 : -1);
+                        setCurrentBannerIndex(idx);
+                    }}
+                    className={`h-2.5 w-2.5 rounded-full transition-all ${
+                      idx === currentBannerIndex 
+                        ? "bg-blue-600 w-8" 
+                        : "bg-gray-300 hover:bg-gray-400"
+                    }`}
+                    aria-label={`Go to slide ${idx + 1}`}
+                  />
+                ))}
+              </div>
             </>
           )}
         </section>
@@ -360,9 +388,13 @@ export default function Home() {
                         unoptimized={banner.imageUrl.includes('http')}
                       />
                     </div>
+                    {banner.title && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                        <h3 className="text-white font-bold text-lg">{banner.title}</h3>
+                      </div>
+                    )}
                   </button>
                 ))}
-                {/* 무한 스크롤을 위한 복제 */}
                 {subBanners.map((banner) => (
                   <button 
                     key={`duplicate-${banner.id}`} 
@@ -380,6 +412,11 @@ export default function Home() {
                         unoptimized={banner.imageUrl.includes('http')}
                       />
                     </div>
+                    {banner.title && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                        <h3 className="text-white font-bold text-lg">{banner.title}</h3>
+                      </div>
+                    )}
                   </button>
                 ))}
               </div>
@@ -394,19 +431,19 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="bg-gray-50 p-8 rounded-lg text-center border border-gray-200 hover:shadow-xl transition-shadow">
                 <h3 className="text-xl font-bold mb-2">AI 기반 상담</h3>
-                <p className="text-gray-600">사건의 특성과 요구사항을 AI가 분석하여 가장 적합한 민간조사원을 매칭해드립니다.</p>
+                <p className="text-gray-600">사건의 특성과 요구사항을 AI가 분석하여 가장 적합한 민간조사원을 매칭해드립니다. 24시간 언제든지 상담 가능합니다.</p>
               </div>
               <div className="bg-gray-50 p-8 rounded-lg text-center border border-gray-200 hover:shadow-xl transition-shadow">
                 <h3 className="text-xl font-bold mb-2">전문가 매칭</h3>
-                <p className="text-gray-600">경험이 풍부하고 검증된 민간조사원들과 연결되어 전문적인 서비스를 받으실 수 있습니다.</p>
+                <p className="text-gray-600">경험이 풍부하고 검증된 민간조사원들과 연결되어 전문적이고 신뢰할 수 있는 서비스를 받으실 수 있습니다.</p>
               </div>
               <div className="bg-gray-50 p-8 rounded-lg text-center border border-gray-200 hover:shadow-xl transition-shadow">
                 <h3 className="text-xl font-bold mb-2">사건 분석</h3>
-                <p className="text-gray-600">유사한 사건 사례를 분석하여 해결 방안을 제시하고 성공 확률을 높입니다.</p>
+                <p className="text-gray-600">유사한 사건들의 사례를 분석하여 효과적인 해결 방안을 제시하고 성공 확률을 높입니다.</p>
               </div>
               <div className="bg-gray-50 p-8 rounded-lg text-center border border-gray-200 hover:shadow-xl transition-shadow">
                 <h3 className="text-xl font-bold mb-2">맞춤형 서비스</h3>
-                <p className="text-gray-600">개인의 상황과 요구사항에 맞는 맞춤형 조사 서비스를 제공합니다.</p>
+                <p className="text-gray-600">개인의 상황과 요구사항에 맞는 맞춤형 조사 서비스를 제공하여 최적의 결과를 보장합니다.</p>
               </div>
             </div>
           </div>
@@ -414,44 +451,159 @@ export default function Home() {
 
         {/* 서비스 진행 절차 */}
         <section className="py-20 bg-gray-50">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-12">서비스 진행 절차</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              <div className="p-6"><h3 className="font-bold">사건 상담</h3></div>
-              <div className="p-6"><h3 className="font-bold">전문가 매칭</h3></div>
-              <div className="p-6"><h3 className="font-bold">조사 진행</h3></div>
-              <div className="p-6"><h3 className="font-bold">결과 분석</h3></div>
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-12">서비스 진행 절차</h2>
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-4 text-center">
+              <div className="flex-1 p-6">
+                <h3 className="text-xl font-bold mb-2">사건 상담</h3>
+                <p className="text-gray-600">AI 상담을 통해 사건의 내용과 요구사항을 상세히 분석하고 적합한 조사 방향을 제시받으세요.</p>
+              </div>
+              <div className="hidden lg:block text-gray-400">
+                <CustomArrow />
+              </div>
+              <div className="flex-1 p-6">
+                <h3 className="text-xl font-bold mb-2">전문가 매칭</h3>
+                <p className="text-gray-600">사건의 특성에 맞는 경험이 풍부한 민간조사원과 매칭되어 전문적인 서비스를 받으실 수 있습니다.</p>
+              </div>
+              <div className="hidden lg:block text-gray-400">
+                <CustomArrow />
+              </div>
+              <div className="flex-1 p-6">
+                <h3 className="text-xl font-bold mb-2">조사 진행</h3>
+                <p className="text-gray-600">전문가와 함께 체계적이고 효율적인 조사를 진행하며 실시간으로 진행 상황을 확인하세요.</p>
+              </div>
+              <div className="hidden lg:block text-gray-400">
+                <CustomArrow />
+              </div>
+              <div className="flex-1 p-6">
+                <h3 className="text-xl font-bold mb-2">결과 분석</h3>
+                <p className="text-gray-600">조사 결과를 종합 분석하여 명확한 해결 방안과 후속 조치를 제공받으세요.</p>
+              </div>
             </div>
           </div>
         </section>
 
         {/* 이용자 후기 */}
         <section className="py-20 bg-white overflow-hidden relative group/testimonials">
-          <div className="container mx-auto px-4">
+          <div className="container mx-auto px-4 mb-4">
             <h2 className="text-3xl font-bold text-center mb-12">이용자 후기</h2>
-            {testimonials.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {visibleTestimonials.map((t) => (
-                  <div key={t.id} className="bg-gray-50 p-5 rounded-lg border">
-                    <p className="text-gray-600 line-clamp-5">"{t.content}"</p>
-                    <p className="mt-4 font-bold">{t.name}</p>
-                  </div>
-                ))}
-              </div>
+            
+            {testimonials.length === 0 ? (
+              <p className="text-center text-sm text-gray-500">등록된 이용자 후기가 없습니다.</p>
+            ) : (
+              <>
+                <div className="relative min-h-[360px] md:min-h-[300px] overflow-hidden">
+                  <AnimatePresence initial={false} custom={testimonialDirection}>
+                    <motion.div
+                      key={testimonialIndex}
+                      custom={testimonialDirection}
+                      variants={slideVariants}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={{
+                        x: { type: "tween", duration: 0.5, ease: "easeInOut" },
+                        opacity: { duration: 0.3 }
+                      }}
+                      className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full"
+                    >
+                      {visibleTestimonials.map((testimonial) => {
+                        const avatarSrc =
+                          testimonial.avatarUrl ||
+                          `https://i.pravatar.cc/150?u=${encodeURIComponent(testimonial.name)}`;
+                        return (
+                          <div
+                            key={testimonial.id}
+                            className="bg-gray-50 p-5 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col"
+                          >
+                            <p className="text-gray-600 mb-4 leading-relaxed flex-grow line-clamp-5">
+                              &ldquo;{testimonial.content}&rdquo;
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTestimonial(testimonial)}
+                              className="self-start text-xs text-blue-600 hover:text-blue-800 mb-3"
+                            >
+                              전체 보기
+                            </button>
+                            <div className="flex items-center mt-auto">
+                              <Image
+                                src={avatarSrc}
+                                alt={testimonial.name}
+                                width={44}
+                                height={44}
+                                className="rounded-full mr-3 border border-gray-200 object-cover"
+                              />
+                              <div>
+                                <p className="font-bold text-gray-900 text-sm">{testimonial.name}</p>
+                                {testimonial.role && (
+                                  <p className="text-xs text-gray-500">{testimonial.role}</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                {/* Testimonial Controls */}
+                {testimonials.length > itemsPerPage && (
+                  <>
+                    <button
+                      className="absolute top-1/2 left-2 md:left-8 z-10 p-3 rounded-full bg-white/80 text-gray-800 shadow-lg hover:bg-white transition-all transform -translate-y-1/2 opacity-0 group-hover/testimonials:opacity-100 focus:opacity-100 disabled:opacity-30"
+                      onClick={() => paginateTestimonial(-1)}
+                      aria-label="Previous testimonial"
+                    >
+                      <FiChevronLeft size={24} />
+                    </button>
+                    <button
+                      className="absolute top-1/2 right-2 md:right-8 z-10 p-3 rounded-full bg-white/80 text-gray-800 shadow-lg hover:bg-white transition-all transform -translate-y-1/2 opacity-0 group-hover/testimonials:opacity-100 focus:opacity-100 disabled:opacity-30"
+                      onClick={() => paginateTestimonial(1)}
+                      aria-label="Next testimonial"
+                    >
+                      <FiChevronRight size={24} />
+                    </button>
+
+                    {/* Indicators */}
+                    <div className="flex justify-center gap-2 mt-8">
+                      {Array.from({ length: Math.ceil(testimonials.length / itemsPerPage) }).map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setTestimonialDirection(idx > testimonialIndex ? 1 : -1);
+                            setTestimonialIndex(idx);
+                          }}
+                          className={`h-2.5 w-2.5 rounded-full transition-all ${
+                            idx === testimonialIndex
+                              ? "bg-blue-600 w-8"
+                              : "bg-gray-300 hover:bg-gray-400"
+                          }`}
+                          aria-label={`Go to testimonial page ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
             )}
           </div>
         </section>
 
-        {/* 수상 내역 */}
+        {/* Awards Section */}
         {awards.length > 0 && (
-          <section className="py-20 bg-gray-50 text-center">
-            <div className="container mx-auto px-4">
+          <section className="py-20 bg-gray-50">
+            <div className="container mx-auto px-4 text-center">
               <h2 className="text-3xl font-bold mb-12">수상 및 인증 내역</h2>
-              <div className="flex flex-wrap justify-center gap-8">
-                {awards.map((a) => (
-                  <div key={a.id} className="w-32">
-                    <img src={a.imageUrl} alt={a.title} className="mx-auto h-20 object-contain" />
-                    <p className="mt-2 text-sm font-bold">{a.title}</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                {awards.map((award) => (
+                  <div key={award.id} className="flex flex-col items-center">
+                    <div className="w-32 h-32 relative mb-4 grayscale hover:grayscale-0 transition-all duration-300 flex items-center justify-center">
+                      <img src={award.imageUrl} alt={award.title} className="max-h-full max-w-full object-contain" />
+                    </div>
+                    <h3 className="font-bold text-lg mb-1">{award.title}</h3>
+                    <p className="text-sm text-gray-500">{new Date(award.date).toLocaleDateString()}</p>
                   </div>
                 ))}
               </div>
@@ -459,18 +611,54 @@ export default function Home() {
           </section>
         )}
 
-        {/* CTA */}
-        <section className="py-20 bg-blue-600 text-white text-center">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold mb-8">민간조사 서비스를 시작할 준비가 되셨나요?</h2>
-            <Link href="/register" className="bg-white text-blue-600 font-bold py-3 px-8 rounded-lg">
+        {/* CTA Section */}
+        <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-4xl font-bold mb-4">전문적인 민간조사 서비스를 시작할 준비가 되셨나요?</h2>
+            <p className="text-lg text-blue-100 mb-8">LIRA를 통해 AI 상담과 전문가 매칭으로 복잡한 사건을 해결하고 있는 수많은 고객들과 함께하세요.</p>
+            <Link href="/register" className="bg-white text-blue-600 font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
               지금 바로 시작하세요
             </Link>
           </div>
         </section>
       </main>
 
-      {/* 모달 */}
+      {/* Testimonial Modal */}
+      <AnimatePresence>
+        {selectedTestimonial && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedTestimonial(null)}
+          >
+            <motion.div
+              className="bg-white max-w-xl w-full mx-4 rounded-lg shadow-xl p-6 relative"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setSelectedTestimonial(null)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+              >
+                닫기
+              </button>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                {selectedTestimonial.content}
+              </p>
+              <div className="mt-6 flex items-center">
+                <div className="font-bold">{selectedTestimonial.name}</div>
+                {selectedTestimonial.role && <div className="ml-2 text-gray-500">| {selectedTestimonial.role}</div>}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Investigator Modal */}
       <InvestigatorDetailModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
