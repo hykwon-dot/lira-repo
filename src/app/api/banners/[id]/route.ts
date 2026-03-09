@@ -12,7 +12,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   try {
     const id = parseInt(params.id);
     const body = await req.json();
-    let { title, imageUrl, linkUrl, type, isActive, order } = body;
+    let { title, imageUrl, linkUrl, type, isActive, order, clickAction, targetId } = body;
     const prisma = await getPrismaClient();
 
     // S3 Upload if imageUrl is Base64
@@ -31,6 +31,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         imageUrl,
         linkUrl,
         type,
+        clickAction: clickAction || 'LINK',
+        targetId: targetId ? parseInt(String(targetId)) : null,
         isActive,
         order,
       },

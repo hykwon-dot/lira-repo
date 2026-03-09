@@ -437,20 +437,28 @@ model Notification {
 }
 
 model Banner {
-  id        Int        @id @default(autoincrement())
-  title     String?
-  imageUrl  String     @db.LongText
-  linkUrl   String?
-  type      BannerType @default(MAIN_LARGE)
-  isActive  Boolean    @default(true)
-  order     Int        @default(0)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id          Int          @id @default(autoincrement())
+  title       String?
+  imageUrl    String       @db.LongText
+  linkUrl     String?
+  type        BannerType   @default(MAIN_LARGE)
+  clickAction BannerAction @default(LINK)
+  targetId    Int?
+  isActive    Boolean      @default(true)
+  order       Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 enum BannerType {
   MAIN_LARGE
   MAIN_SMALL
+}
+
+enum BannerAction {
+  LINK
+  INVESTIGATOR
+  ORGANIZATION
 }
 
 enum UserRole {

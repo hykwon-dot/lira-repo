@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    let { title, imageUrl, linkUrl, type, isActive, order } = body;
+    let { title, imageUrl, linkUrl, type, isActive, order, clickAction, targetId } = body;
     const prisma = await getPrismaClient();
 
     // S3 Upload if imageUrl is Base64
@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
             imageUrl = await uploadBase64ToS3(imageUrl, `banner_${Date.now()}`, "banners", true);
         } catch (e) {
             console.error('S3 Upload failed for banner', e);
-            // Fallback to original Base64 if S3 fails (optional)
         }
     }
 
@@ -44,6 +43,8 @@ export async function POST(req: NextRequest) {
         imageUrl,
         linkUrl,
         type: type || 'MAIN_LARGE',
+        clickAction: clickAction || 'LINK',
+        targetId: targetId ? parseInt(String(targetId)) : null,
         isActive: isActive ?? true,
         order: order ?? 0,
       },

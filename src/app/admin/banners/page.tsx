@@ -9,15 +9,27 @@ type Banner = {
   imageUrl: string;
   linkUrl: string | null;
   type: 'MAIN_LARGE' | 'MAIN_SMALL';
+  clickAction: 'LINK' | 'INVESTIGATOR' | 'ORGANIZATION';
+  targetId: number | null;
   isActive: boolean;
   order: number;
 };
 
+type SimpleInvestigator = {
+  id: number;
+  user: {
+    name: string;
+  };
+};
+
 export default function AdminBannersPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [investigators, setInvestigators] = useState<SimpleInvestigator[]>([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState<Partial<Banner>>({
     type: 'MAIN_LARGE',
+    clickAction: 'LINK',
+    targetId: null,
     isActive: true,
     order: 0,
   });
@@ -26,6 +38,7 @@ export default function AdminBannersPage() {
 
   useEffect(() => {
     fetchBanners();
+    fetchInvestigators();
   }, []);
 
   const fetchBanners = async () => {
@@ -37,6 +50,19 @@ export default function AdminBannersPage() {
       console.error('Failed to fetch banners', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInvestigators = async () => {
+    try {
+      // Fetch only approved investigators for the select box
+      const res = await fetch('/api/investigators?status=APPROVED');
+      if (res.ok) {
+        const data = await res.json();
+        setInvestigators(data.investigators || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch investigators', error);
     }
   };
 
@@ -81,11 +107,14 @@ export default function AdminBannersPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+            ...formData,
+            targetId: formData.targetId ? parseInt(String(formData.targetId)) : null
+        }),
       });
       if (res.ok) {
         fetchBanners();
-        setFormData({ type: 'MAIN_LARGE', isActive: true, order: 0, title: '', imageUrl: '', linkUrl: '' });
+        setFormData({ type: 'MAIN_LARGE', clickAction: 'LINK', targetId: null, isActive: true, order: 0, title: '', imageUrl: '', linkUrl: '' });
         setEditingId(null);
       } else {
         alert('Failed to save banner');
@@ -161,15 +190,51 @@ export default function AdminBannersPage() {
               />
               {uploading && <p className="text-xs text-blue-500 mt-1">업로드 중...</p>}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">링크 URL</label>
-              <input
-                type="text"
-                value={formData.linkUrl || ''}
-                onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2"
-              />
+
+            <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">클릭 액션</label>
+                  <select
+                    value={formData.clickAction}
+                    onChange={(e) => setFormData({ ...formData, clickAction: e.target.value as Banner['clickAction'], targetId: null })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2"
+                  >
+                    <option value="LINK">외부 링크 이동</option>
+                    <option value="INVESTIGATOR">조사원 상세 팝업</option>
+                  </select>
+                </div>
+                
+                {formData.clickAction === 'LINK' ? (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">링크 URL</label>
+                      <input
+                        type="text"
+                        value={formData.linkUrl || ''}
+                        onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2"
+                        placeholder="https://..."
+                      />
+                    </div>
+                ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">대상 조사원 선택</label>
+                      <select
+                        value={formData.targetId || ''}
+                        onChange={(e) => setFormData({ ...formData, targetId: e.target.value ? parseInt(e.target.value) : null })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2"
+                        required
+                      >
+                        <option value="">조사원을 선택하세요</option>
+                        {investigators.map((inv) => (
+                          <option key={inv.id} value={inv.id}>
+                            {inv.user.name} (ID: {inv.id})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                )}
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700">타입</label>
               <select
@@ -208,7 +273,7 @@ export default function AdminBannersPage() {
                   type="button"
                   onClick={() => {
                     setEditingId(null);
-                    setFormData({ type: 'MAIN_LARGE', isActive: true, order: 0, title: '', imageUrl: '', linkUrl: '' });
+                    setFormData({ type: 'MAIN_LARGE', clickAction: 'LINK', targetId: null, isActive: true, order: 0, title: '', imageUrl: '', linkUrl: '' });
                   }}
                   className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded hover:bg-gray-300"
                 >
@@ -218,11 +283,10 @@ export default function AdminBannersPage() {
             </div>
           </form>
           <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-            <h3 className="text-sm font-bold text-blue-800 mb-2">💡 배너 이미지 최적화 안내</h3>
+            <h3 className="text-sm font-bold text-blue-800 mb-2">💡 팁</h3>
             <ul className="text-xs text-blue-700 space-y-1 list-disc pl-4">
-              <li><strong>메인 (큰 배너):</strong> 권장 사이즈 1920x1080px (가로가 넓은 고해상도 이미지)</li>
-              <li><strong>서브 (작은 배너):</strong> 권장 사이즈 800x450px (16:9 비율, 최소 400x225px 이상)</li>
-              <li>이미지 용량은 가급적 1MB 이하로 압축하여 등록해주세요.</li>
+              <li><strong>조사원 상세 팝업:</strong> 목록에서 조사원을 선택하면 배너 클릭 시 해당 조사원의 프로필이 뜹니다.</li>
+              <li>목록에 없는 경우 해당 조사원이 '승인(APPROVED)' 상태인지 확인하세요.</li>
             </ul>
           </div>
         </div>
@@ -239,7 +303,10 @@ export default function AdminBannersPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold">{banner.title || '(제목 없음)'}</h3>
-                  <p className="text-sm text-gray-500">{banner.type} | Order: {banner.order}</p>
+                  <p className="text-sm text-gray-500">
+                    {banner.type} | {banner.clickAction === 'INVESTIGATOR' ? '조사원 팝업' : '외부 링크'} 
+                    {banner.clickAction === 'INVESTIGATOR' ? ` (${investigators.find(i => i.id === banner.targetId)?.user.name || `ID: ${banner.targetId}`})` : ''}
+                  </p>
                   <p className="text-xs text-gray-400">{banner.linkUrl}</p>
                 </div>
                 <div className="flex gap-2">

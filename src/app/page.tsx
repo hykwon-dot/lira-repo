@@ -6,6 +6,8 @@ import { useState, useEffect } from 'react';
 import { useUserStore } from "@/lib/userStore";
 import { AnimatePresence, motion } from "framer-motion";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import InvestigatorDetailModal from "./investigators/InvestigatorDetailModal";
+import { translateCode, translateList } from "@/lib/translationHelper";
 
 type Banner = {
   id: number;
@@ -13,6 +15,8 @@ type Banner = {
   imageUrl: string;
   linkUrl: string | null;
   type: 'MAIN_LARGE' | 'MAIN_SMALL';
+  clickAction: 'LINK' | 'INVESTIGATOR' | 'ORGANIZATION';
+  targetId: number | null;
   isActive: boolean;
   order: number;
 };
@@ -32,6 +36,33 @@ type Testimonial = {
   content: string;
   avatarUrl: string | null;
 };
+
+// Re-use helper functions for the modal
+function translateRegion(regionString: string | null): string {
+  if (!regionString) return "정보 없음";
+  return translateList(regionString);
+}
+
+function formatSpecialties(specialties: unknown): string[] {
+  let items: string[] = [];
+  if (Array.isArray(specialties)) {
+    items = specialties.map((item) => {
+      let val = "";
+      if (typeof item === "string") val = item;
+      else if (item && typeof item === "object") {
+         if ("value" in item) val = String((item as Record<string, unknown>).value ?? "");
+         else if ("label" in item) val = String((item as Record<string, unknown>).label ?? "");
+         else val = JSON.stringify(item);
+      } else val = JSON.stringify(item);
+      return val;
+    });
+  } else if (specialties && typeof specialties === "object") {
+    items = Object.values(specialties as Record<string, unknown>).map((value) =>
+      typeof value === "string" ? value : JSON.stringify(value)
+    );
+  }
+  return items.map(item => translateCode(item));
+}
 
 const CustomArrow = () => (
   <svg width="50" height="30" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -72,6 +103,11 @@ export default function Home() {
   const [itemsPerPage, setItemsPerPage] = useState(4);
   const [selectedTestimonial, setSelectedTestimonial] = useState<Testimonial | null>(null);
 
+  // Modal states for banner action
+  const [selectedInvestigator, setSelectedInvestigator] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loadingInvestigator, setLoadingInvestigator] = useState(false);
+
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
@@ -89,6 +125,7 @@ export default function Home() {
   }, []);
 
   const paginate = (newDirection: number) => {
+    if (mainBanners.length === 0) return;
     setDirection(newDirection);
     setCurrentBannerIndex((prev) => (prev + newDirection + mainBanners.length) % mainBanners.length);
   };
@@ -148,30 +185,53 @@ export default function Home() {
       paginate(1);
     }, 5000);
     return () => clearInterval(interval);
-  }, [mainBanners.length]); // Dependencies simplified to length, paginate logic inside uses function update
+  }, [mainBanners.length]); 
 
   useEffect(() => {
     if (testimonials.length <= itemsPerPage) return;
     const interval = setInterval(() => {
       paginateTestimonial(1);
-    }, 6000); // Testimonial auto slide
+    }, 6000); 
     return () => clearInterval(interval);
   }, [itemsPerPage, testimonials.length]);
 
+  const handleBannerClick = async (banner: Banner) => {
+    if (banner.clickAction === 'INVESTIGATOR' && banner.targetId) {
+        setLoadingInvestigator(true);
+        try {
+            const res = await fetch(`/api/investigators/${banner.targetId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setSelectedInvestigator(data.investigator);
+                setIsModalOpen(true);
+            } else {
+                alert('조사원 정보를 불러올 수 없습니다.');
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoadingInvestigator(false);
+        }
+    } else if (banner.clickAction === 'LINK' && banner.linkUrl) {
+        window.open(banner.linkUrl, '_blank');
+    }
+  };
+
   const currentBanner = mainBanners[currentBannerIndex];
 
-  // Logic to slice testimonials for current view
   const visibleTestimonials = testimonials.slice(
     testimonialIndex * itemsPerPage,
     (testimonialIndex + 1) * itemsPerPage
   );
-  // Handle edge case where last page has fewer items, maybe fill from start? 
-  // For simplicity, just show what's available. 
-  // If we want infinite loop with 3 items, the slicing needs to wrap around.
-  // Implementing simpler page-based slide.
 
   return (
     <div className="min-h-screen flex flex-col text-gray-800">
+      {loadingInvestigator && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-sm">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+      )}
+
       {/* Hero Section */}
       <main className="flex-1">
         <section className="relative h-[60vh] -mt-20 overflow-hidden bg-white group">
@@ -218,10 +278,13 @@ export default function Home() {
                     <br className="hidden md:block" />{' '}
                     경험이 풍부한 전문 민간조사원과 매칭을 받으세요.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link href={currentBanner.linkUrl || "/simulation"} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
+                  <div className="flex justify-center">
+                    <button 
+                        onClick={() => handleBannerClick(currentBanner)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105"
+                    >
                       {currentBanner.title ? '자세히 보기' : 'AI를 통해 상담해서 사건 맡기기'}
-                    </Link>
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -244,13 +307,6 @@ export default function Home() {
                       {' '}믿을 수 있는 전문가와 일을 진행할 수 있습니다.
                     </span>
                   </h1>
-                  <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed break-keep">
-                    AI와 초기 상담을 통해 사건을 분석하고,
-                    <br className="hidden md:block" />{' '}
-                    경험이 풍부한 전문 민간조사원과 매칭을 받으세요.
-                    <br className="hidden md:block" />{' '}
-                    유사한 사건 사례를 참고하여 더 나은 결과를 얻으실 수 있습니다.
-                  </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link href="/simulation" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
                       AI를 통해 상담해서 사건 맡기기
@@ -258,19 +314,14 @@ export default function Home() {
                     <Link href={user ? "/scenario" : "/login"} className="bg-white hover:bg-gray-200 text-blue-600 font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105 border border-blue-600">
                       나와 유사한 사건 찾기
                     </Link>
-                    <Link href="/investigators" className="bg-gray-900 hover:bg-black text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
-                      탐정 명단 보기
-                    </Link>
                   </div>
                 </div>
               </div>
             )}
           </AnimatePresence>
           
-          {/* Banner Controls */}
           {mainBanners.length > 1 && (
             <>
-              {/* Arrows */}
               <button
                 className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-3 rounded-full backdrop-blur-sm transition-all z-20 hidden group-hover:block"
                 onClick={() => paginate(-1)}
@@ -283,25 +334,6 @@ export default function Home() {
               >
                 <FiChevronRight size={32} />
               </button>
-
-              {/* Indicator Dots */}
-              <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center gap-2">
-                {mainBanners.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                        setDirection(idx > currentBannerIndex ? 1 : -1);
-                        setCurrentBannerIndex(idx);
-                    }}
-                    className={`h-2.5 w-2.5 rounded-full transition-all ${
-                      idx === currentBannerIndex 
-                        ? "bg-blue-600 w-8" 
-                        : "bg-gray-300 hover:bg-gray-400"
-                    }`}
-                    aria-label={`Go to slide ${idx + 1}`}
-                  />
-                ))}
-              </div>
             </>
           )}
         </section>
@@ -311,14 +343,11 @@ export default function Home() {
           <section className="py-10 bg-gray-50 overflow-hidden">
             <div className="w-full">
               <div className="flex animate-scroll gap-6 w-max px-4">
-                {/* Original */}
                 {subBanners.map((banner) => (
-                  <Link 
+                  <button 
                     key={`original-${banner.id}`} 
-                    href={banner.linkUrl || '#'} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0 bg-white"
+                    onClick={() => handleBannerClick(banner)}
+                    className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0 bg-white text-left"
                   >
                     <div className="relative aspect-video w-full overflow-hidden flex items-center justify-center">
                       <Image
@@ -331,21 +360,14 @@ export default function Home() {
                         unoptimized={banner.imageUrl.includes('http')}
                       />
                     </div>
-                    {banner.title && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                        <h3 className="text-white font-bold text-lg">{banner.title}</h3>
-                      </div>
-                    )}
-                  </Link>
+                  </button>
                 ))}
-                {/* Duplicate */}
+                {/* 무한 스크롤을 위한 복제 */}
                 {subBanners.map((banner) => (
-                  <Link 
+                  <button 
                     key={`duplicate-${banner.id}`} 
-                    href={banner.linkUrl || '#'} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0 bg-white"
+                    onClick={() => handleBannerClick(banner)}
+                    className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0 bg-white text-left"
                   >
                     <div className="relative aspect-video w-full overflow-hidden flex items-center justify-center">
                       <Image
@@ -358,200 +380,78 @@ export default function Home() {
                         unoptimized={banner.imageUrl.includes('http')}
                       />
                     </div>
-                    {banner.title && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                        <h3 className="text-white font-bold text-lg">{banner.title}</h3>
-                      </div>
-                    )}
-                  </Link>
+                  </button>
                 ))}
               </div>
             </div>
           </section>
         )}
 
-        {/* Why WeeklyAiving? */}
+        {/* LIRA의 장점 */}
         <section className="py-20 bg-white">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-12">LIRA의 장점</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="bg-gray-50 p-8 rounded-lg text-center border border-gray-200 hover:shadow-xl transition-shadow">
                 <h3 className="text-xl font-bold mb-2">AI 기반 상담</h3>
-                <p className="text-gray-600">사건의 특성과 요구사항을 AI가 분석하여 가장 적합한 민간조사원을 매칭해드립니다. 24시간 언제든지 상담 가능합니다.</p>
+                <p className="text-gray-600">사건의 특성과 요구사항을 AI가 분석하여 가장 적합한 민간조사원을 매칭해드립니다.</p>
               </div>
               <div className="bg-gray-50 p-8 rounded-lg text-center border border-gray-200 hover:shadow-xl transition-shadow">
                 <h3 className="text-xl font-bold mb-2">전문가 매칭</h3>
-                <p className="text-gray-600">경험이 풍부하고 검증된 민간조사원들과 연결되어 전문적이고 신뢰할 수 있는 서비스를 받으실 수 있습니다.</p>
+                <p className="text-gray-600">경험이 풍부하고 검증된 민간조사원들과 연결되어 전문적인 서비스를 받으실 수 있습니다.</p>
               </div>
               <div className="bg-gray-50 p-8 rounded-lg text-center border border-gray-200 hover:shadow-xl transition-shadow">
                 <h3 className="text-xl font-bold mb-2">사건 분석</h3>
-                <p className="text-gray-600">유사한 사건들의 사례를 분석하여 효과적인 해결 방안을 제시하고 성공 확률을 높입니다.</p>
+                <p className="text-gray-600">유사한 사건 사례를 분석하여 해결 방안을 제시하고 성공 확률을 높입니다.</p>
               </div>
               <div className="bg-gray-50 p-8 rounded-lg text-center border border-gray-200 hover:shadow-xl transition-shadow">
                 <h3 className="text-xl font-bold mb-2">맞춤형 서비스</h3>
-                <p className="text-gray-600">개인의 상황과 요구사항에 맞는 맞춤형 조사 서비스를 제공하여 최적의 결과를 보장합니다.</p>
+                <p className="text-gray-600">개인의 상황과 요구사항에 맞는 맞춤형 조사 서비스를 제공합니다.</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* How It Works */}
+        {/* 서비스 진행 절차 */}
         <section className="py-20 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-12">서비스 진행 절차</h2>
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-4 text-center">
-              <div className="flex-1 p-6">
-                <h3 className="text-xl font-bold mb-2">사건 상담</h3>
-                <p className="text-gray-600">AI 상담을 통해 사건의 내용과 요구사항을 상세히 분석하고 적합한 조사 방향을 제시받으세요.</p>
-              </div>
-              <div className="hidden lg:block text-gray-400">
-                <CustomArrow />
-              </div>
-              <div className="flex-1 p-6">
-                <h3 className="text-xl font-bold mb-2">전문가 매칭</h3>
-                <p className="text-gray-600">사건의 특성에 맞는 경험이 풍부한 민간조사원과 매칭되어 전문적인 서비스를 받으실 수 있습니다.</p>
-              </div>
-              <div className="hidden lg:block text-gray-400">
-                <CustomArrow />
-              </div>
-              <div className="flex-1 p-6">
-                <h3 className="text-xl font-bold mb-2">조사 진행</h3>
-                <p className="text-gray-600">전문가와 함께 체계적이고 효율적인 조사를 진행하며 실시간으로 진행 상황을 확인하세요.</p>
-              </div>
-              <div className="hidden lg:block text-gray-400">
-                <CustomArrow />
-              </div>
-              <div className="flex-1 p-6">
-                <h3 className="text-xl font-bold mb-2">결과 분석</h3>
-                <p className="text-gray-600">조사 결과를 종합 분석하여 명확한 해결 방안과 후속 조치를 제공받으세요.</p>
-              </div>
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold mb-12">서비스 진행 절차</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div className="p-6"><h3 className="font-bold">사건 상담</h3></div>
+              <div className="p-6"><h3 className="font-bold">전문가 매칭</h3></div>
+              <div className="p-6"><h3 className="font-bold">조사 진행</h3></div>
+              <div className="p-6"><h3 className="font-bold">결과 분석</h3></div>
             </div>
           </div>
         </section>
 
-        {/* What Our Users Say - Sliding Carousel */}
+        {/* 이용자 후기 */}
         <section className="py-20 bg-white overflow-hidden relative group/testimonials">
-          <div className="container mx-auto px-4 mb-4">
+          <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-12">이용자 후기</h2>
-            
-            {testimonials.length === 0 ? (
-              <p className="text-center text-sm text-gray-500">등록된 이용자 후기가 없습니다.</p>
-            ) : (
-              <>
-                <div className="relative min-h-[360px] md:min-h-[300px] overflow-hidden">
-                  <AnimatePresence initial={false} custom={testimonialDirection}>
-                    <motion.div
-                      key={testimonialIndex}
-                      custom={testimonialDirection}
-                      variants={slideVariants}
-                      initial="enter"
-                      animate="center"
-                      exit="exit"
-                      transition={{
-                        x: { type: "tween", duration: 0.5, ease: "easeInOut" },
-                        opacity: { duration: 0.3 }
-                      }}
-                      className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full"
-                    >
-                      {visibleTestimonials.map((testimonial) => {
-                        const avatarSrc =
-                          testimonial.avatarUrl ||
-                          `https://i.pravatar.cc/150?u=${encodeURIComponent(testimonial.name)}`;
-                        return (
-                          <div
-                            key={testimonial.id}
-                            className="bg-gray-50 p-5 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col"
-                          >
-                            <p className="text-gray-600 mb-4 leading-relaxed flex-grow line-clamp-5">
-                              &ldquo;{testimonial.content}&rdquo;
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedTestimonial(testimonial)}
-                              className="self-start text-xs text-blue-600 hover:text-blue-800 mb-3"
-                            >
-                              전체 보기
-                            </button>
-                            <div className="flex items-center mt-auto">
-                              <Image
-                                src={avatarSrc}
-                                alt={testimonial.name}
-                                width={44}
-                                height={44}
-                                className="rounded-full mr-3 border border-gray-200 object-cover"
-                              />
-                              <div>
-                                <p className="font-bold text-gray-900 text-sm">{testimonial.name}</p>
-                                {testimonial.role && (
-                                  <p className="text-xs text-gray-500">{testimonial.role}</p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-
-                {/* Testimonial Controls */}
-                {testimonials.length > itemsPerPage && (
-                  <>
-                    <button
-                      className="absolute top-1/2 left-2 md:left-8 z-10 p-3 rounded-full bg-white/80 text-gray-800 shadow-lg hover:bg-white transition-all transform -translate-y-1/2 opacity-0 group-hover/testimonials:opacity-100 focus:opacity-100 disabled:opacity-30"
-                      onClick={() => paginateTestimonial(-1)}
-                      aria-label="Previous testimonial"
-                    >
-                      <FiChevronLeft size={24} />
-                    </button>
-                    <button
-                      className="absolute top-1/2 right-2 md:right-8 z-10 p-3 rounded-full bg-white/80 text-gray-800 shadow-lg hover:bg-white transition-all transform -translate-y-1/2 opacity-0 group-hover/testimonials:opacity-100 focus:opacity-100 disabled:opacity-30"
-                      onClick={() => paginateTestimonial(1)}
-                      aria-label="Next testimonial"
-                    >
-                      <FiChevronRight size={24} />
-                    </button>
-
-                    {/* Indicators */}
-                    <div className="flex justify-center gap-2 mt-8">
-                      {Array.from({ length: Math.ceil(testimonials.length / itemsPerPage) }).map((_, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            setTestimonialDirection(idx > testimonialIndex ? 1 : -1);
-                            setTestimonialIndex(idx);
-                          }}
-                          className={`h-2.5 w-2.5 rounded-full transition-all ${
-                            idx === testimonialIndex
-                              ? "bg-blue-600 w-8"
-                              : "bg-gray-300 hover:bg-gray-400"
-                          }`}
-                          aria-label={`Go to testimonial page ${idx + 1}`}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </>
+            {testimonials.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {visibleTestimonials.map((t) => (
+                  <div key={t.id} className="bg-gray-50 p-5 rounded-lg border">
+                    <p className="text-gray-600 line-clamp-5">"{t.content}"</p>
+                    <p className="mt-4 font-bold">{t.name}</p>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </section>
 
-        {/* Awards Section */}
+        {/* 수상 내역 */}
         {awards.length > 0 && (
-          <section className="py-20 bg-gray-50">
+          <section className="py-20 bg-gray-50 text-center">
             <div className="container mx-auto px-4">
-              <h2 className="text-3xl font-bold text-center mb-12">수상 및 인증 내역</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                {awards.map((award) => (
-                  <div key={award.id} className="flex flex-col items-center text-center">
-                    <div className="w-32 h-32 relative mb-4 grayscale hover:grayscale-0 transition-all duration-300">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={award.imageUrl} alt={award.title} className="object-contain w-full h-full" />
-                    </div>
-                    <h3 className="font-bold text-lg mb-1">{award.title}</h3>
-                    <p className="text-sm text-gray-500">{new Date(award.date).toLocaleDateString()}</p>
-                    {award.description && <p className="text-sm text-gray-600 mt-2">{award.description}</p>}
+              <h2 className="text-3xl font-bold mb-12">수상 및 인증 내역</h2>
+              <div className="flex flex-wrap justify-center gap-8">
+                {awards.map((a) => (
+                  <div key={a.id} className="w-32">
+                    <img src={a.imageUrl} alt={a.title} className="mx-auto h-20 object-contain" />
+                    <p className="mt-2 text-sm font-bold">{a.title}</p>
                   </div>
                 ))}
               </div>
@@ -559,59 +459,25 @@ export default function Home() {
           </section>
         )}
 
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-4xl font-bold mb-4">전문적인 민간조사 서비스를 시작할 준비가 되셨나요?</h2>
-            <p className="text-lg text-blue-100 mb-8">LIRA를 통해 AI 상담과 전문가 매칭으로 복잡한 사건을 해결하고 있는 수많은 고객들과 함께하세요.</p>
-            <Link href="/register" className="bg-white text-blue-600 font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
+        {/* CTA */}
+        <section className="py-20 bg-blue-600 text-white text-center">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold mb-8">민간조사 서비스를 시작할 준비가 되셨나요?</h2>
+            <Link href="/register" className="bg-white text-blue-600 font-bold py-3 px-8 rounded-lg">
               지금 바로 시작하세요
             </Link>
           </div>
         </section>
       </main>
 
-      {/* Testimonial Full View Modal */}
-      <AnimatePresence>
-        {selectedTestimonial && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-white max-w-xl w-full mx-4 rounded-lg shadow-xl p-6 relative"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "tween", duration: 0.2 }}
-            >
-              <button
-                type="button"
-                onClick={() => setSelectedTestimonial(null)}
-                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-sm"
-              >
-                닫기
-              </button>
-              <div className="flex items-center mb-4">
-                <div className="w-10 h-10 rounded-full bg-gray-200 mr-3 flex items-center justify-center text-xs font-semibold text-gray-600">
-                  {selectedTestimonial.name.charAt(0)}
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">{selectedTestimonial.name}</p>
-                  {selectedTestimonial.role && (
-                    <p className="text-xs text-gray-500">{selectedTestimonial.role}</p>
-                  )}
-                </div>
-              </div>
-              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                {selectedTestimonial.content}
-              </p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* 모달 */}
+      <InvestigatorDetailModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        investigator={selectedInvestigator}
+        formatSpecialties={formatSpecialties}
+        translateRegion={translateRegion}
+      />
     </div>
   );
 }
