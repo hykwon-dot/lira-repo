@@ -1,7 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import type { Prisma } from '@prisma/client';
+import { 
+  FiChevronsLeft, 
+  FiChevronLeft, 
+  FiChevronRight, 
+  FiChevronsRight 
+} from "react-icons/fi";
 
 type ScenarioWithRelations = Prisma.ScenarioGetPayload<{
   include: {
@@ -42,37 +48,48 @@ const formatCompetency = (value: Prisma.JsonValue): string => {
 
 export default function ScenarioAdmin() {
   const [scenarios, setScenarios] = useState<ScenarioWithRelations[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const LIMIT = 10; // 10 items per page for better pagination view
+
+  const totalPages = Math.ceil(totalCount / LIMIT);
 
   const canSubmit = useMemo(() => title.trim().length > 1 && description.trim().length > 4 && !submitting, [description, submitting, title]);
 
-  // 시나리오 목록 불러오기
-  useEffect(() => {
-    const load = async () => {
-      setError(null);
-      try {
-        const res = await fetch("/api/scenario");
-        if (!res.ok) {
-          throw new Error("시나리오 목록을 불러오지 못했습니다.");
-        }
-        const data = (await res.json()) as ScenarioWithRelations[];
-        setScenarios(data);
-      } catch (err) {
-        console.error(err);
-        setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
-      } finally {
-        setLoading(false);
+  // Load scenarios for specific page
+  const loadScenarios = useCallback(async (page: number) => {
+    setLoading(true);
+    setError(null);
+    const offset = (page - 1) * LIMIT;
+    
+    try {
+      const res = await fetch(`/api/scenario?limit=${LIMIT}&offset=${offset}`);
+      if (!res.ok) {
+        throw new Error("시나리오 목록을 불러오지 못했습니다.");
       }
-    };
+      const data = await res.json() as { items: ScenarioWithRelations[], total: number };
+      
+      setScenarios(data.items);
+      setTotalCount(data.total);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }, [LIMIT]);
 
-    void load();
-  }, []);
+  useEffect(() => {
+    void loadScenarios(currentPage);
+  }, [currentPage, loadScenarios]);
 
-  // 시나리오 추가
+  // Handle Scenario Addition
   const addScenario = async () => {
     if (!canSubmit) return;
     setSubmitting(true);
@@ -83,13 +100,14 @@ export default function ScenarioAdmin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: title.trim(), description: description.trim() }),
       });
-      const payload = await res.json();
       if (!res.ok) {
+        const payload = await res.json();
         throw new Error(payload?.error ?? "시나리오를 추가하지 못했습니다.");
       }
-      setScenarios((prev) => [payload as ScenarioWithRelations, ...prev]);
       setTitle("");
       setDescription("");
+      setCurrentPage(1); // Go back to first page to see new item
+      await loadScenarios(1);
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "시나리오를 추가하지 못했습니다.");
@@ -98,8 +116,26 @@ export default function ScenarioAdmin() {
     }
   };
 
+  // Pagination Logic for generating page numbers
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
   return (
     <div className="space-y-6">
+      {/* Registration Section */}
       <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -140,33 +176,35 @@ export default function ScenarioAdmin() {
           <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-600">{error}</p>
         )}
       </div>
+
+      {/* List Section */}
       <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-[#1a2340]">시나리오 목록</h3>
-          <span className="text-xs text-slate-400">{scenarios.length}건</span>
+          <div className="text-right">
+            <span className="text-xs text-slate-400 block">전체 {totalCount}건</span>
+            <span className="text-[10px] text-slate-300 block">{currentPage} / {totalPages || 1} 페이지</span>
+          </div>
         </div>
+
         {loading ? (
-          <div className="mt-4 space-y-3">
+          <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-100" />
             ))}
           </div>
         ) : scenarios.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 p-6 text-center text-sm text-slate-500">
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 p-6 text-center text-sm text-slate-500">
             등록된 시나리오가 없습니다. 새로운 조사를 추가해보세요.
           </div>
         ) : (
-          <ul className="mt-4 space-y-3">
+          <ul className="space-y-3">
             {scenarios.map((scenario) => {
               const overview = isJsonObject(scenario.overview) ? scenario.overview : undefined;
               const spendTracking = isJsonObject(scenario.spendTracking) ? scenario.spendTracking : undefined;
               const spendCategories = Array.isArray(spendTracking?.categories)
                 ? (spendTracking.categories as Prisma.JsonValue[])
                 : [];
-              const overallSpend = spendTracking && isJsonObject(spendTracking.overall)
-                ? spendTracking.overall
-                : undefined;
-              const plannedTotal = overallSpend ? getNumber(overallSpend.plannedTotal) : undefined;
               const raciMatrixRows = Array.isArray(scenario.raciMatrix)
                 ? (scenario.raciMatrix as Prisma.JsonValue[])
                 : [];
@@ -175,7 +213,7 @@ export default function ScenarioAdmin() {
                 : [];
 
               return (
-                <li key={scenario.id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 shadow-sm">
+                <li key={`${scenario.id}-${scenario.createdAt}`} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 shadow-sm">
                   <div className="flex flex-col gap-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h4 className="text-base font-semibold text-[#1a2340]">{scenario.title}</h4>
@@ -203,7 +241,7 @@ export default function ScenarioAdmin() {
                                 {phase.tasks.map((task) => (
                                   <li key={task.id}>
                                     {task.desc}
-                                    <span className="text-slate-400">[{formatCompetency(task.competency)}]</span>
+                                    <span className="text-slate-400"> [{formatCompetency(task.competency)}]</span>
                                   </li>
                                 ))}
                               </ul>
@@ -228,9 +266,7 @@ export default function ScenarioAdmin() {
                         </thead>
                         <tbody>
                           {spendCategories.map((category, index) => {
-                            if (!isJsonObject(category)) {
-                              return null;
-                            }
+                            if (!isJsonObject(category)) return null;
                             const planned = getNumber(category.planned);
                             const actual = getNumber(category.actual);
                             return (
@@ -244,9 +280,6 @@ export default function ScenarioAdmin() {
                           })}
                         </tbody>
                       </table>
-                      <div className="mt-2 text-xs text-slate-500">
-                        총계: {plannedTotal != null ? plannedTotal.toLocaleString() : "-"}원
-                      </div>
                     </details>
                   )}
 
@@ -258,19 +291,17 @@ export default function ScenarioAdmin() {
                           <thead className="bg-slate-100 text-slate-600">
                             <tr>
                               {isJsonObject(raciMatrixRows[0])
-                                ? Object.keys(raciMatrixRows[0]).map((key) => <th key={key}>{key}</th>)
+                                ? Object.keys(raciMatrixRows[0]).map((key) => <th key={key} className="px-2 py-1 text-left">{key}</th>)
                                 : null}
                             </tr>
                           </thead>
                           <tbody>
                             {raciMatrixRows.map((row, rowIndex) => {
-                              if (!isJsonObject(row)) {
-                                return null;
-                              }
+                              if (!isJsonObject(row)) return null;
                               const cells = Object.values(row).map((cell, cellIndex) => (
-                                <td key={cellIndex}>{typeof cell === "string" ? cell : JSON.stringify(cell)}</td>
+                                <td key={cellIndex} className="px-2 py-1 border-t border-slate-100">{typeof cell === "string" ? cell : JSON.stringify(cell)}</td>
                               ));
-                              return <tr key={rowIndex} className="border-t border-slate-100">{cells}</tr>;
+                              return <tr key={rowIndex}>{cells}</tr>;
                             })}
                           </tbody>
                         </table>
@@ -291,9 +322,7 @@ export default function ScenarioAdmin() {
                         </thead>
                         <tbody>
                           {scheduleTemplateRows.map((row, index) => {
-                            if (!isJsonObject(row)) {
-                              return null;
-                            }
+                            if (!isJsonObject(row)) return null;
                             const phaseId = getString(row.phaseId) ?? String(getNumber(row.phaseId) ?? index + 1);
                             const offsetDay = getNumber(row.offsetDay);
                             const duration = getNumber(row.duration);
@@ -313,6 +342,61 @@ export default function ScenarioAdmin() {
               );
             })}
           </ul>
+        )}
+
+        {/* Pagination UI */}
+        {totalPages > 1 && (
+          <div className="mt-8 flex items-center justify-center gap-1">
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-20 transition-colors"
+              title="처음으로"
+            >
+              <FiChevronsLeft size={18} />
+            </button>
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-20 transition-colors"
+              title="이전"
+            >
+              <FiChevronLeft size={18} />
+            </button>
+
+            <div className="flex gap-1 px-2">
+              {getPageNumbers().map(pageNum => (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`w-9 h-9 rounded-lg text-sm font-medium transition-all ${
+                    currentPage === pageNum
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                      : "hover:bg-slate-100 text-slate-600"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-20 transition-colors"
+              title="다음"
+            >
+              <FiChevronRight size={18} />
+            </button>
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              className="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-20 transition-colors"
+              title="끝으로"
+            >
+              <FiChevronsRight size={18} />
+            </button>
+          </div>
         )}
       </div>
     </div>
