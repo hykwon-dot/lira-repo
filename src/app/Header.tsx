@@ -57,91 +57,95 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 shadow-md backdrop-blur">
-      <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4 md:h-20">
-        <div className="flex flex-1 items-center gap-6">
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/images/lione-logo.svg"
-              alt="LIONE 로고"
-              width={180}
-              height={54}
-              priority
-              className="h-8 w-auto md:h-10"
-            />
-          </Link>
-          <nav className="hidden items-center gap-5 text-sm font-semibold text-slate-500 lg:flex">
-            {navLinks.map((link) => {
-              const active = isLinkActive(link.href);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`relative whitespace-nowrap pb-0.5 transition-colors ${
-                    active
-                      ? "text-blue-600 after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full after:rounded-full after:bg-blue-500"
-                      : "text-slate-500 hover:text-blue-500"
-                  }`}
-                >
-                  {link.label}
+    <>
+      <header className="sticky top-0 z-50 bg-white/95 shadow-md backdrop-blur">
+        <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4 md:h-20">
+          <div className="flex flex-1 items-center gap-6">
+            <Link href="/" className="flex items-center gap-3">
+              <Image
+                src="/images/lione-logo.svg"
+                alt="LIONE 로고"
+                width={180}
+                height={54}
+                priority
+                className="h-8 w-auto md:h-10"
+              />
+            </Link>
+            <nav className="hidden items-center gap-5 text-sm font-semibold text-slate-500 lg:flex">
+              {navLinks.map((link) => {
+                const active = isLinkActive(link.href);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`relative whitespace-nowrap pb-0.5 transition-colors ${
+                      active
+                        ? "text-blue-600 after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full after:rounded-full after:bg-blue-500"
+                        : "text-slate-500 hover:text-blue-500"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+          <div className="hidden flex-shrink-0 items-center gap-4 md:flex">
+            {loggedInUser && (
+              <ErrorBoundary>
+                <NotificationBell />
+              </ErrorBoundary>
+            )}
+            {loggedInUser ? (
+              <div className="flex items-center gap-3">
+                <span className="hidden text-sm text-slate-600 md:block">안녕하세요, {loggedInUser.name}님</span>
+                {showMyPageButton && (
+                  <Link
+                    href="/my-page"
+                    className="lira-button lira-button--secondary text-xs md:text-sm"
+                  >
+                    내페이지
+                  </Link>
+                )}
+                <button onClick={handleLogout} className="lira-button lira-button--danger text-xs md:text-sm">
+                  로그아웃
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link href="/login" className="lira-button lira-button--ghost text-sm">
+                  로그인
                 </Link>
-              );
-            })}
-          </nav>
-        </div>
-        <div className="hidden flex-shrink-0 items-center gap-4 md:flex">
-          {loggedInUser && (
-            <ErrorBoundary>
-              <NotificationBell />
-            </ErrorBoundary>
-          )}
-          {loggedInUser ? (
-            <div className="flex items-center gap-3">
-              <span className="hidden text-sm text-slate-600 md:block">안녕하세요, {loggedInUser.name}님</span>
-              {showMyPageButton && (
-                <Link
-                  href="/my-page"
-                  className="lira-button lira-button--secondary text-xs md:text-sm"
-                >
-                  내페이지
+                <Link href="/register" className="lira-button lira-button--primary text-sm">
+                  회원가입
                 </Link>
-              )}
-              <button onClick={handleLogout} className="lira-button lira-button--danger text-xs md:text-sm">
-                로그아웃
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link href="/login" className="lira-button lira-button--ghost text-sm">
-                로그인
-              </Link>
-              <Link href="/register" className="lira-button lira-button--primary text-sm">
-                회원가입
-              </Link>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 md:hidden">
+            <button
+              type="button"
+              aria-label="모바일 메뉴 열기"
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-blue-200 hover:text-blue-500"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2 md:hidden">
-          <button
-            type="button"
-            aria-label="모바일 메뉴 열기"
-            aria-expanded={mobileMenuOpen}
-            onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-blue-200 hover:text-blue-500"
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
-      </div>
+      </header>
+
+      {/* Mobile Menu Overlay and Navigation (Outside of Header) */}
       {mobileMenuOpen && (
-        <>
+        <div className="md:hidden">
           <button
             type="button"
             aria-label="모바일 메뉴 닫기"
             onClick={() => setMobileMenuOpen(false)}
-            className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm transition-opacity"
           />
-          <nav className="fixed top-0 right-0 z-50 flex h-full w-[78vw] max-w-xs flex-col gap-6 border-l border-slate-100 bg-white px-6 py-8 shadow-xl md:hidden">
+          <nav className="fixed top-0 right-0 z-[70] flex h-full w-[78vw] max-w-xs flex-col gap-6 border-l border-slate-100 bg-white px-6 py-8 shadow-2xl transition-transform">
             <div className="flex items-center justify-between">
               <Image
                 src="/images/lione-logo.svg"
@@ -223,8 +227,8 @@ export default function Header() {
               </div>
             ) : null}
           </nav>
-        </>
+        </div>
       )}
-    </header>
+    </>
   );
 }

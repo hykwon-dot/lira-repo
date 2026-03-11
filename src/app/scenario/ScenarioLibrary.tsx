@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { ComponentType, SVGProps } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -13,6 +14,10 @@ import {
   Clock,
   Shield,
   X,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 
 export interface ProcessedScenario {
@@ -26,7 +31,10 @@ export interface ProcessedScenario {
 }
 
 interface ScenarioLibraryProps {
-  scenarios: ProcessedScenario[];
+  initialScenarios: ProcessedScenario[];
+  totalCount: number;
+  currentPage: number;
+  limit: number;
 }
 
 const difficultyTone = {
@@ -55,37 +63,22 @@ const formatBudget = (amount: number) => {
   return `${amount.toLocaleString()}원`;
 };
 
-export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
+export default function ScenarioLibrary({ initialScenarios, totalCount, currentPage, limit }: ScenarioLibraryProps) {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [budgetFilter, setBudgetFilter] = useState('모든 예산');
   const [difficulty, setDifficulty] = useState('모든 난이도');
   const [sortBy, setSortBy] = useState('title-asc');
 
-  const totalScenarios = scenarios.length;
-  const averageBudget = useMemo(() => {
-    if (!scenarios.length) return 0;
-    return scenarios.reduce((acc, cur) => acc + cur.totalBudget, 0) / scenarios.length;
-  }, [scenarios]);
-  const averageDuration = useMemo(() => {
-    if (!scenarios.length) return 0;
-    return scenarios.reduce((acc, cur) => acc + cur.totalDays, 0) / scenarios.length;
-  }, [scenarios]);
+  const totalPages = Math.ceil(totalCount / limit);
 
-  const difficultyStats = useMemo(() => {
-    return scenarios.reduce(
-      (acc, cur) => {
-        const key = cur.difficulty ?? '기타';
-        acc[key] = (acc[key] ?? 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-  }, [scenarios]);
-
+  // Note: Client-side filtering/sorting will only work on the current page data.
+  // In a real production app with 1000+ items, these should be handled by the API.
+  // For now, we apply them to the current page's scenarios.
   const filteredScenarios = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
-    return scenarios.filter((scenario) => {
+    return initialScenarios.filter((scenario) => {
       const matchesKeyword = keyword
         ? scenario.title.toLowerCase().includes(keyword) || scenario.description.toLowerCase().includes(keyword)
         : true;
@@ -109,7 +102,7 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
 
       return matchesKeyword && matchesDifficulty && matchesBudget;
     });
-  }, [scenarios, search, difficulty, budgetFilter]);
+  }, [initialScenarios, search, difficulty, budgetFilter]);
 
   const sortedScenarios = useMemo(() => {
     return [...filteredScenarios].sort((a, b) => {
@@ -129,13 +122,32 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
     });
   }, [filteredScenarios, sortBy]);
 
-  const featuredScenarios = sortedScenarios.slice(0, 3);
+  const handlePageChange = (page: number) => {
+    router.push(`/scenario?page=${page}`);
+  };
 
   const resetFilters = () => {
     setSearch('');
     setBudgetFilter('모든 예산');
     setDifficulty('모든 난이도');
     setSortBy('title-asc');
+  };
+
+  // Pagination Logic for generating page numbers
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
   };
 
   return (
@@ -156,7 +168,7 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
                   <span className="text-indigo-200"> 가장 적합한 대응 계획</span>을 제안받으세요.
                 </h1>
                 <p className="mt-3 text-sm text-indigo-100 md:text-base">
-                  AI가 정리한 핵심 메트릭과 단계별 가이드를 토대로 기업 조사부터 민감한 개인 사건까지,
+                  AI가 정리한 핵심 요약 위주로 기업 조사부터 민감한 개인 사건까지,
                   데이터 기반 의사결정을 지원합니다.
                 </p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -167,7 +179,7 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
                     실시간 시뮬레이션 시작하기
                   </Link>
                   <Link
-                    href="/persona"
+                    href="/investigators"
                     className="lira-button lira-button--ghost w-full justify-center border border-white/30 text-sm text-white hover:bg-white/10"
                   >
                     인증된 탐정 살펴보기
@@ -177,27 +189,27 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
               <div className="grid gap-4 md:grid-cols-2">
                 <MetricCard
                   icon={TrendingUp}
-                  value={`${totalScenarios}건`}
+                  value={`${totalCount}건`}
                   label="가용 시나리오"
                   caption="주요 카테고리별 전략을 큐레이션했습니다."
                 />
                 <MetricCard
                   icon={Clock}
-                  value={`${Math.round(averageDuration) || 0}일`}
-                  label="평균 예상 기간"
-                  caption="단계별 소요 시간으로 현실성 있는 플랜을 확보하세요."
+                  value="실시간"
+                  label="단계별 가이드"
+                  caption="성공적인 결과를 위한 최적의 일정을 제안합니다."
                 />
                 <MetricCard
                   icon={Shield}
-                  value={formatBudget(Math.round(averageBudget))}
-                  label="평균 예산"
-                  caption="비슷한 사건 대비 합리적인 예산 범위를 제안합니다."
+                  value="데이터 기반"
+                  label="합리적 예산"
+                  caption="사건별 표준화된 예산 범위를 제공합니다."
                 />
                 <MetricCard
                   icon={Sparkles}
-                  value={`${difficultyStats['어려움'] ?? 0}건`}
-                  label="고난도 케이스"
-                  caption="전문가가 설계한 리스크 대응 전략."
+                  value="AI 분석"
+                  label="리스크 대응"
+                  caption="전문가가 설계한 단계별 대응 전략."
                 />
               </div>
             </div>
@@ -210,13 +222,6 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
                 <p className="mt-1 text-sm text-slate-500">
                   필요한 조건을 선택하면 맞춤형 시나리오를 바로 확인할 수 있어요.
                 </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                {Object.entries(difficultyStats).map(([key, count]) => (
-                  <span key={key} className="rounded-full border border-slate-200 bg-slate-100/60 px-3 py-1">
-                    {key} {count}건
-                  </span>
-                ))}
               </div>
             </div>
 
@@ -255,7 +260,7 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
             <div className="mt-6 flex flex-col gap-4 rounded-2xl bg-slate-100/70 p-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
               <p className="flex items-center gap-2 text-slate-500">
                 <ListFilter className="h-4 w-4" />
-                총 <strong className="text-slate-700">{filteredScenarios.length}</strong>개의 시나리오를 찾았습니다.
+                현재 페이지에서 <strong className="text-slate-700">{filteredScenarios.length}</strong>개의 시나리오를 찾았습니다.
               </p>
               <button
                 onClick={resetFilters}
@@ -266,63 +271,14 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
             </div>
           </section>
 
-          {/* Featured */}
+          {/* All scenarios with Pagination */}
           <section className="space-y-6">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <div>
-                <h2 className="text-xl font-semibold text-slate-900">추천 시나리오</h2>
-                <p className="text-sm text-slate-500">AI 추천과 고객 선호도를 반영한 인기 사례입니다.</p>
+                <h2 className="text-xl font-semibold text-slate-900">시나리오 탐색</h2>
+                <p className="text-sm text-slate-500">총 {totalCount}개의 사례가 준비되어 있습니다.</p>
               </div>
-              <Link
-                href="/simulation"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-500"
-              >
-                추천 기준 살펴보기 <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {featuredScenarios.map((scenario) => {
-                const tone = difficultyTone[scenario.difficulty as keyof typeof difficultyTone] ?? difficultyTone.default;
-                return (
-                  <motion.article
-                    key={scenario.id}
-                    whileHover={{ y: -6 }}
-                    className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition"
-                  >
-                    <div className="flex flex-col gap-4">
-                      <div className="flex items-center justify-between">
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${tone.badge}`}>{scenario.difficulty}</span>
-                        <span className="text-xs font-medium text-slate-400">예상 {scenario.totalDays}일</span>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-slate-900 group-hover:text-indigo-600">{scenario.title}</h3>
-                        <p className="mt-2 line-clamp-3 text-sm text-slate-600">{scenario.description}</p>
-                      </div>
-                      <div className="flex items-center justify-between text-sm text-slate-500">
-                        <span className="font-semibold text-slate-700">{formatBudget(scenario.totalBudget)}</span>
-                        <Link
-                          href={`/scenarios/${scenario.id}`}
-                          className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-500"
-                        >
-                          상세 보기 <ArrowRight className="h-4 w-4" />
-                        </Link>
-                      </div>
-                    </div>
-                  </motion.article>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* All scenarios */}
-          <section className="space-y-6">
-            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <div>
-                <h2 className="text-xl font-semibold text-slate-900">전체 시나리오 탐색</h2>
-                <p className="text-sm text-slate-500">필터링된 결과를 한눈에 비교하면서 프로젝트를 준비하세요.</p>
-              </div>
-              <p className="text-xs font-medium text-slate-400">총 {filteredScenarios.length}건 • 정렬 기준: {sortBy}</p>
+              <p className="text-xs font-medium text-slate-400">페이지 {currentPage} / {totalPages || 1}</p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -358,10 +314,61 @@ export default function ScenarioLibrary({ scenarios }: ScenarioLibraryProps) {
                 })
               ) : (
                 <div className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-white/70 p-10 text-center text-sm text-slate-500">
-                  조건에 맞는 시나리오가 없습니다. 필터를 조정해 보세요.
+                  데이터가 없거나 필터 조건에 맞는 결과가 없습니다.
                 </div>
               )}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex items-center justify-center gap-1">
+                <button
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg hover:bg-white disabled:opacity-20 transition-all border border-slate-200 bg-white/50 shadow-sm"
+                >
+                  <ChevronsLeft size={18} />
+                </button>
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg hover:bg-white disabled:opacity-20 transition-all border border-slate-200 bg-white/50 shadow-sm"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+
+                <div className="flex gap-1 px-2">
+                  {getPageNumbers().map(pageNum => (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
+                        currentPage === pageNum
+                          ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200"
+                          : "hover:bg-white text-slate-600 border border-slate-200 bg-white/50"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-lg hover:bg-white disabled:opacity-20 transition-all border border-slate-200 bg-white/50 shadow-sm"
+                >
+                  <ChevronRight size={18} />
+                </button>
+                <button
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-lg hover:bg-white disabled:opacity-20 transition-all border border-slate-200 bg-white/50 shadow-sm"
+                >
+                  <ChevronsRight size={18} />
+                </button>
+              </div>
+            )}
           </section>
         </div>
       </main>
