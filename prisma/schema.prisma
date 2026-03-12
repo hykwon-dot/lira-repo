@@ -53,7 +53,7 @@ model InvestigatorProfile {
   reviewedById      Int?
   contactPhone      String?                @db.VarChar(20)
   agencyPhone       String?                @db.VarChar(20)
-  serviceArea       String?                @db.VarChar(100)
+  serviceArea       String?                @db.VarChar(512)
   officeAddress     String?                @db.VarChar(255)
   introduction      String?                @db.Text
   portfolioUrl      String?                @db.Text

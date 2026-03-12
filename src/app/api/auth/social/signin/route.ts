@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       if (!kakaoClientId) {
         return NextResponse.json({ error: 'Kakao Client ID is not configured' }, { status: 500 });
       }
-      authUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${kakaoClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`;
+      authUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${kakaoClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&state=kakao`;
       break;
 
     case 'naver':
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Naver Client ID is not configured' }, { status: 500 });
       }
       const state = Math.random().toString(36).substring(7);
-      authUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${naverClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+      authUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${naverClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=naver`;
       break;
 
     case 'google':
