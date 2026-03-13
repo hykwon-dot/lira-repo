@@ -13,6 +13,11 @@ frontend:
         - echo "LIRA_AWS_ACCESS_KEY_ID=$LIRA_AWS_ACCESS_KEY_ID" >> .env
         - echo "LIRA_AWS_SECRET_ACCESS_KEY=$LIRA_AWS_SECRET_ACCESS_KEY" >> .env
         - echo "LIRA_AWS_S3_BUCKET_NAME=$LIRA_AWS_S3_BUCKET_NAME" >> .env
+        - echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
+        - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
+        - echo "KAKAO_CLIENT_ID=$KAKAO_CLIENT_ID" >> .env
+        - echo "NAVER_CLIENT_ID=$NAVER_CLIENT_ID" >> .env
+        - echo "NAVER_CLIENT_SECRET=$NAVER_CLIENT_SECRET" >> .env
         - npm run build
         - npx prisma db push --accept-data-loss
         # - npm run db:seed  <-- Removed to prevent data reset on deployment
