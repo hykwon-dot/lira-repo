@@ -118,6 +118,12 @@ export async function GET(
 
     // 2. Try redirecting to URL if Data URI failed or didn't exist
     if (urlString) {
+       // If it's an S3 URL, generate a presigned URL for private access
+       if (urlString.includes('amazonaws.com')) {
+          const { getPresignedUrl } = await import('@/lib/s3');
+          const presignedUrl = await getPresignedUrl(urlString);
+          return NextResponse.redirect(presignedUrl);
+       }
        return NextResponse.redirect(urlString);
     }
     

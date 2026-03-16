@@ -1,5 +1,6 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // S3 클라이언트 초기화
 const s3Client = new S3Client({
@@ -19,6 +20,7 @@ export type S3Folder = "profiles" | "documents" | "banners" | "cases" | "public"
  * @param fileBuffer 파일 데이터 (Buffer 또는 Blob)
  * @param fileName 저장될 파일 이름
  * @param folder 저장될 폴더 경로
+ * @param contentType 마임 타입
  * @param isPublic 공개 여부 (public-read 설정)
  */
 export async function uploadToS3(
@@ -44,8 +46,8 @@ export async function uploadToS3(
 
     await upload.done();
 
-    // S3 객체 URL 반환
-    const region = process.env.AWS_REGION || "ap-northeast-2";
+    // S3 객체 URL 반환 (영구 주소)
+    const region = process.env.LIRA_AWS_REGION || "ap-northeast-2";
     return `https://${BUCKET_NAME}.s3.${region}.amazonaws.com/${key}`;
   } catch (error) {
     console.error("[S3_UPLOAD_ERROR]", error);
@@ -54,10 +56,37 @@ export async function uploadToS3(
 }
 
 /**
+ * 비공개 파일에 접근할 수 있는 임시 URL(Presigned URL)을 생성합니다.
+ * @param s3Url S3 객체의 풀 URL (또는 Key)
+ * @param expiresIn 만료 시간 (초 단위, 기본 1시간)
+ */
+export async function getPresignedUrl(s3Url: string, expiresIn: number = 3600): Promise<string> {
+  try {
+    // URL에서 Key 추출 (https://bucket.s3.region.amazonaws.com/key 형태 대응)
+    let key = s3Url;
+    if (s3Url.startsWith("http")) {
+      const url = new URL(s3Url);
+      key = url.pathname.startsWith("/") ? url.pathname.substring(1) : url.pathname;
+    }
+
+    const command = new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    });
+
+    return await getSignedUrl(s3Client, command, { expiresIn });
+  } catch (error) {
+    console.error("[S3_PRESIGNED_URL_ERROR]", error);
+    return s3Url; // 실패 시 원본 URL 반환
+  }
+}
+
+/**
  * Base64 데이터를 S3에 업로드합니다.
  * @param base64String data:image/png;base64,... 형태의 문자열
  * @param fileName 파일 이름
  * @param folder 폴더
+ * @param isPublic 공개 여부
  */
 export async function uploadBase64ToS3(
   base64String: string,

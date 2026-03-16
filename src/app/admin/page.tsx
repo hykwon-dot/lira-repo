@@ -7,7 +7,7 @@ import AdminFeedback from './AdminFeedback';
 import Image from 'next/image';
 import Link from 'next/link';
 import { INVESTIGATOR_REGION_OPTIONS } from '@/lib/options';
-import { translateCode } from '@/lib/translationHelper';
+import { translateCode, translateList } from '@/lib/translationHelper';
 
 type RequestStatus =
   | 'OPEN'
@@ -782,21 +782,21 @@ export default function AdminPage() {
 
                         <div className="flex gap-2">
                           <Link
-                            href={inv.businessLicenseUrl || `/api/admin/investigators/${inv.id}/documents?type=businessLicense`}
+                            href={`/api/admin/investigators/${inv.id}/documents?type=businessLicense`}
                             target="_blank"
                             className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
                           >
                             📄 사업자등록증
                           </Link>
                           <Link
-                            href={inv.pledgeUrl || `/api/admin/investigators/${inv.id}/documents?type=pledge`}
+                            href={`/api/admin/investigators/${inv.id}/documents?type=pledge`}
                             target="_blank"
                             className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
                           >
                             📝 서약서
                           </Link>
                           <Link
-                            href={inv.termsUrl || `/api/admin/investigators/${inv.id}/documents?type=terms`}
+                            href={`/api/admin/investigators/${inv.id}/documents?type=terms`}
                             target="_blank"
                             className="flex-1 rounded-xl bg-slate-100 py-2 text-center text-xs text-slate-600 transition hover:bg-slate-200"
                           >
@@ -1173,7 +1173,7 @@ export default function AdminPage() {
 
               <div>
                 <label className="text-xs font-semibold uppercase text-slate-500">활동 지역</label>
-                <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.serviceArea ? translateCode(selectedInvestigator.serviceArea) : '-'}</p>
+                <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.serviceArea ? translateList(selectedInvestigator.serviceArea) : '-'}</p>
               </div>
 
               <div>
