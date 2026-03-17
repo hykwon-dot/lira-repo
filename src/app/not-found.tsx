@@ -19,8 +19,11 @@ export default function NotFound() {
         <p className="text-base text-slate-600 mb-4">
           문의사항이 있으시면 아래로 연락주세요:
         </p>
-        <p className="text-base text-blue-600 font-medium my-2">
+        {/* <p className="text-base text-blue-600 font-medium my-2">
           📧 jylee@lira365.com
+        </p> */}
+        <p className="text-base text-blue-600 font-medium my-2">
+          📧 liralira36524@gmail.com
         </p>
         <p className="text-base text-blue-600 font-medium my-2">
           📞 070-7599-4030
