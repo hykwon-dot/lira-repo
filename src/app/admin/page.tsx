@@ -193,6 +193,14 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
 
+  // Investigator Pagination
+  const [investigators, setInvestigators] = useState<Investigator[]>([]);
+  const [invPage, setInvPage] = useState(1);
+  const [invTotalPages, setInvTotalPages] = useState(1);
+  const [invLoading, setInvLoading] = useState(false);
+  const [invSearch, setInvSearch] = useState('');
+  const [invStatusFilter, setInvStatusFilter] = useState('');
+
   const isAuthorized = user && (user.role === 'admin' || user.role === 'super_admin');
 
   const resolveAuthToken = useCallback(() => {
@@ -258,6 +266,36 @@ export default function AdminPage() {
       setAuthLoading(false);
     }
   };
+
+  const fetchInvestigators = useCallback(async (page: number, search: string, status: string) => {
+    setInvLoading(true);
+    try {
+      const authToken = resolveAuthToken();
+      const res = await fetch(`/api/admin/investigators?page=${page}&limit=10&search=${encodeURIComponent(search)}&status=${status}`, {
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setInvestigators(data.investigators);
+        setInvTotalPages(data.pagination.totalPages);
+      }
+    } catch (e) {
+      console.error('Fetch investigators failed', e);
+    } finally {
+      setInvLoading(false);
+    }
+  }, [resolveAuthToken]);
+
+  useEffect(() => {
+    if (isAuthorized) {
+      fetchInvestigators(invPage, invSearch, invStatusFilter);
+    }
+  }, [isAuthorized, invPage, invSearch, invStatusFilter, fetchInvestigators]);
+
+  // Reset page when search or filter changes
+  useEffect(() => {
+    setInvPage(1);
+  }, [invSearch, invStatusFilter]);
 
   useEffect(() => {
     const load = async () => {
@@ -329,27 +367,16 @@ export default function AdminPage() {
       if (!res.ok) {
         throw new Error(payload.error ?? '승인에 실패했습니다.');
       }
-      const approvedInvestigator = payload?.investigator as Investigator | undefined;
-
-      setDashboard((prev) => {
-        if (!prev) return prev;
-        const updatedPending = prev.pendingInvestigators.filter((inv) => inv.id !== id);
-        return {
-          ...prev,
-          stats: {
-            ...prev.stats,
-            investigator: {
-              ...prev.stats.investigator,
-              PENDING: Math.max((prev.stats.investigator.PENDING ?? 1) - 1, 0),
-              APPROVED: (prev.stats.investigator.APPROVED ?? 0) + 1,
-            },
-          },
-          pendingInvestigators: updatedPending,
-          activeInvestigators: approvedInvestigator
-            ? [approvedInvestigator, ...prev.activeInvestigators]
-            : prev.activeInvestigators,
-        };
+      
+      // Reload everything
+      fetchInvestigators(invPage, invSearch, invStatusFilter);
+      const dashboardRes = await fetch('/api/admin/dashboard', {
+        headers: { Authorization: `Bearer ${authToken}` },
       });
+      if (dashboardRes.ok) {
+        const data = await dashboardRes.json();
+        setDashboard(data);
+      }
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : '조사원 승인 중 오류가 발생했습니다.');
@@ -450,32 +477,105 @@ export default function AdminPage() {
         throw new Error(payload.error ?? '조사원 삭제에 실패했습니다.');
       }
 
-      setDashboard((prev) => {
-        if (!prev) return prev;
-        const pendingRemoved = prev.pendingInvestigators.some((item) => item.id === profileId);
-        const activeRemoved = prev.activeInvestigators.some((item) => item.id === profileId);
-        const investigatorStats = { ...prev.stats.investigator };
-        if (pendingRemoved) {
-          investigatorStats.PENDING = Math.max((investigatorStats.PENDING ?? 1) - 1, 0);
-        }
-        if (activeRemoved) {
-          investigatorStats.APPROVED = Math.max((investigatorStats.APPROVED ?? 1) - 1, 0);
-        }
-        return {
-          ...prev,
-          stats: {
-            ...prev.stats,
-            investigator: investigatorStats,
-          },
-          pendingInvestigators: prev.pendingInvestigators.filter((item) => item.id !== profileId),
-          activeInvestigators: prev.activeInvestigators.filter((item) => item.id !== profileId),
-        };
+      fetchInvestigators(invPage, invSearch, invStatusFilter);
+      const dashboardRes = await fetch('/api/admin/dashboard', {
+        headers: { Authorization: `Bearer ${authToken}` },
       });
+      if (dashboardRes.ok) {
+        const data = await dashboardRes.json();
+        setDashboard(data);
+      }
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : '조사원 삭제 중 오류가 발생했습니다.');
     } finally {
       setRemovingInvestigatorId(null);
+    }
+  };
+
+  const handleStatusUpdate = async (id: number, nextStatus: string, actionLabel: string) => {
+    const reason = window.prompt(`${actionLabel} 사유를 입력하세요.`);
+    if (reason === null) return;
+
+    const authToken = resolveAuthToken();
+    if (!authToken) {
+      setError('관리자 인증이 만료되었습니다. 다시 로그인해주세요.');
+      logout();
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/investigators/${id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ status: nextStatus, note: reason })
+      });
+
+      if (res.ok) {
+        alert(`${actionLabel} 처리가 완료되었습니다.`);
+        fetchInvestigators(invPage, invSearch, invStatusFilter);
+        // Reload dashboard logic
+        const dashboardRes = await fetch('/api/admin/dashboard', {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        if (dashboardRes.ok) {
+          const data = await dashboardRes.json();
+          setDashboard(data);
+        }
+        setSelectedInvestigator(null);
+      } else {
+        const err = await res.json();
+        alert(`오류: ${err.error}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('상태 변경 처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleWithdrawal = async (id: number) => {
+    const reason = window.prompt('회원탈퇴 사유를 입력하세요. (데이터는 삭제되지 않고 탈퇴 상태로만 변경됩니다)');
+    if (reason === null) return;
+
+    const authToken = resolveAuthToken();
+    if (!authToken) {
+      setError('관리자 인증이 만료되었습니다. 다시 로그인해주세요.');
+      logout();
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/investigators/${id}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ note: reason })
+      });
+
+      if (res.ok) {
+        alert('회원탈퇴 처리가 완료되었습니다.');
+        fetchInvestigators(invPage, invSearch, invStatusFilter);
+        // Reload dashboard
+        const dashboardRes = await fetch('/api/admin/dashboard', {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        if (dashboardRes.ok) {
+          const data = await dashboardRes.json();
+          setDashboard(data);
+        }
+        setSelectedInvestigator(null);
+      } else {
+        const err = await res.json();
+        alert(`오류: ${err.error}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('탈퇴 처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -964,12 +1064,37 @@ export default function AdminPage() {
 
         <section className="grid grid-cols-1 gap-8 xl:grid-cols-2">
           <div className="rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm backdrop-blur">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-[#1a2340]">승인된 조사원 명단</h2>
-                <p className="text-sm text-slate-500">서비스에 참여 중인 조사원을 관리하고 필요 시 즉시 비활성화하세요.</p>
+                <p className="text-sm text-slate-500">서비스에 참여 중인 조사원을 관리하세요.</p>
               </div>
-              <span className="text-xs text-slate-400">최근 업데이트 기준</span>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="이름 또는 이메일 검색"
+                    value={invSearch}
+                    onChange={(e) => setInvSearch(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm focus:border-sky-400 focus:outline-none focus:ring-4 focus:ring-sky-100 sm:w-64"
+                  />
+                </div>
+                <select
+                  value={invStatusFilter}
+                  onChange={(e) => setInvStatusFilter(e.target.value)}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 focus:border-sky-400 focus:outline-none focus:ring-4 focus:ring-sky-100"
+                >
+                  <option value="">모든 상태</option>
+                  <option value="APPROVED">활동중</option>
+                  <option value="SUSPENDED">정지됨</option>
+                  <option value="WITHDRAWN">탈퇴</option>
+                </select>
+              </div>
             </div>
             <div className="overflow-hidden rounded-2xl border border-slate-100">
               <table className="min-w-full table-fixed border-collapse">
@@ -978,11 +1103,18 @@ export default function AdminPage() {
                     <th className="px-4 py-3">조사원</th>
                     <th className="px-4 py-3">전문 분야</th>
                     <th className="px-4 py-3">연락처</th>
-                    <th className="px-4 py-3 text-right">관리</th>
+                    <th className="px-4 py-3 text-right">상태</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white text-sm">
-                  {dashboard?.activeInvestigators.map((inv) => {
+                  {invLoading && investigators.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-10 text-center text-slate-400">
+                        데이터를 불러오는 중입니다…
+                      </td>
+                    </tr>
+                  )}
+                  {investigators.map((inv) => {
                     const specialties = chipList(inv.specialties).slice(0, 3);
                     return (
                       <tr key={inv.id} className="border-t border-slate-100">
@@ -1010,18 +1142,28 @@ export default function AdminPage() {
                         </td>
                         <td className="px-4 py-4 text-sm text-slate-600">{inv.contactPhone ?? '-'}</td>
                         <td className="px-4 py-4 text-right">
-                          <button
-                            onClick={() => handleRemoveInvestigator(inv.id)}
-                            disabled={removingInvestigatorId === inv.id}
-                            className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 shadow-sm transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
-                          >
-                            {removingInvestigatorId === inv.id ? '삭제 중…' : '삭제'}
-                          </button>
+                          {inv.status === 'APPROVED' ? (
+                            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-600 border border-emerald-100">
+                              활동중
+                            </span>
+                          ) : inv.status === 'SUSPENDED' ? (
+                            <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-600 border border-amber-100">
+                              정지됨
+                            </span>
+                          ) : inv.status === 'WITHDRAWN' ? (
+                            <span className="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-bold text-rose-600 border border-rose-100">
+                              탈퇴
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-slate-50 px-2.5 py-0.5 text-xs font-bold text-slate-600 border border-slate-100">
+                              {inv.status}
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );
                   })}
-                  {dashboard && dashboard.activeInvestigators.length === 0 && (
+                  {!invLoading && investigators.length === 0 && (
                     <tr>
                       <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-400">
                         아직 승인된 조사원이 없습니다. 승인을 완료하면 명단이 표시됩니다.
@@ -1031,6 +1173,65 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Investigator Pagination UI */}
+            {invTotalPages > 1 && (
+              <div className="mt-6 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setInvPage(1)}
+                  disabled={invPage === 1}
+                  className="rounded-lg border border-slate-200 p-2 text-slate-400 transition hover:bg-slate-50 disabled:opacity-30"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setInvPage((p) => Math.max(1, p - 1))}
+                  disabled={invPage === 1}
+                  className="rounded-lg border border-slate-200 p-2 text-slate-400 transition hover:bg-slate-50 disabled:opacity-30"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                  </svg>
+                </button>
+                <div className="flex gap-1">
+                  {Array.from({ length: invTotalPages }, (_, i) => i + 1)
+                    .filter((p) => Math.abs(p - invPage) <= 2)
+                    .map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setInvPage(p)}
+                        className={`min-w-[2.5rem] rounded-lg border px-3 py-1.5 text-sm font-bold transition ${
+                          invPage === p
+                            ? 'border-sky-500 bg-sky-500 text-white shadow-sm'
+                            : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                </div>
+                <button
+                  onClick={() => setInvPage((p) => Math.min(invTotalPages, p + 1))}
+                  disabled={invPage === invTotalPages}
+                  className="rounded-lg border border-slate-200 p-2 text-slate-400 transition hover:bg-slate-50 disabled:opacity-30"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setInvPage(invTotalPages)}
+                  disabled={invPage === invTotalPages}
+                  className="rounded-lg border border-slate-200 p-2 text-slate-400 transition hover:bg-slate-50 disabled:opacity-30"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 4.5l7.5 7.5-7.5 7.5m6-15l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-sm backdrop-blur">
@@ -1253,20 +1454,56 @@ export default function AdminPage() {
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                <button
-                  onClick={() => handleRemoveInvestigator(selectedInvestigator.id)}
-                  disabled={removingInvestigatorId === selectedInvestigator.id}
-                  className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-100 disabled:opacity-50"
-                >
-                  {removingInvestigatorId === selectedInvestigator.id ? '삭제 중...' : '가입 거절'}
-                </button>
-                <button
-                  onClick={() => handleApproveInvestigator(selectedInvestigator.id)}
-                  disabled={approvingId === selectedInvestigator.id}
-                  className="rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-sky-700 disabled:opacity-50"
-                >
-                  {approvingId === selectedInvestigator.id ? '승인 중...' : '가입 승인'}
-                </button>
+                {selectedInvestigator.status === 'PENDING' ? (
+                  <>
+                    <button
+                      onClick={() => handleStatusUpdate(selectedInvestigator.id, 'APPROVED', '가입 승인')}
+                      className="rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-sky-700 disabled:opacity-50"
+                    >
+                      가입 승인
+                    </button>
+                    <button
+                      onClick={() => handleWithdrawal(selectedInvestigator.id)}
+                      className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-100"
+                    >
+                      회원 탈퇴
+                    </button>
+                  </>
+                ) : selectedInvestigator.status === 'APPROVED' ? (
+                  <>
+                    <button
+                      onClick={() => handleStatusUpdate(selectedInvestigator.id, 'SUSPENDED', '활동 정지')}
+                      className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-amber-600"
+                    >
+                      활동 정지
+                    </button>
+                    <button
+                      onClick={() => handleWithdrawal(selectedInvestigator.id)}
+                      className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-100"
+                    >
+                      회원 탈퇴
+                    </button>
+                  </>
+                ) : selectedInvestigator.status === 'SUSPENDED' ? (
+                  <>
+                    <button
+                      onClick={() => handleStatusUpdate(selectedInvestigator.id, 'APPROVED', '활동 승인')}
+                      className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-700"
+                    >
+                      활동 승인
+                    </button>
+                    <button
+                      onClick={() => handleWithdrawal(selectedInvestigator.id)}
+                      className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-100"
+                    >
+                      회원 탈퇴
+                    </button>
+                  </>
+                ) : (
+                  <div className="w-full text-center py-2.5 bg-slate-100 rounded-xl text-slate-500 font-bold">
+                    {selectedInvestigator.status === 'WITHDRAWN' ? '탈퇴한 회원입니다.' : '정지/거절된 회원입니다.'}
+                  </div>
+                )}
               </div>
             </div>
           </div>

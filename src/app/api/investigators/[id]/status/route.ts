@@ -4,10 +4,7 @@ import { requireCapability } from '@/lib/authz';
 import { recordAuditEvent } from '@/lib/audit';
 import { InvestigatorStatus } from '@prisma/client';
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-export async function POST(
+export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
@@ -20,59 +17,47 @@ export async function POST(
   } = authResult;
 
   const investigatorId = Number(params.id);
-  if (!Number.isFinite(investigatorId)) {
-    return NextResponse.json({ error: 'INVALID_ID' }, { status: 400 });
-  }
+  const body = await req.json();
+  const { status, note } = body;
 
-  let payload: unknown;
-  try {
-    payload = await req.json();
-  } catch {
-    payload = undefined;
-  }
-  const note = isRecord(payload) && typeof payload.note === 'string' ? payload.note.trim() : '';
-  if (!note) {
-    return NextResponse.json({ error: 'NOTE_REQUIRED' }, { status: 400 });
+  if (![InvestigatorStatus.APPROVED, InvestigatorStatus.SUSPENDED].includes(status)) {
+    return NextResponse.json({ error: 'INVALID_STATUS_TRANSITION' }, { status: 400 });
   }
 
   const prisma = await getPrismaClient();
   const profile = await prisma.investigatorProfile.findUnique({
     where: { id: investigatorId },
-    include: { user: true },
   });
+
   if (!profile) {
     return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
-  }
-  
-  // Withdrawal is a terminal state for the activity management flow
-  if (profile.status === InvestigatorStatus.WITHDRAWN) {
-    return NextResponse.json({ error: 'ALREADY_WITHDRAWN' }, { status: 409 });
   }
 
   const updated = await prisma.investigatorProfile.update({
     where: { id: investigatorId },
     data: {
-      status: InvestigatorStatus.WITHDRAWN,
+      status,
       reviewedAt: new Date(),
-      reviewNote: note,
+      reviewNote: note || profile.reviewNote,
       reviewedBy: { connect: { id: reviewerId } },
     },
-    include: { user: true, reviewedBy: true },
+    include: { user: true },
   });
 
   await recordAuditEvent({
     actorId: reviewerId,
-    action: 'INVESTIGATOR_WITHDRAWN',
+    action: status === InvestigatorStatus.SUSPENDED ? 'INVESTIGATOR_SUSPENDED' : 'INVESTIGATOR_ACTIVATED',
     targetType: 'InvestigatorProfile',
     targetId: investigatorId,
     metadata: {
       previousStatus: profile.status,
+      newStatus: status,
       note,
     },
   });
 
   return NextResponse.json({
-    message: 'INVESTIGATOR_WITHDRAWN',
+    message: 'STATUS_UPDATED',
     investigator: updated,
   });
 }

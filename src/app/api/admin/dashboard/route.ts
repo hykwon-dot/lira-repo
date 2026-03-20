@@ -116,12 +116,12 @@ export async function GET() {
     }),
     prisma.investigatorProfile.findMany({
       where: {
-        status: 'APPROVED',
+        status: { in: ['APPROVED', 'SUSPENDED', 'WITHDRAWN'] },
         deletedAt: null,
         user: { deletedAt: null },
       },
       orderBy: { updatedAt: 'desc' },
-      take: 8,
+      take: 12,
       select: {
           id: true,
           licenseNumber: true,

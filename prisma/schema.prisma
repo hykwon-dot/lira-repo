@@ -473,6 +473,8 @@ enum InvestigatorStatus {
   PENDING
   APPROVED
   REJECTED
+  SUSPENDED
+  WITHDRAWN
 }
 
 enum InvestigationTimelineType {
