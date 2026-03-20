@@ -115,7 +115,7 @@ export default function ReportDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <SummaryCard title="총 런" value={summary.totalRuns} accent="text-sky-400" />
+        <SummaryCard title="총 건" value={summary.totalRuns} accent="text-sky-400" />
         <SummaryCard title="진행 중" value={summary.activeRuns} accent="text-amber-400" />
         <SummaryCard title="완료됨" value={summary.completedRuns} accent="text-emerald-400" />
         <SummaryCard

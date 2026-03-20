@@ -55,7 +55,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
     };
   }, []);
 
-  let className = "pt-28";
+  let className = "";
   if (pathname.startsWith("/simulation")) {
     className = "min-h-screen bg-slate-50";
   } else if (pathname === "/scenario") {

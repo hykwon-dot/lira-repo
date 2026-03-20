@@ -1070,6 +1070,16 @@ export default function AdminPage() {
                 <p className="text-sm text-slate-500">서비스에 참여 중인 조사원을 관리하세요.</p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
+                <select
+                  value={invStatusFilter}
+                  onChange={(e) => setInvStatusFilter(e.target.value)}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 focus:border-sky-400 focus:outline-none focus:ring-4 focus:ring-sky-100"
+                >
+                  <option value="">모든 상태</option>
+                  <option value="APPROVED">활동중</option>
+                  <option value="SUSPENDED">정지됨</option>
+                  <option value="WITHDRAWN">탈퇴</option>
+                </select>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
@@ -1084,16 +1094,7 @@ export default function AdminPage() {
                     className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm focus:border-sky-400 focus:outline-none focus:ring-4 focus:ring-sky-100 sm:w-64"
                   />
                 </div>
-                <select
-                  value={invStatusFilter}
-                  onChange={(e) => setInvStatusFilter(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 focus:border-sky-400 focus:outline-none focus:ring-4 focus:ring-sky-100"
-                >
-                  <option value="">모든 상태</option>
-                  <option value="APPROVED">활동중</option>
-                  <option value="SUSPENDED">정지됨</option>
-                  <option value="WITHDRAWN">탈퇴</option>
-                </select>
+
               </div>
             </div>
             <div className="overflow-hidden rounded-2xl border border-slate-100">

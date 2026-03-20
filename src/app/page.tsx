@@ -240,7 +240,7 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col text-gray-800">
+    <div className="min-h-screen flex flex-col text-gray-800 pt-28">
       {loadingInvestigator && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-sm">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
