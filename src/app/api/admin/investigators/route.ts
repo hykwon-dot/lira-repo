@@ -44,7 +44,7 @@ export async function GET(request: Request) {
       }),
       prisma.investigatorProfile.findMany({
         where: whereClause,
-        orderBy: { updatedAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
         select: {
@@ -65,6 +65,7 @@ export async function GET(request: Request) {
           pledgeUrl: true,
           termsUrl: true,
           idCardUrl: true,
+          featuredOrder: true,
           user: {
             select: {
               id: true,

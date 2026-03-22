@@ -39,6 +39,7 @@ type Investigator = {
   termsUrl?: string | null;
   idCardData?: string | null;
   idCardUrl?: string | null;
+  featuredOrder?: number | null;
   user: {
     id: number;
     name: string | null;
@@ -193,13 +194,14 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
 
-  // Investigator Pagination
+  // Investigator Pagination & Search
   const [investigators, setInvestigators] = useState<Investigator[]>([]);
   const [invPage, setInvPage] = useState(1);
   const [invTotalPages, setInvTotalPages] = useState(1);
   const [invLoading, setInvLoading] = useState(false);
   const [invSearch, setInvSearch] = useState('');
   const [invStatusFilter, setInvStatusFilter] = useState('');
+  const [updatingFeatured, setUpdatingFeatured] = useState(false);
 
   const isAuthorized = user && (user.role === 'admin' || user.role === 'super_admin');
 
@@ -536,6 +538,35 @@ export default function AdminPage() {
     }
   };
 
+  const handleUpdateFeaturedOrder = async (id: number, order: number | null) => {
+    setUpdatingFeatured(true);
+    const authToken = resolveAuthToken();
+    try {
+      const res = await fetch(`/api/admin/investigators/${id}/featured`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ featuredOrder: order })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        alert(data.message);
+        fetchInvestigators(invPage, invSearch, invStatusFilter);
+        setSelectedInvestigator(prev => prev ? { ...prev, featuredOrder: order } : null);
+      } else {
+        const err = await res.json();
+        alert(`오류: ${err.error}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('설정 중 오류가 발생했습니다.');
+    } finally {
+      setUpdatingFeatured(false);
+    }
+  };
+
   const handleWithdrawal = async (id: number) => {
     const reason = window.prompt('회원탈퇴 사유를 입력하세요. (데이터는 삭제되지 않고 탈퇴 상태로만 변경됩니다)');
     if (reason === null) return;
@@ -649,6 +680,19 @@ export default function AdminPage() {
       },
     ];
   }, [dashboard]);
+
+  // 상단 노출 중인 조사원 매핑 생성
+  const featuredMap = useMemo(() => {
+    const mapping: Record<number, string> = {};
+    // 현재 페이지 리스트와 대시보드 리스트 모두 활용하여 최대한 최신 정보 수집
+    const allKnown = [...(dashboard?.activeInvestigators || []), ...investigators];
+    allKnown.forEach(inv => {
+      if (inv.featuredOrder) {
+        mapping[inv.featuredOrder] = inv.user.name || '이름 미기재';
+      }
+    });
+    return mapping;
+  }, [dashboard, investigators]);
 
   if (!isAuthorized) {
     return (
@@ -1094,7 +1138,6 @@ export default function AdminPage() {
                     className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm focus:border-sky-400 focus:outline-none focus:ring-4 focus:ring-sky-100 sm:w-64"
                   />
                 </div>
-
               </div>
             </div>
             <div className="overflow-hidden rounded-2xl border border-slate-100">
@@ -1104,13 +1147,14 @@ export default function AdminPage() {
                     <th className="px-4 py-3">조사원</th>
                     <th className="px-4 py-3">전문 분야</th>
                     <th className="px-4 py-3">연락처</th>
-                    <th className="px-4 py-3 text-right">상태</th>
+                    <th className="px-4 py-3">노출 순위</th>
+                    <th className="px-4 py-3">상태</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white text-sm">
                   {invLoading && investigators.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-4 py-10 text-center text-slate-400">
+                      <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
                         데이터를 불러오는 중입니다…
                       </td>
                     </tr>
@@ -1142,7 +1186,16 @@ export default function AdminPage() {
                           )}
                         </td>
                         <td className="px-4 py-4 text-sm text-slate-600">{inv.contactPhone ?? '-'}</td>
-                        <td className="px-4 py-4 text-right">
+                        <td className="px-4 py-4">
+                          {inv.featuredOrder ? (
+                            <span className="inline-flex items-center rounded-lg bg-sky-50 px-2 py-1 text-xs font-bold text-sky-700 border border-sky-100 text-center">
+                              {inv.featuredOrder}순위
+                            </span>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-center">
                           {inv.status === 'APPROVED' ? (
                             <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-600 border border-emerald-100">
                               활동중
@@ -1276,9 +1329,9 @@ export default function AdminPage() {
                         <button
                           onClick={() => handleRemoveCustomer(customer.id)}
                           disabled={removingCustomerId === customer.id}
-                          className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 shadow-sm transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                          className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-100 disabled:opacity-50"
                         >
-                          {removingCustomerId === customer.id ? '삭제 중…' : '삭제'}
+                          {removingCustomerId === customer.id ? '삭제 중…' : '계정 삭제'}
                         </button>
                       </td>
                     </tr>
@@ -1451,6 +1504,32 @@ export default function AdminPage() {
                       </Link>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* 상단 노출 설정 UI 추가 */}
+              <div className="rounded-2xl bg-sky-50/50 p-4 border border-sky-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-bold text-sky-800">메인 페이지 상단 노출 설정</label>
+                    <p className="text-xs text-sky-600 mt-0.5">상단 9개 슬롯 중 하나를 지정하여 우선 노출합니다.</p>
+                  </div>
+                  <select
+                    value={selectedInvestigator.featuredOrder || ""}
+                    onChange={(e) => {
+                      const val = e.target.value === "" ? null : parseInt(e.target.value);
+                      handleUpdateFeaturedOrder(selectedInvestigator.id, val);
+                    }}
+                    disabled={updatingFeatured}
+                    className="rounded-xl border border-sky-200 bg-white px-3 py-2 text-sm font-bold text-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-100"
+                  >
+                    <option value="">고정 안 함</option>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                      <option key={n} value={n}>
+                        {n}순위 노출 {featuredMap[n] ? `(현재: ${featuredMap[n]})` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

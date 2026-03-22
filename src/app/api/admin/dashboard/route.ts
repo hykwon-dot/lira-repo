@@ -69,7 +69,9 @@ export async function GET() {
           pledgeUrl: true,
           termsUrl: true,
           idCardUrl: true,
-        user: {
+          featuredOrder: true,
+          user: {
+
           select: {
             id: true,
             name: true,
@@ -120,7 +122,7 @@ export async function GET() {
         deletedAt: null,
         user: { deletedAt: null },
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
       take: 12,
       select: {
           id: true,
@@ -140,7 +142,9 @@ export async function GET() {
           pledgeUrl: true,
           termsUrl: true,
           idCardUrl: true,
-        user: {
+          featuredOrder: true,
+          user: {
+
           select: {
             id: true,
             name: true,

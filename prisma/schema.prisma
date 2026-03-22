@@ -69,6 +69,7 @@ model InvestigatorProfile {
   privacyAcceptedAt DateTime?
   avatarUrl         String?                @db.LongText
   deletedAt         DateTime?
+  featuredOrder     Int?                   // 상단 고정 순번 (1~9)
   assignedRequests  InvestigationRequest[]
   matches           InvestigatorMatch[]
   reviewedBy        User?                  @relation("InvestigatorReviewedBy", fields: [reviewedById], references: [id])
