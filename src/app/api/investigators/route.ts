@@ -20,7 +20,23 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { featuredOrder: 'asc' },
       take: 9,
-      include: {
+      select: {
+        id: true,
+        licenseNumber: true,
+        experienceYears: true,
+        specialties: true,
+        status: true,
+        ratingAverage: true,
+        successRate: true,
+        createdAt: true,
+        contactPhone: true,
+        agencyPhone: true,
+        serviceArea: true,
+        officeAddress: true,
+        introduction: true,
+        portfolioUrl: true,
+        avatarUrl: true,
+        featuredOrder: true,
         user: {
           select: { id: true, name: true, email: true, createdAt: true }
         }
@@ -28,13 +44,8 @@ export async function GET(req: NextRequest) {
     });
 
     // 2. 일반 조사원 조회 (랜덤 셔플)
-    // MariaDB/MySQL의 RAND() 함수를 사용하기 위해 raw 쿼리를 사용하거나, 
-    // 전체 데이터를 가져와 섞습니다. 여기서는 성능을 위해 raw 쿼리 방식을 활용합니다.
-    
-    // Featured 아이디 제외 목록
     const featuredIds = featuredInvestigators.map(inv => inv.id);
     
-    // 일반 조사원 무작위 조회 (MariaDB 기준 RAND())
     const otherInvestigatorsRaw: any[] = await prisma.$queryRawUnsafe(`
       SELECT ip.id FROM InvestigatorProfile ip
       WHERE ip.status = 'APPROVED' 
@@ -46,10 +57,25 @@ export async function GET(req: NextRequest) {
 
     const otherIds = otherInvestigatorsRaw.map(row => row.id);
 
-    // 상세 데이터 조회 (Prisma 타입 안정성 확보)
     const otherInvestigators = await prisma.investigatorProfile.findMany({
       where: { id: { in: otherIds } },
-      include: {
+      select: {
+        id: true,
+        licenseNumber: true,
+        experienceYears: true,
+        specialties: true,
+        status: true,
+        ratingAverage: true,
+        successRate: true,
+        createdAt: true,
+        contactPhone: true,
+        agencyPhone: true,
+        serviceArea: true,
+        officeAddress: true,
+        introduction: true,
+        portfolioUrl: true,
+        avatarUrl: true,
+        featuredOrder: true,
         user: {
           select: { id: true, name: true, email: true, createdAt: true }
         }
