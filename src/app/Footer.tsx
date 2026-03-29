@@ -42,7 +42,7 @@ export default function Footer() {
               {/* <p>이 메 일 : jylee@lira365.com</p> */}
               <p>이 메 일 : liralira36524@gmail.com</p>
               <p>사업자번호 : 450-86-03429</p>
-              {/* <p>대표자 : 이재훈</p> */}
+              <p>대표자 : 이재훈</p>
               <p>오시는 길 : 경기도 성남시 수정구 산성대로67, 2층</p>
             </div>
           </div>
