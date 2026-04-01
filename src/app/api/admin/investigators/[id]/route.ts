@@ -15,6 +15,8 @@ export async function PATCH(
   try {
     const body = await req.json();
     const { 
+      name, // Added
+      officeAddress, // Added
       introduction, 
       serviceArea, 
       specialties, 
@@ -28,28 +30,46 @@ export async function PATCH(
 
     // Verify existence
     const existing = await prisma.investigatorProfile.findUnique({
-      where: { id: profileId }
+      where: { id: profileId },
+      include: { user: true }
     });
 
     if (!existing) {
       return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
     }
 
-    const updated = await prisma.investigatorProfile.update({
-      where: { id: profileId },
-      data: {
-        introduction,
-        serviceArea,
-        specialties,
-        experienceYears: experienceYears ? Number(experienceYears) : undefined,
-        contactPhone,
-        portfolioUrl,
-        avatarUrl,
-        updatedAt: new Date(),
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Update User name if provided
+      if (name !== undefined) {
+        await tx.user.update({
+          where: { id: existing.userId },
+          data: { name }
+        });
+      }
+
+      // 2. Update Profile
+      return await tx.investigatorProfile.update({
+        where: { id: profileId },
+        data: {
+          introduction,
+          serviceArea,
+          specialties,
+          experienceYears: experienceYears ? Number(experienceYears) : undefined,
+          contactPhone,
+          officeAddress, // Added
+          portfolioUrl,
+          avatarUrl,
+          updatedAt: new Date(),
+        },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true }
+          }
+        }
+      });
     });
 
-    return NextResponse.json({ success: true, data: updated });
+    return NextResponse.json({ success: true, data: result });
   } catch (error) {
     console.error('Failed to update investigator profile:', error);
     return NextResponse.json({ error: 'INTERNAL_SERVER_ERROR' }, { status: 500 });

@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
 
   const redirectUri = `${origin}/api/auth/social/callback`;
 
+  console.log('[DEBUG] OAuth Signin:', { provider, origin, redirectUri });
+
   if (!provider) {
     return NextResponse.json({ error: 'Provider is required' }, { status: 400 });
   }

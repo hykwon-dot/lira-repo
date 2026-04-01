@@ -194,6 +194,15 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
 
+  // Investigator Editing State
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    officeAddress: '',
+    contactPhone: ''
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
   // Investigator Pagination & Search
   const [investigators, setInvestigators] = useState<Investigator[]>([]);
   const [invPage, setInvPage] = useState(1);
@@ -564,6 +573,39 @@ export default function AdminPage() {
       alert('설정 중 오류가 발생했습니다.');
     } finally {
       setUpdatingFeatured(false);
+    }
+  };
+
+  const handleSaveInvestigator = async () => {
+    if (!selectedInvestigator) return;
+    setIsSaving(true);
+    const authToken = resolveAuthToken();
+    try {
+      const res = await fetch(`/api/admin/investigators/${selectedInvestigator.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(editForm)
+      });
+      
+      if (res.ok) {
+        const result = await res.json();
+        alert('정보가 성공적으로 수정되었습니다.');
+        setIsEditing(false);
+        // Refresh lists
+        fetchInvestigators(invPage, invSearch, invStatusFilter);
+        setSelectedInvestigator(result.data);
+      } else {
+        const err = await res.json();
+        alert(`수정 실패: ${err.error}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('수정 중 오류가 발생했습니다.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -1383,21 +1425,50 @@ export default function AdminPage() {
                 <h3 className="text-xl font-bold text-slate-800">조사원 상세 정보</h3>
                 <p className="text-sm text-slate-500">가입 신청 상세 내용 확인</p>
               </div>
-              <button
-                onClick={() => setSelectedInvestigator(null)}
-                className="rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-slate-200"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-2">
+                {!isEditing && (
+                  <button
+                    onClick={() => {
+                      setEditForm({
+                        name: selectedInvestigator.user.name || '',
+                        officeAddress: selectedInvestigator.officeAddress || '',
+                        contactPhone: selectedInvestigator.contactPhone || ''
+                      });
+                      setIsEditing(true);
+                    }}
+                    className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    ✏️ 정보 수정
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setIsEditing(false);
+                    setSelectedInvestigator(null);
+                  }}
+                  className="rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-slate-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-6">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>
                   <label className="text-xs font-semibold uppercase text-slate-500">이름</label>
-                  <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.user.name}</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+                    />
+                  ) : (
+                    <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.user.name}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs font-semibold uppercase text-slate-500">이메일</label>
@@ -1405,7 +1476,16 @@ export default function AdminPage() {
                 </div>
                 <div>
                   <label className="text-xs font-semibold uppercase text-slate-500">연락처</label>
-                  <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.contactPhone || '-'}</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editForm.contactPhone}
+                      onChange={(e) => setEditForm({ ...editForm, contactPhone: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+                    />
+                  ) : (
+                    <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.contactPhone || '-'}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs font-semibold uppercase text-slate-500">사무실 번호</label>
@@ -1423,7 +1503,16 @@ export default function AdminPage() {
 
               <div>
                 <label className="text-xs font-semibold uppercase text-slate-500">사무실 주소</label>
-                <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.officeAddress || '-'}</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editForm.officeAddress}
+                    onChange={(e) => setEditForm({ ...editForm, officeAddress: e.target.value })}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+                  />
+                ) : (
+                  <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.officeAddress || '-'}</p>
+                )}
               </div>
 
               <div>
@@ -1534,7 +1623,24 @@ export default function AdminPage() {
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                {selectedInvestigator.status === 'PENDING' ? (
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      disabled={isSaving}
+                      className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={handleSaveInvestigator}
+                      disabled={isSaving}
+                      className="rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-sky-700 disabled:opacity-50"
+                    >
+                      {isSaving ? '저장 중...' : '변경사항 저장'}
+                    </button>
+                  </>
+                ) : selectedInvestigator.status === 'PENDING' ? (
                   <>
                     <button
                       onClick={() => handleStatusUpdate(selectedInvestigator.id, 'APPROVED', '가입 승인')}
