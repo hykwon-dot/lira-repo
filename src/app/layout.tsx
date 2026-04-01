@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   verification: {
     google: "tQQTAV3kKyHT4Td-3mheTrarsfGFFjuBvybTT7zs0Tk",
     other: {
-      "naver-site-verification": "6dac9ba7390d1135459f183d0dc08f9e7fec138d",
+      "naver-site-verification": "3e6a4aaaf873562309cec539071c8fb3b97e81f2",
     },
   },
   openGraph: {
@@ -46,7 +46,7 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased`}>
         <noscript>
           <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-MPLWLJQP"
+            src="https://www.googletagmanager.com/ns.html?id=GTM-N98KHZXM"
             height="0"
             width="0"
             style={{ display: "none", visibility: "hidden" }}
@@ -61,7 +61,7 @@ export default function RootLayout({
           new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
           j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-          })(window,document,'script','dataLayer','GTM-MPLWLJQP');`}
+          })(window,document,'script','dataLayer','GTM-N98KHZXM');`}
         </Script>
       </body>
     </html>

@@ -1,0 +1,23 @@
+https://www.li-one.co.kr/
+
+1) 네이버 태그
+<meta name="naver-site-verification" content="3e6a4aaaf873562309cec539071c8fb3b97e81f2" />
+
+
+2) 구글 태그관리자
+1. 페이지의 <head>에서 최대한 위에 이 코드를 붙여넣으세요.
+
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-N98KHZXM');</script>
+<!-- End Google Tag Manager -->
+
+
+2. 여는 <body> 태그 바로 뒤에 코드를 붙여넣으세요.
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N98KHZXM"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
