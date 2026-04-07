@@ -1,6 +1,7 @@
 export const CASE_TYPE_OPTIONS = [
   { value: 'INFIDELITY', label: '개인사례' },
-  { value: 'MISSING_PERSON', label: '실종 및 추적' },
+  // { value: 'MISSING_PERSON', label: '실종 및 추적' },
+  { value: 'MISSING_PERSON', label: '실종' },
   { value: 'CORPORATE', label: '기업 내부 조사' },
   { value: 'DIGITAL_FORENSICS', label: '디지털 포렌식' },
   { value: 'BACKGROUND_CHECK', label: '신원 조회' },
@@ -9,22 +10,28 @@ export const CASE_TYPE_OPTIONS = [
 ] as const;
 
 export const INVESTIGATOR_SPECIALTIES = [
-  { value: 'FIELD_TAIL', label: '현장 미행/감시' },
+  // { value: 'FIELD_TAIL', label: '현장 미행/감시' },
+  { value: 'FIELD_TAIL', label: '현장 조사' },
   { value: 'DIGITAL_FORENSIC', label: '디지털 포렌식' },
-  { value: 'UNDERCOVER', label: '위장 수사/잠입' },
+  // { value: 'UNDERCOVER', label: '위장 수사/잠입' },
+  { value: 'UNDERCOVER', label: '현장 정보 분석' },
   { value: 'LEGAL_SUPPORT', label: '법적 증거 수집' },
   { value: 'CORPORATE_RISK', label: '기업 리스크 진단' },
   { value: 'FRAUD_INVESTIGATION', label: '보험/사기 조사' },
-  { value: 'MISSING_PERSON', label: '실종자 수색' },
+  // { value: 'MISSING_PERSON', label: '실종자 수색' },
+  { value: 'MISSING_PERSON', label: '가족/지인 재연결' },
 ] as const;
 
 export const INVESTIGATOR_SPECIALTY_GROUPS = [
   {
     label: '현장 조사',
     options: [
-      { value: 'FIELD_TAIL', label: '미행 및 감시', description: '대상자의 동선 파악 및 증거 수집' },
-      { value: 'MISSING_PERSON', label: '실종/가출인 찾기', description: '연락 두절된 가족/지인 소재 파악' },
-      { value: 'LOCATE', label: '소재 탐지', description: '채무자 등 특정인의 은신처 파악' },
+      // { value: 'FIELD_TAIL', label: '미행 및 감시', description: '대상자의 동선 파악 및 증거 수집' },
+      // { value: 'MISSING_PERSON', label: '실종/가출인 찾기', description: '연락 두절된 가족/지인 소재 파악' },
+      // { value: 'LOCATE', label: '소재 탐지', description: '채무자 등 특정인의 은신처 파악' },
+      { value: 'FIELD_TAIL', label: '현장 확인 / 상황 점검', description: '대상자의 동선 파악 및 증거 수집' },
+      { value: 'MISSING_PERSON', label: '활동 정보 확인', description: '연락 두절된 가족/지인 소재 파악' },
+      { value: 'LOCATE', label: '위치 관련 정보 확인', description: '채무자 등 특정인의 은신처 파악' },
     ]
   },
   {
@@ -40,7 +47,8 @@ export const INVESTIGATOR_SPECIALTY_GROUPS = [
     options: [
       { value: 'DIGITAL_FORENSICS', label: '디지털 포렌식', description: '삭제된 데이터 복구 및 분석' },
       { value: 'CYBER_CRIME', label: '사이버 범죄', description: '악성 댓글, 해킹 피해 조사' },
-      { value: 'BUG_SWEEP', label: '도청/몰카 탐지', description: '사무실, 차량, 자택 보안 점검' },
+      // { value: 'BUG_SWEEP', label: '도청/몰카 탐지', description: '사무실, 차량, 자택 보안 점검' },
+      { value: 'BUG_SWEEP', label: '보안 점검', description: '사무실, 차량, 자택 보안 점검' },
     ]
   },
   {
