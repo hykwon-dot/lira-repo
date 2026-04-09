@@ -8,7 +8,7 @@ interface HelpDeskWidgetProps {
 }
 
 const SUPPORT_EMAIL = "support@lira.ai";
-const SUPPORT_PHONE = "02-000-0000";
+const SUPPORT_PHONE = "070-7599-4030";
 
 const FAQ_ITEMS = [
   {

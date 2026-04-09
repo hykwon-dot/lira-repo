@@ -21,9 +21,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   // title: "AI 시뮬레이션 기반 민간조사 매칭 | LIRA",
-  title: "AI 리원 탐정 매칭 서비스",
+  title: "리원 - AI 기반 탐정 매칭. 업무지원 통합 서비스",
   description: "실시간 AI 분석과 시뮬레이션으로 의뢰인과 전문 민간조사원을 연결하는 LIRA 플랫폼",
-  keywords: "LIRA, 민간조사, AI 시뮬레이션, 조사 의뢰, 탐정 매칭",
+  keywords: "리원, LIRA, 민간조사, AI 시뮬레이션, 조사 의뢰, 탐정 매칭",
   verification: {
     google: "tQQTAV3kKyHT4Td-3mheTrarsfGFFjuBvybTT7zs0Tk",
     other: {
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     // title: "AI 시뮬레이션 기반 민간조사 매칭 | LIRA",
-    title: "AI 리원 탐정 매칭 서비스",
+    title: "리원 - AI 기반 탐정 매칭. 업무지원 통합 서비스",
     description: "실시간 AI 분석과 시뮬레이션으로 의뢰인과 전문 민간조사원을 연결하는 LIRA 플랫폼",
     images: ["/images/lione-logo.svg"],
   },
