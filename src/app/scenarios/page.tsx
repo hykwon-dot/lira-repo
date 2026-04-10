@@ -18,7 +18,13 @@ async function getScenarios(): Promise<ScenarioSummary[]> {
     },
   });
 
-  return scenarios.map((scenario) => {
+  // MISSING_PERSON 타입 제외 필터링 (임시)
+  const filteredScenarios = scenarios.filter((scenario) => {
+    const overview = (scenario.overview as any) || {};
+    return overview.caseType !== 'MISSING_PERSON';
+  });
+
+  return filteredScenarios.map((scenario) => {
     // Overview field type assertion
     const overview = (scenario.overview as any) || {};
     

@@ -17,25 +17,30 @@ interface ProcessedScenario {
 async function getScenarios(limit: number, offset: number): Promise<{ items: ProcessedScenario[], total: number }> {
   const prisma = await getPrismaClient();
   
-  const [scenarios, total] = await Promise.all([
-    prisma.scenario.findMany({
-      where: { isActive: true },
-      take: limit,
-      skip: offset,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        phases: {
-          select: {
-            durationDays: true,
-            budget: true,
-          }
-        },
+  // 임시적으로 더 많은 데이터를 가져와서 필터링 (페이지네이션 오차 최소화)
+  const scenarios = await prisma.scenario.findMany({
+    where: { isActive: true },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      phases: {
+        select: {
+          durationDays: true,
+          budget: true,
+        }
       },
-    }),
-    prisma.scenario.count({ where: { isActive: true } })
-  ]);
+    },
+  });
 
-  const processedScenarios = scenarios.map((scenario) => {
+  // MISSING_PERSON 타입 제외 필터링 (임시)
+  const filteredScenarios = scenarios.filter((scenario) => {
+    const overview = (scenario.overview as any) || {};
+    return overview.caseType !== 'MISSING_PERSON';
+  });
+
+  const total = filteredScenarios.length;
+  const paginatedScenarios = filteredScenarios.slice(offset, offset + limit);
+
+  const processedScenarios = paginatedScenarios.map((scenario) => {
     const totalDays = scenario.phases.reduce((acc, phase) => acc + phase.durationDays, 0);
     const totalBudget = scenario.phases.reduce((acc, phase) => {
         const budget = phase.budget as { recommended?: number };
