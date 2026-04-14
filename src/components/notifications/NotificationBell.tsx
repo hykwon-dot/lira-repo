@@ -38,7 +38,7 @@ function getBadgeColor(type: NotificationDTO["type"]) {
   }
 }
 
-export function NotificationBell() {
+export function NotificationBell({ dropDirection = "down" }: { dropDirection?: "up" | "down" }) {
   const token = useUserStore((state) => state.token);
   const user = useUserStore((state) => state.user);
   const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
@@ -181,7 +181,11 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-3 w-80 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_60px_-30px_rgba(15,23,42,0.55)]">
+        <div
+          className={`absolute right-0 z-50 w-80 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_60px_-30px_rgba(15,23,42,0.55)] ${
+            dropDirection === "up" ? "bottom-full mb-3" : "mt-3"
+          }`}
+        >
           <div className="flex items-center justify-between px-4 py-3">
             <div>
               <p className="text-sm font-semibold text-slate-800">알림</p>

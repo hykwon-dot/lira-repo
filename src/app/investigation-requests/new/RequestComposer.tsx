@@ -387,7 +387,7 @@ export default function RequestComposer({ investigator, scenarios }: RequestComp
                       placeholder="예: 제품 유출 의혹 조사"
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
+                  {/* <div className="flex flex-col gap-1">
                     <label className="text-xs font-semibold text-slate-500">연관 시나리오</label>
                     <select
                       value={scenarioId}
@@ -403,7 +403,7 @@ export default function RequestComposer({ investigator, scenarios }: RequestComp
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </div> */}
                 </div>
                 <div className="mt-4 flex flex-col gap-1">
                   <label className="text-xs font-semibold text-slate-500">사건 상세 *</label>

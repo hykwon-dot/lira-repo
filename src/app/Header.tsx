@@ -213,7 +213,7 @@ export default function Header() {
                   <span className="text-xs font-medium text-slate-500">알림</span>
                   <ErrorBoundary>
                     <div className="scale-90 transform">
-                      <NotificationBell />
+                      <NotificationBell dropDirection="up" />
                     </div>
                   </ErrorBoundary>
                 </div>
