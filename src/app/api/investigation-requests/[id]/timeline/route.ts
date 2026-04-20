@@ -4,6 +4,15 @@ import { Prisma } from "@prisma/client";
 import { requireCapability } from "@/lib/authz";
 import type { Role } from "@/lib/rbac";
 import { ensureAuthResult, validateTimelineType } from "../../shared";
+import { createNotification } from "@/lib/notifications";
+
+const TIMELINE_TYPE_LABELS: Record<string, string> = {
+  PROGRESS_NOTE: "진행 메모",
+  INTERIM_REPORT: "중간 보고",
+  FINAL_REPORT: "최종 보고",
+  ATTACHMENT_SHARED: "자료 공유",
+  STATUS_ADVANCED: "단계 변경",
+};
 
 const MUTABLE_TIMELINE_TYPES = new Set([
   "PROGRESS_NOTE",
@@ -126,6 +135,33 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const toIso = (value: EntryRecord["createdAt"]): string =>
     value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+
+  // --- 알림 발송 로직 추가 ---
+  try {
+    const recipientUserId = actorId === requestRecord.userId ? investigatorUserId : requestRecord.userId;
+    
+    if (recipientUserId && recipientUserId !== actorId) {
+      const typeLabel = TIMELINE_TYPE_LABELS[timelineType] || "새로운 기록";
+      const previewText = rawTitle || rawNote || "내용 없음";
+
+      await createNotification({
+        userId: recipientUserId,
+        type: "TIMELINE_ENTRY",
+        title: `조사진행 ${typeLabel} 알림`,
+        message: `[${requestRecord.title}] 사건에 새로운 기록이 등록되었습니다: ${previewText.slice(0, 50)}...`,
+        actionUrl: `/investigation-requests/${requestId}/chat`,
+        metadata: {
+          requestId,
+          entryId: created.id,
+          type: timelineType,
+        },
+      });
+    }
+  } catch (notificationError) {
+    console.error("Failed to send timeline notification:", notificationError);
+    // 알림 실패가 전체 프로세스에 영향을 주지 않도록 로깅만 수행
+  }
+  // -------------------------
 
   return NextResponse.json(
     {

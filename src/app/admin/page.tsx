@@ -14,6 +14,7 @@ type RequestStatus =
   | 'UNDER_REVIEW'
   | 'ASSIGNED'
   | 'IN_PROGRESS'
+  | 'REPORTING'
   | 'COMPLETED'
   | 'CANCELLED';
 
@@ -122,22 +123,25 @@ type StatCard = {
   accent: string;
 };
 
-const REQUEST_STATUS_LABEL: Record<RequestStatus, string> = {
+const REQUEST_STATUS_LABEL: Record<RequestStatus | string, string> = {
   OPEN: '신규 접수',
+  MATCHING: '매칭 중',
   UNDER_REVIEW: '검토 중',
   ASSIGNED: '배정 완료',
   IN_PROGRESS: '진행 중',
+  REPORTING: '보고 중',
   COMPLETED: '완료',
   CANCELLED: '취소',
 };
 
-const STATUS_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
+const STATUS_TRANSITIONS: Record<string, string[]> = {
   OPEN: ['UNDER_REVIEW', 'ASSIGNED', 'CANCELLED'],
   UNDER_REVIEW: ['ASSIGNED', 'CANCELLED'],
   ASSIGNED: ['IN_PROGRESS', 'CANCELLED'],
-  IN_PROGRESS: ['COMPLETED', 'CANCELLED'],
-  COMPLETED: [],
-  CANCELLED: [],
+  IN_PROGRESS: ['REPORTING', 'COMPLETED', 'CANCELLED'],
+  REPORTING: ['IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
+  COMPLETED: ['IN_PROGRESS'],
+  CANCELLED: ['OPEN', 'UNDER_REVIEW', 'IN_PROGRESS'],
 };
 
 const formatNumber = (value: number | undefined) =>
@@ -165,6 +169,7 @@ function StatusBadge({ status }: { status: RequestStatus }) {
     UNDER_REVIEW: 'bg-amber-50 text-amber-600 border-amber-200',
     ASSIGNED: 'bg-indigo-50 text-indigo-600 border-indigo-200',
     IN_PROGRESS: 'bg-purple-50 text-purple-600 border-purple-200',
+    REPORTING: 'bg-sky-50 text-sky-600 border-sky-200',
     COMPLETED: 'bg-emerald-50 text-emerald-600 border-emerald-200',
     CANCELLED: 'bg-slate-100 text-slate-500 border-slate-200',
   };
