@@ -6,7 +6,7 @@ import ScenarioAdmin from './ScenarioAdmin';
 import AdminFeedback from './AdminFeedback';
 import Image from 'next/image';
 import Link from 'next/link';
-import { INVESTIGATOR_REGION_OPTIONS } from '@/lib/options';
+import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS } from '@/lib/options';
 import { translateCode, translateList } from '@/lib/translationHelper';
 
 type RequestStatus =
@@ -199,9 +199,23 @@ export default function AdminPage() {
   const [editForm, setEditForm] = useState({
     name: '',
     officeAddress: '',
-    contactPhone: ''
+    contactPhone: '',
+    agencyPhone: '',
+    licenseNumber: '',
+    experienceYears: 0,
+    serviceArea: '', // Activity area (usually string code)
+    specialties: [] as string[] // Specialty list
   });
   const [isSaving, setIsSaving] = useState(false);
+
+  const toggleSpecialty = (val: string) => {
+    setEditForm(prev => {
+      const next = prev.specialties.includes(val)
+        ? prev.specialties.filter(v => v !== val)
+        : [...prev.specialties, val];
+      return { ...prev, specialties: next };
+    });
+  };
 
   // Investigator Pagination & Search
   const [investigators, setInvestigators] = useState<Investigator[]>([]);
@@ -1429,10 +1443,16 @@ export default function AdminPage() {
                 {!isEditing && (
                   <button
                     onClick={() => {
+                      const initialSpecialties = chipList(selectedInvestigator.specialties);
                       setEditForm({
                         name: selectedInvestigator.user.name || '',
                         officeAddress: selectedInvestigator.officeAddress || '',
-                        contactPhone: selectedInvestigator.contactPhone || ''
+                        contactPhone: selectedInvestigator.contactPhone || '',
+                        agencyPhone: selectedInvestigator.agencyPhone || '',
+                        licenseNumber: selectedInvestigator.licenseNumber || '',
+                        experienceYears: selectedInvestigator.experienceYears || 0,
+                        serviceArea: selectedInvestigator.serviceArea || '',
+                        specialties: initialSpecialties
                       });
                       setIsEditing(true);
                     }}
@@ -1489,15 +1509,45 @@ export default function AdminPage() {
                 </div>
                 <div>
                   <label className="text-xs font-semibold uppercase text-slate-500">사무실 번호</label>
-                  <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.agencyPhone || '-'}</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editForm.agencyPhone}
+                      onChange={(e) => setEditForm({ ...editForm, agencyPhone: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+                    />
+                  ) : (
+                    <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.agencyPhone || '-'}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs font-semibold uppercase text-slate-500">자격번호</label>
-                  <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.licenseNumber || '-'}</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editForm.licenseNumber}
+                      onChange={(e) => setEditForm({ ...editForm, licenseNumber: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+                    />
+                  ) : (
+                    <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.licenseNumber || '-'}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs font-semibold uppercase text-slate-500">경력</label>
-                  <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.experienceYears}년</p>
+                  {isEditing ? (
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={editForm.experienceYears}
+                        onChange={(e) => setEditForm({ ...editForm, experienceYears: parseInt(e.target.value) || 0 })}
+                        className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+                      />
+                      <span className="text-sm text-slate-600">년</span>
+                    </div>
+                  ) : (
+                    <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.experienceYears}년</p>
+                  )}
                 </div>
               </div>
 
@@ -1517,19 +1567,62 @@ export default function AdminPage() {
 
               <div>
                 <label className="text-xs font-semibold uppercase text-slate-500">활동 지역</label>
-                <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.serviceArea ? translateList(selectedInvestigator.serviceArea) : '-'}</p>
+                {isEditing ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {INVESTIGATOR_REGION_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setEditForm({ ...editForm, serviceArea: opt.value })}
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                          editForm.serviceArea === opt.value
+                            ? 'bg-sky-600 text-white shadow-md'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-1 font-medium text-slate-900">{selectedInvestigator.serviceArea ? translateList(selectedInvestigator.serviceArea) : '-'}</p>
+                )}
               </div>
 
               <div>
                 <label className="text-xs font-semibold uppercase text-slate-500">전문 분야</label>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {chipList(selectedInvestigator.specialties).map((spec) => (
-                    <span key={spec} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
-                      #{translateCode(spec)}
-                    </span>
-                  ))}
-                  {chipList(selectedInvestigator.specialties).length === 0 && <span className="text-sm text-slate-400">-</span>}
-                </div>
+                {isEditing ? (
+                  <div className="mt-2 space-y-4 rounded-xl border border-slate-100 bg-slate-50/50 p-4">
+                    {INVESTIGATOR_SPECIALTY_GROUPS.map((group) => (
+                      <div key={group.label}>
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">{group.label}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {group.options.map((opt) => (
+                            <button
+                              key={opt.value}
+                              onClick={() => toggleSpecialty(opt.value)}
+                              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                                editForm.specialties.includes(opt.value)
+                                  ? 'bg-indigo-600 text-white shadow-md'
+                                  : 'bg-white text-slate-500 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {chipList(selectedInvestigator.specialties).map((spec) => (
+                      <span key={spec} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
+                        #{translateCode(spec)}
+                      </span>
+                    ))}
+                    {chipList(selectedInvestigator.specialties).length === 0 && <span className="text-sm text-slate-400">-</span>}
+                  </div>
+                )}
               </div>
 
               <div>

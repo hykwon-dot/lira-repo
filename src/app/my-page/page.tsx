@@ -15,6 +15,7 @@ import {
   type OrganizationSummary,
 } from "@/types/investigation";
 import { useUserStore } from "@/lib/userStore";
+import { INVESTIGATOR_REGION_OPTIONS, INVESTIGATOR_SPECIALTY_GROUPS } from "@/lib/options";
 
 interface QuickLink {
   href: string;
@@ -475,7 +476,18 @@ export default function MyPage() {
                   <div className="lira-stat">
                     <dt className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">주요 활동 지역</dt>
                     <dd className="text-sm font-semibold text-slate-800">
-                      {investigatorProfile.serviceArea ?? "등록 필요"}
+                      {(() => {
+                        if (!investigatorProfile.serviceArea) return "등록 필요";
+                        
+                        // Split by comma, trim each, and map to Korean label
+                        const areas = investigatorProfile.serviceArea.split(",").map(s => s.trim().toUpperCase());
+                        const mappedLabels = areas.map(area => {
+                          const matched = INVESTIGATOR_REGION_OPTIONS.find(opt => opt.value === area);
+                          return matched?.label ?? area;
+                        });
+                        
+                        return mappedLabels.join(", ");
+                      })()}
                     </dd>
                   </div>
                 ) : null}
@@ -500,11 +512,17 @@ export default function MyPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">전문 분야</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {Array.isArray(profileData.profile.specialties)
-                    ? (profileData.profile.specialties as string[]).map((tag, index) => (
-                        <span key={`${tag}-${index}`} className="lira-pill-muted">
-                          {tag}
-                        </span>
-                      ))
+                    ? (profileData.profile.specialties as string[]).map((tag, index) => {
+                        // Find label from groups case-insensitively with trim
+                        const cleanTag = tag?.trim().toUpperCase();
+                        const allSpecialties = INVESTIGATOR_SPECIALTY_GROUPS.flatMap(g => g.options);
+                        const matched = allSpecialties.find(opt => opt.value === cleanTag);
+                        return (
+                          <span key={`${tag}-${index}`} className="lira-pill-muted">
+                            {matched?.label ?? tag}
+                          </span>
+                        );
+                      })
                     : null}
                 </div>
               </div>

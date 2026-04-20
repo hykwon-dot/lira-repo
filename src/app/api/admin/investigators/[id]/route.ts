@@ -15,8 +15,10 @@ export async function PATCH(
   try {
     const body = await req.json();
     const { 
-      name, // Added
-      officeAddress, // Added
+      name,
+      officeAddress,
+      agencyPhone, // Added
+      licenseNumber, // Added
       introduction, 
       serviceArea, 
       specialties, 
@@ -54,9 +56,11 @@ export async function PATCH(
           introduction,
           serviceArea,
           specialties,
-          experienceYears: experienceYears ? Number(experienceYears) : undefined,
+          experienceYears: experienceYears !== undefined ? Number(experienceYears) : undefined,
           contactPhone,
-          officeAddress, // Added
+          agencyPhone, // Added
+          licenseNumber, // Added
+          officeAddress,
           portfolioUrl,
           avatarUrl,
           updatedAt: new Date(),
