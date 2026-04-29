@@ -226,15 +226,23 @@ export default function ScenarioLibrary({ initialScenarios, totalCount, currentP
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="시나리오 제목이나 키워드로 검색"
-                  className="w-full rounded-full border border-slate-200 px-12 py-3 text-sm text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                />
-              </div>
+              <label className="flex flex-col gap-2 text-sm text-slate-600">
+                <span className="font-medium text-slate-700">시나리오 검색</span>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
+                    <Search className="h-4 w-4 text-slate-400" />
+                  </div>
+                  <input
+                    id="scenario-search"
+                    name="q"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="제목이나 키워드 검색"
+                    aria-label="시나리오 검색"
+                    className="w-full h-12 rounded-full border border-slate-200 px-12 text-sm text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  />
+                </div>
+              </label>
               <Select value={budgetFilter} onChange={setBudgetFilter} label="예산 범위">
                 <option>모든 예산</option>
                 <option>1,000만원 이하</option>
