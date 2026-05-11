@@ -52,7 +52,7 @@ export default function Footer() {
               <Link href="https://pf.kakao.com/_bxbSxgn" target="_blank" rel="noopener noreferrer" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#FEE500] hover:text-[#3C1E1E] transition-colors" title="카카오톡 채널">
                 <RiKakaoTalkFill size={20} />
               </Link>
-              <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#03C75A] hover:text-white transition-colors" title="네이버 블로그">
+              <Link href="https://cafe.naver.com/lione365?iframe_url=/MyCafeIntro.nhn%3Fclubid=31641901" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#03C75A] hover:text-white transition-colors" title="네이버 블로그">
                 <FaBlogger size={18} />
               </Link>
               <Link href="https://www.youtube.com/@lira.lira.36524" target="_blank" rel="noopener noreferrer" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#FF0000] hover:text-white transition-colors" title="유튜브">
