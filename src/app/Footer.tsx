@@ -61,7 +61,7 @@ export default function Footer() {
               <Link href="#" className="bg-gray-800 p-2.5 rounded-full hover:bg-black hover:text-white transition-colors" title="스레드">
                 <SiThreads size={18} />
               </Link>
-              <Link href="https://cafe.naver.com/lione365?iframe_url=/MyCafeIntro.nhn%3Fclubid=31641901" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#03C75A] hover:text-white transition-colors" title="네이버 카페">
+              <Link target="_blank" rel="noopener noreferrer" href="https://cafe.naver.com/lione365?iframe_url=/MyCafeIntro.nhn%3Fclubid=31641901" className="bg-gray-800 p-2.5 rounded-full hover:bg-[#03C75A] hover:text-white transition-colors" title="네이버 카페">
                 <FaMugHot size={18} />
               </Link>
             </div>

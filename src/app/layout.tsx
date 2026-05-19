@@ -4,7 +4,7 @@ import dynamicImport from "next/dynamic";
 import Script from "next/script";
 import "./globals.css";
 import ClientLayout from "./ClientLayout";
-import KakaoChannelButton from "@/components/KakaoChannelButton";
+import FloatingChannelButtons from "@/components/FloatingChannelButtons";
 import Footer from "./Footer";
 
 const Header = dynamicImport(() => import("./Header"), { ssr: false });
@@ -57,7 +57,7 @@ export default function RootLayout({
         <Header />
         <ClientLayout>{children}</ClientLayout>
         <Footer />
-        <KakaoChannelButton />
+        <FloatingChannelButtons />
         <Script id="gtm" strategy="beforeInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
           new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
