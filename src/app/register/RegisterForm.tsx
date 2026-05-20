@@ -1002,14 +1002,14 @@ export default function RegisterForm() {
                       리원(LIONE) 서비스 가입자 서약 및 확인서 다운로드 (PDF)
                     </a>
                     <a
-                      href="/downloads/LIONE_Service_Agreement_Investigator.hwp"
-                      download="리원 서비스 이용약관_탐정 회원가입 (LIONE service agreement).hwp"
+                      href="/downloads/LIONE_Service_Agreement_Investigator.pdf"
+                      download="리원 서비스 이용약관_탐정 회원가입 (LIONE service agreement).pdf"
                       className="inline-flex items-center gap-2 text-blue-600 hover:underline"
                     >
                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
-                      LIONE 탐정 서비스 이용 약관 다운로드 (HWP)
+                      LIONE 탐정 서비스 이용 약관 다운로드 (PDF)
                     </a>
                   </div>
                 </div>

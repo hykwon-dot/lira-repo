@@ -1,8 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { RiKakaoTalkFill } from "react-icons/ri";
-import { FaMugHot } from "react-icons/fa";
+import Image from 'next/image';
 
 export default function FloatingChannelButtons() {
   const KAKAO_CHANNEL_URL = "http://pf.kakao.com/_bxbSxgn";
@@ -15,11 +14,18 @@ export default function FloatingChannelButtons() {
         href={NAVER_CAFE_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-center w-14 h-14 bg-[#03C75A] text-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
+        className="flex items-center justify-center w-15 h-15 bg-[#03C75A] text-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 overflow-hidden"
         aria-label="네이버 카페 바로가기"
         title="네이버 카페"
       >
-        <FaMugHot size={26} />
+        <div className="relative w-15 h-15">
+          <Image 
+            src="/images/cafe.png" 
+            alt="네이버 카페" 
+            fill 
+            className="object-contain"
+          />
+        </div>
       </Link>
 
       {/* Kakao Channel Button */}
@@ -27,11 +33,18 @@ export default function FloatingChannelButtons() {
         href={KAKAO_CHANNEL_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-center w-14 h-14 bg-[#FEE500] text-[#3C1E1E] rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
+        className="flex items-center justify-center w-15 h-15 bg-[#FEE500] text-[#3C1E1E] rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 overflow-hidden"
         aria-label="카카오톡 채널 문의하기"
         title="카카오톡 채널"
       >
-        <RiKakaoTalkFill size={32} />
+        <div className="relative w-14 h-14">
+          <Image 
+            src="/images/kakaotalk.png" 
+            alt="카카오톡" 
+            fill 
+            className="object-contain"
+          />
+        </div>
       </Link>
     </div>
   );

@@ -1643,7 +1643,7 @@ export default function AdminPage() {
                   {[
                     { label: '사업자등록증', url: selectedInvestigator.businessLicenseUrl, type: 'businessLicense', data: selectedInvestigator.businessLicenseData },
                     { label: '보안서약서', url: selectedInvestigator.pledgeUrl, type: 'pledge', data: selectedInvestigator.pledgeData },
-                    { label: '비밀유지계약서', url: selectedInvestigator.termsUrl, type: 'terms', data: selectedInvestigator.termsData },
+                    { label: '서비스 이용약관 탐정 회원', url: selectedInvestigator.termsUrl, type: 'terms', data: selectedInvestigator.termsData },
                     { label: '신분증 사본', url: selectedInvestigator.idCardUrl, type: 'idCard', data: selectedInvestigator.idCardData },
                     { label: '포트폴리오', url: selectedInvestigator.portfolioUrl, type: 'portfolio', data: null },
                   ].map((doc) => {
