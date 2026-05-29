@@ -36,7 +36,7 @@ export default function Header() {
 
   const navLinks = [
     { href: "/", label: "홈" },
-    { href: "/simulation", label: "AI 시뮬레이션" },
+    { href: "/simulation", label: "사전진단" },
     { href: "/scenarios", label: "시나리오 라이브러리" },
     { href: "/report", label: "데이터 리포트" },
   ];

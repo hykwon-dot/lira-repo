@@ -1,671 +1,462 @@
 "use client";
 
+import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from 'react';
-import { useUserStore } from "@/lib/userStore";
-import { AnimatePresence, motion } from "framer-motion";
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import InvestigatorDetailModal from "./investigators/InvestigatorDetailModal";
-import { translateCode, translateList } from "@/lib/translationHelper";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
-type Banner = {
-  id: number;
-  title: string | null;
-  imageUrl: string;
-  linkUrl: string | null;
-  type: 'MAIN_LARGE' | 'MAIN_SMALL';
-  clickAction: 'LINK' | 'INVESTIGATOR' | 'ORGANIZATION';
-  targetId: number | null;
-  isActive: boolean;
-  order: number;
-};
+// --- Data Constants ---
 
-type Award = {
-  id: number;
-  title: string;
-  description: string | null;
-  imageUrl: string;
-  date: string;
-};
+const caseTypes = [
+  "외도·상간",
+  "채무자·소재 확인",
+  "사기 피해",
+  "기업 내부조사",
+  "기술·자료 유출",
+  "가족·양육권",
+  "기타",
+];
 
-type Testimonial = {
-  id: number;
-  name: string;
-  role: string | null;
-  content: string;
-  avatarUrl: string | null;
-};
+const evidenceTypes = [
+  "대화내역",
+  "송금내역",
+  "계약서·차용증",
+  "사진·영상",
+  "녹음파일",
+  "아직 없음",
+];
 
-// Re-use helper functions for the modal
-function translateRegion(regionString: string | null): string {
-  if (!regionString) return "정보 없음";
-  return translateList(regionString);
-}
+const reviewSteps = [
+  "입력 내용 확인",
+  "비슷한 사건 데이터 대조",
+  "보유 자료 기준 검토",
+  "조사 가능 범위 분류",
+  "조사원 연결 가능 여부 확인",
+];
 
-function formatSpecialties(specialties: unknown): string[] {
-  let items: string[] = [];
-  if (Array.isArray(specialties)) {
-    items = specialties.map((item) => {
-      let val = "";
-      if (typeof item === "string") val = item;
-      else if (item && typeof item === "object") {
-         if ("value" in item) val = String((item as Record<string, unknown>).value ?? "");
-         else if ("label" in item) val = String((item as Record<string, unknown>).label ?? "");
-         else val = JSON.stringify(item);
-      } else val = JSON.stringify(item);
-      return val;
-    });
-  } else if (specialties && typeof specialties === "object") {
-    items = Object.values(specialties as Record<string, unknown>).map((value) =>
-      typeof value === "string" ? value : JSON.stringify(value)
-    );
-  }
-  return items.map(item => translateCode(item));
-}
+const investigatorList = [
+  { name: "K 조사원", field: "외도·상간 / 소재 확인", career: "경력 12년", area: "수도권" },
+  { name: "P 조사원", field: "기업 내부조사 / 자료 유출", career: "경력 15년", area: "서울·경기" },
+  { name: "L 조사원", field: "채무자 소재 / 사실 확인", career: "경력 10년", area: "전국 협력" },
+  { name: "J 조사원", field: "사기 피해 / 증거 정리", career: "경력 9년", area: "수도권" },
+];
 
-const CustomArrow = () => (
-  <svg width="50" height="30" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M0 35 H60 V15 L100 50 L60 85 V65 H0 Z" fill="#4F81BD" stroke="#385D8A" strokeWidth="3"/>
-  </svg>
-);
-
-// Carousel Animation Variants
-const slideVariants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? "100%" : "-100%",
-    opacity: 0,
-    zIndex: 0,
-  }),
-  center: {
-    zIndex: 1,
-    x: 0,
-    opacity: 1,
+const faqItems = [
+  {
+    q: "처음부터 실명이나 자세한 개인정보를 입력해야 하나요?",
+    a: "아닙니다. 초기 사전진단 단계에서는 실명이나 연락처 없이 사건 유형과 확인하고 싶은 내용을 입력할 수 있습니다. 담당자 상담, 결과 저장, 조사원 연결이 필요한 경우에만 연락 가능한 정보를 단계적으로 안내합니다.",
   },
-  exit: (direction: number) => ({
-    zIndex: 0,
-    x: direction < 0 ? "100%" : "-100%",
-    opacity: 0,
-  }),
-};
+  {
+    q: "입력한 사건 내용이 조사원에게 바로 전달되나요?",
+    a: "아닙니다. 입력 내용은 먼저 사전진단과 내부 검토에 사용됩니다. 조사원 연결은 사전진단 결과를 확인한 뒤, 의뢰인이 상담 또는 조사원 연결을 요청할 경우에만 검토됩니다.",
+  },
+  {
+    q: "입력한 사건 정보와 보유 자료는 어떻게 관리되나요?",
+    a: "입력한 내용은 사전진단과 상담 검토 목적 범위에서 관리됩니다. 정식 진행 전에는 필요한 범위 이상의 개인정보를 요구하지 않으며, 자료 보관과 삭제 기준은 개인정보처리방침에 따릅니다.",
+  },
+  {
+    q: "위치추적이나 메신저 복구 같은 요청도 가능한가요?",
+    a: "불법 위치추적, 해킹, 도청, 개인정보 불법조회 등 위법 소지가 있는 요청은 진행하지 않습니다. Li-One은 합법적으로 확인 가능한 범위와 필요한 자료를 먼저 안내합니다.",
+  },
+];
+
+// --- Sub-components ---
+
+function SelectablePill({ active, children, onClick }: { active: boolean; children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        active
+          ? "rounded-xl border border-slate-950 bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition"
+          : "rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-blue-50"
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+function MiniStat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white px-5 py-5 text-center shadow-lg shadow-slate-200/70 transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-100/80">
+      <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-slate-950 via-blue-700 to-blue-400" />
+      <div className="mx-auto flex min-h-[84px] flex-col items-center justify-center">
+        <div className="text-2xl font-black tracking-tight text-slate-950 md:text-3xl">{value}</div>
+        <div className="mt-2 text-xs font-semibold leading-5 text-slate-500">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function InvestigatorCard({ item }: { item: typeof investigatorList[0] }) {
+  return (
+    <div className="min-w-[260px] rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-sm font-bold text-white">
+          {item.name.slice(0, 1)}
+        </div>
+        <div>
+          <div className="font-bold text-slate-950">{item.name}</div>
+          <div className="text-xs font-medium text-blue-700">신원확인 완료 조사원</div>
+        </div>
+      </div>
+      <div className="mt-4 space-y-2 text-sm text-slate-600">
+        <div>{item.field}</div>
+        <div>{item.career} · {item.area}</div>
+      </div>
+    </div>
+  );
+}
+
+// --- Main Component ---
 
 export default function Home() {
-  const user = useUserStore((state) => state.user);
-  const [mainBanners, setMainBanners] = useState<Banner[]>([]);
-  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
-  const [direction, setDirection] = useState(0);
+  const router = useRouter();
+  const [selectedCase, setSelectedCase] = useState("외도·상간");
+  const [selectedEvidence, setSelectedEvidence] = useState<string[]>(["대화내역", "사진·영상"]);
+  const [memo, setMemo] = useState("");
+  const [status, setStatus] = useState<"input" | "loading" | "result">("input");
+  const [openFaq, setOpenFaq] = useState(0);
 
-  const [subBanners, setSubBanners] = useState<Banner[]>([]);
-  const [awards, setAwards] = useState<Award[]>([]);
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [testimonialIndex, setTestimonialIndex] = useState(0);
-  const [testimonialDirection, setTestimonialDirection] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(4);
-  const [selectedTestimonial, setSelectedTestimonial] = useState<Testimonial | null>(null);
+  const evidenceLabel = useMemo(() => {
+    if (!selectedEvidence.length) return "선택 없음";
+    return selectedEvidence.join(", ");
+  }, [selectedEvidence]);
 
-  // Modal states for banner action
-  const [selectedInvestigator, setSelectedInvestigator] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loadingInvestigator, setLoadingInvestigator] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
-      if (width < 640) {
-        setItemsPerPage(1);
-      } else if (width < 1024) {
-        setItemsPerPage(2);
-      } else {
-        setItemsPerPage(4);
-      }
-    };
-    handleResize(); // Initial check
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Combine Default Banner with DB Banners
-  const allMainSlides = [
-    { 
-      id: -1, // Unique ID for default slide
-      imageUrl: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=2574&auto=format&fit=crop',
-      title: null,
-      linkUrl: null,
-      clickAction: 'LINK' as const,
-      targetId: null,
-      isActive: true,
-      order: -1,
-      type: 'MAIN_LARGE' as const
-    },
-    ...mainBanners
-  ];
-
-  const paginate = (newDirection: number) => {
-    setDirection(newDirection);
-    setCurrentBannerIndex((prev) => (prev + newDirection + allMainSlides.length) % allMainSlides.length);
-  };
-  
-  const paginateTestimonial = (newDirection: number) => {
-    setTestimonialDirection(newDirection);
-    setTestimonialIndex((prev) => {
-      const nextIndex = prev + newDirection;
-      const maxIndex = Math.ceil(testimonials.length / itemsPerPage) - 1;
-      if (nextIndex < 0) return maxIndex;
-      if (nextIndex > maxIndex) return 0;
-      return nextIndex;
+  const toggleEvidence = (item: string) => {
+    if (item === "아직 없음") {
+      setSelectedEvidence(["아직 없음"]);
+      return;
+    }
+    setSelectedEvidence((prev) => {
+      const filtered = prev.filter((v) => v !== "아직 없음");
+      return filtered.includes(item) ? filtered.filter((v) => v !== item) : [...filtered, item];
     });
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [bannersRes, awardsRes, testimonialsRes] = await Promise.all([
-          fetch('/api/banners'),
-          fetch('/api/awards'),
-          fetch('/api/testimonials'),
-        ]);
-        
-        const bannersData = await bannersRes.json();
-        const awardsData = await awardsRes.json();
-        const testimonialsData = await testimonialsRes.json().catch(() => ({}));
-
-        if (bannersData.banners) {
-          const large = bannersData.banners
-            .filter((b: Banner) => b.type === 'MAIN_LARGE' && b.isActive)
-            .sort((a: Banner, b: Banner) => a.order - b.order);
-          const small = bannersData.banners.filter((b: Banner) => b.type === 'MAIN_SMALL' && b.isActive);
-          
-          setMainBanners(large);
-          setSubBanners(small);
-        }
-
-        if (awardsData.awards) {
-          setAwards(awardsData.awards);
-        }
-
-        if (testimonialsData.testimonials) {
-          setTestimonials(testimonialsData.testimonials);
-        }
-      } catch (error) {
-        console.error('Failed to fetch home data', error);
-      }
+  const startReview = () => {
+    // Save to session storage for the simulation page to pick up
+    const handoffData = {
+      caseType: selectedCase,
+      evidence: selectedEvidence,
+      memo: memo,
+      timestamp: Date.now(),
     };
-
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    if (allMainSlides.length <= 1) return;
-    const interval = setInterval(() => {
-      paginate(1);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [allMainSlides.length]); 
-
-  useEffect(() => {
-    if (testimonials.length <= itemsPerPage) return;
-    const interval = setInterval(() => {
-      paginateTestimonial(1);
-    }, 6000); 
-    return () => clearInterval(interval);
-  }, [itemsPerPage, testimonials.length]);
-
-  const handleBannerClick = async (banner: Banner) => {
-    if (banner.clickAction === 'INVESTIGATOR' && banner.targetId) {
-        setLoadingInvestigator(true);
-        try {
-            const res = await fetch(`/api/investigators/${banner.targetId}`);
-            if (res.ok) {
-                const data = await res.json();
-                setSelectedInvestigator(data.investigator);
-                setIsModalOpen(true);
-            } else {
-                alert('조사원 정보를 불러올 수 없습니다.');
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoadingInvestigator(false);
-        }
-    } else if (banner.clickAction === 'LINK' && banner.linkUrl) {
-        window.open(banner.linkUrl, '_blank');
+    
+    try {
+      window.sessionStorage.setItem("main-diagnosis-handoff", JSON.stringify(handoffData));
+    } catch (e) {
+      console.error("Failed to save diagnosis handoff", e);
     }
+
+    router.push("/simulation");
   };
 
-  const currentSlide = allMainSlides[currentBannerIndex];
-
-  const visibleTestimonials = testimonials.slice(
-    testimonialIndex * itemsPerPage,
-    (testimonialIndex + 1) * itemsPerPage
-  );
+  const resetReview = () => setStatus("input");
 
   return (
-    <div className="min-h-screen flex flex-col text-gray-800 pt-28">
-      {loadingInvestigator && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-sm">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-      )}
+    <div className="min-h-screen bg-[#f6f8fb] text-slate-950">
+      {/* 
+        Note: Header and Footer are provided by layout.tsx.
+        Removing redundant header/footer from the design concept.
+      */}
 
-      {/* Hero Section */}
-      <main className="flex-1">
-        <section className="relative h-[60vh] -mt-20 overflow-hidden bg-white group">
-          <AnimatePresence initial={false} custom={direction}>
+      <section id="diagnosis" className="relative overflow-hidden px-5 py-10 md:px-8 md:py-14">
+        <div className="absolute left-1/2 top-0 h-[520px] w-[940px] -translate-x-1/2 rounded-full bg-blue-100/70 blur-3xl" />
+        <div className="relative mx-auto max-w-7xl">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="inline-flex rounded-full border border-blue-200 bg-white px-4 py-2 text-sm font-bold text-blue-700 shadow-sm">
+              말하기 어려운 문제도, 비공개로 먼저 확인할 수 있습니다
+            </div>
+            <h1 className="mt-6 text-4xl font-extrabold leading-tight tracking-tight text-slate-950 md:text-6xl">
+              누구에게도 말하기 어려운 문제,
+              <br className="hidden md:block" /> 비공개로 먼저 확인해보세요
+            </h1>
+            <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+              외도, 채무, 사기, 가족 문제처럼 쉽게 꺼내기 어려운 일도 처음부터 실명이나 연락처 없이 시작할 수 있습니다. Li-One의 누적 사건 데이터와 유사 사례를 바탕으로 조사 가능 범위, 필요한 자료, 조사원 연결 가능 여부를 먼저 정리합니다.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-8 grid max-w-4xl grid-cols-2 gap-3 md:grid-cols-4">
+            <MiniStat value="누적 데이터" label="유사 사건 기준 대조" />
+            <MiniStat value="30+" label="신원확인 완료 조사원" />
+            <MiniStat value="비공개 검토" label="조사원 자동전달 없음" />
+            <MiniStat value="계약 전" label="범위·비용 먼저 안내" />
+          </div>
+
+          <div className="mx-auto mt-8 grid max-w-7xl gap-5 lg:grid-cols-[1.1fr_0.9fr]">
             <motion.div
-              key={currentBannerIndex}
-              custom={direction}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{
-                x: { type: "tween", duration: 0.5, ease: "easeInOut" },
-                opacity: { duration: 0.3 }
-              }}
-              className="absolute inset-0 flex flex-col justify-center items-center text-center w-full h-full"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45 }}
+              className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-200/80 md:p-7"
             >
-              <div 
-                className="absolute inset-0 bg-cover bg-center opacity-20" 
-                style={{ 
-                  backgroundImage: `url('${currentSlide?.imageUrl}')` 
-                }}
-              ></div>
-              <div className="container mx-auto px-4 relative text-center z-10">
-                {currentSlide?.id === -1 ? (
-                  // Case 1: Default Intro Banner
-                  <>
-                    <h1 className="font-bold text-gray-900 mb-4 leading-tight break-keep">
-                      <span className="block text-3xl md:text-5xl mb-6">
-                        AI를 통한 쉽고 간편한 민간조사 의뢰
-                      </span>
-                      <span className="block text-2xl md:text-4xl">
-                        이제 24시간 언제든지 맞춤형 민간조사원을 매칭받고,
-                        <br className="hidden md:block" />
-                        {' '}믿을 수 있는 전문가와 일을 진행할 수 있습니다.
-                      </span>
-                    </h1>
-                    <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed break-keep">
-                      AI와 초기 상담을 통해 사건을 분석하고,
-                      <br className="hidden md:block" />{' '}
-                      경험이 풍부한 전문 민간조사원과 매칭을 받으세요.
-                      <br className="hidden md:block" />{' '}
-                      유사한 사건 사례를 참고하여 더 나은 결과를 얻으실 수 있습니다.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                      <Link href="/simulation" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
-                        AI를 통해 상담해서 사건 맡기기
-                      </Link>
-                      <Link href={user ? "/scenario" : "/login"} className="bg-white hover:bg-gray-200 text-blue-600 font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105 border border-blue-600">
-                        나와 유사한 사건 찾기
-                      </Link>
-                      <Link href="/investigators" className="bg-gray-900 hover:bg-black text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
-                        탐정 명단 보기
-                      </Link>
+              {status === "input" && (
+                <div>
+                  <div className="mb-6 flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                    <div>
+                      <h2 className="text-2xl font-extrabold">내 사건 비공개 사전진단</h2>
+                      <p className="mt-1 text-sm text-slate-500">입력한 내용은 조사원에게 바로 전달되지 않습니다.</p>
                     </div>
-                  </>
-                ) : (
-                  // Case 2: Admin Registered Banners
-                  <>
-                    <h1 className="font-bold text-gray-900 mb-4 leading-tight break-keep">
-                      {currentSlide?.title ? (
-                        <span className="text-2xl md:text-4xl">{currentSlide.title}</span>
-                      ) : (
-                        <span className="text-2xl md:text-4xl">LIRA와 함께 사건을 해결하세요</span>
-                      )}
-                    </h1>
-                    <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed break-keep">
-                      검증된 민간조사원들이 당신의 사건을 해결하기 위해 대기 중입니다.
-                    </p>
-                    <div className="flex justify-center">
-                      <button 
-                          onClick={() => handleBannerClick(currentSlide as Banner)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105"
-                      >
-                        {currentSlide?.clickAction === 'INVESTIGATOR' ? '프로필 보기' : '자세히 보기'}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-          
-          {allMainSlides.length > 1 && (
-            <>
-              <button
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-3 rounded-full backdrop-blur-sm transition-all z-20 hidden group-hover:block"
-                onClick={() => paginate(-1)}
-              >
-                <FiChevronLeft size={32} />
-              </button>
-              <button
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-3 rounded-full backdrop-blur-sm transition-all z-20 hidden group-hover:block"
-                onClick={() => paginate(1)}
-              >
-                <FiChevronRight size={32} />
-              </button>
-
-              <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center gap-2">
-                {allMainSlides.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                        setDirection(idx > currentBannerIndex ? 1 : -1);
-                        setCurrentBannerIndex(idx);
-                    }}
-                    className={`h-2.5 w-2.5 rounded-full transition-all ${
-                      idx === currentBannerIndex 
-                        ? "bg-blue-600 w-8" 
-                        : "bg-gray-300 hover:bg-gray-400"
-                    }`}
-                    aria-label={`Go to slide ${idx + 1}`}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </section>
-
-        {/* Sub Banners */}
-        {subBanners.length > 0 && (
-          <section className="py-10 bg-gray-50 overflow-hidden">
-            <div className="w-full">
-              <div className="flex animate-scroll gap-6 w-max px-4">
-                {subBanners.map((banner) => (
-                  <button 
-                    key={`original-${banner.id}`} 
-                    onClick={() => handleBannerClick(banner)}
-                    className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0 bg-white text-left"
-                  >
-                    <div className="relative aspect-video w-full overflow-hidden flex items-center justify-center">
-                      <Image
-                        src={banner.imageUrl}
-                        alt={banner.title || 'Banner'}
-                        fill
-                        sizes="(max-width: 768px) 300px, 400px"
-                        style={{ objectFit: 'contain' }}
-                        className="group-hover:scale-105 transition-transform duration-300 p-2"
-                        unoptimized={banner.imageUrl.includes('http')}
-                      />
-                    </div>
-                    {banner.title && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                        <h3 className="text-white font-bold text-lg">{banner.title}</h3>
-                      </div>
-                    )}
-                  </button>
-                ))}
-                {subBanners.map((banner) => (
-                  <button 
-                    key={`duplicate-${banner.id}`} 
-                    onClick={() => handleBannerClick(banner)}
-                    className="block group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-[300px] md:w-[400px] flex-shrink-0 bg-white text-left"
-                  >
-                    <div className="relative aspect-video w-full overflow-hidden flex items-center justify-center">
-                      <Image
-                        src={banner.imageUrl}
-                        alt={banner.title || 'Banner'}
-                        fill
-                        sizes="(max-width: 768px) 300px, 400px"
-                        style={{ objectFit: 'contain' }}
-                        className="group-hover:scale-105 transition-transform duration-300 p-2"
-                        unoptimized={banner.imageUrl.includes('http')}
-                      />
-                    </div>
-                    {banner.title && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                        <h3 className="text-white font-bold text-lg">{banner.title}</h3>
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* LIRA의 장점 */}
-        <section className="py-20 bg-white">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-12">LIRA의 장점</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <div className="bg-gray-50 p-8 rounded-lg text-center border border-gray-200 hover:shadow-xl transition-shadow">
-                <h3 className="text-xl font-bold mb-2">AI 기반 상담</h3>
-                <p className="text-gray-600">사건의 특성과 요구사항을 AI가 분석하여 가장 적합한 민간조사원을 매칭해드립니다. 24시간 언제든지 상담 가능합니다.</p>
-              </div>
-              <div className="bg-gray-50 p-8 rounded-lg text-center border border-gray-200 hover:shadow-xl transition-shadow">
-                <h3 className="text-xl font-bold mb-2">전문가 매칭</h3>
-                <p className="text-gray-600">경험이 풍부하고 검증된 민간조사원들과 연결되어 전문적이고 신뢰할 수 있는 서비스를 받으실 수 있습니다.</p>
-              </div>
-              <div className="bg-gray-50 p-8 rounded-lg text-center border border-gray-200 hover:shadow-xl transition-shadow">
-                <h3 className="text-xl font-bold mb-2">사건 분석</h3>
-                <p className="text-gray-600">유사한 사건들의 사례를 분석하여 효과적인 해결 방안을 제시하고 성공 확률을 높입니다.</p>
-              </div>
-              <div className="bg-gray-50 p-8 rounded-lg text-center border border-gray-200 hover:shadow-xl transition-shadow">
-                <h3 className="text-xl font-bold mb-2">맞춤형 서비스</h3>
-                <p className="text-gray-600">개인의 상황과 요구사항에 맞는 맞춤형 조사 서비스를 제공하여 최적의 결과를 보장합니다.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 서비스 진행 절차 */}
-        <section className="py-20 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-12">서비스 진행 절차</h2>
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-4 text-center">
-              <div className="flex-1 p-6">
-                <h3 className="text-xl font-bold mb-2">사건 상담</h3>
-                <p className="text-gray-600">AI 상담을 통해 사건의 내용과 요구사항을 상세히 분석하고 적합한 조사 방향을 제시받으세요.</p>
-              </div>
-              <div className="hidden lg:block text-gray-400">
-                <CustomArrow />
-              </div>
-              <div className="flex-1 p-6">
-                <h3 className="text-xl font-bold mb-2">전문가 매칭</h3>
-                <p className="text-gray-600">사건의 특성에 맞는 경험이 풍부한 민간조사원과 매칭되어 전문적인 서비스를 받으실 수 있습니다.</p>
-              </div>
-              <div className="hidden lg:block text-gray-400">
-                <CustomArrow />
-              </div>
-              <div className="flex-1 p-6">
-                <h3 className="text-xl font-bold mb-2">조사 진행</h3>
-                <p className="text-gray-600">전문가와 함께 체계적이고 효율적인 조사를 진행하며 실시간으로 진행 상황을 확인하세요.</p>
-              </div>
-              <div className="hidden lg:block text-gray-400">
-                <CustomArrow />
-              </div>
-              <div className="flex-1 p-6">
-                <h3 className="text-xl font-bold mb-2">결과 분석</h3>
-                <p className="text-gray-600">조사 결과를 종합 분석하여 명확한 해결 방안과 후속 조치를 제공받으세요.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 이용자 후기 */}
-        <section className="py-20 bg-white overflow-hidden relative group/testimonials">
-          <div className="container mx-auto px-4 mb-4">
-            <h2 className="text-3xl font-bold text-center mb-12">이용자 후기</h2>
-            
-            {testimonials.length === 0 ? (
-              <p className="text-center text-sm text-gray-500">등록된 이용자 후기가 없습니다.</p>
-            ) : (
-              <>
-                <div className="relative min-h-[360px] md:min-h-[300px] overflow-hidden">
-                  <AnimatePresence initial={false} custom={testimonialDirection}>
-                    <motion.div
-                      key={testimonialIndex}
-                      custom={testimonialDirection}
-                      variants={slideVariants}
-                      initial="enter"
-                      animate="center"
-                      exit="exit"
-                      transition={{
-                        x: { type: "tween", duration: 0.5, ease: "easeInOut" },
-                        opacity: { duration: 0.3 }
-                      }}
-                      className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full"
-                    >
-                      {visibleTestimonials.map((testimonial) => {
-                        const avatarSrc =
-                          testimonial.avatarUrl ||
-                          `https://i.pravatar.cc/150?u=${encodeURIComponent(testimonial.name)}`;
-                        return (
-                          <div
-                            key={testimonial.id}
-                            className="bg-gray-50 p-5 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col"
-                          >
-                            <p className="text-gray-600 mb-4 leading-relaxed flex-grow line-clamp-5">
-                              &ldquo;{testimonial.content}&rdquo;
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedTestimonial(testimonial)}
-                              className="self-start text-xs text-blue-600 hover:text-blue-800 mb-3"
-                            >
-                              전체 보기
-                            </button>
-                            <div className="flex items-center mt-auto">
-                              <Image
-                                src={avatarSrc}
-                                alt={testimonial.name}
-                                width={44}
-                                height={44}
-                                className="rounded-full mr-3 border border-gray-200 object-cover"
-                              />
-                              <div>
-                                <p className="font-bold text-gray-900 text-sm">{testimonial.name}</p>
-                                {testimonial.role && (
-                                  <p className="text-xs text-gray-500">{testimonial.role}</p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-
-                {/* Testimonial Controls */}
-                {testimonials.length > itemsPerPage && (
-                  <>
-                    <button
-                      className="absolute top-1/2 left-2 md:left-8 z-10 p-3 rounded-full bg-white/80 text-gray-800 shadow-lg hover:bg-white transition-all transform -translate-y-1/2 opacity-0 group-hover/testimonials:opacity-100 focus:opacity-100 disabled:opacity-30"
-                      onClick={() => paginateTestimonial(-1)}
-                      aria-label="Previous testimonial"
-                    >
-                      <FiChevronLeft size={24} />
-                    </button>
-                    <button
-                      className="absolute top-1/2 right-2 md:right-8 z-10 p-3 rounded-full bg-white/80 text-gray-800 shadow-lg hover:bg-white transition-all transform -translate-y-1/2 opacity-0 group-hover/testimonials:opacity-100 focus:opacity-100 disabled:opacity-30"
-                      onClick={() => paginateTestimonial(1)}
-                      aria-label="Next testimonial"
-                    >
-                      <FiChevronRight size={24} />
-                    </button>
-
-                    {/* Indicators */}
-                    <div className="flex justify-center gap-2 mt-8">
-                      {Array.from({ length: Math.ceil(testimonials.length / itemsPerPage) }).map((_, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            setTestimonialDirection(idx > testimonialIndex ? 1 : -1);
-                            setTestimonialIndex(idx);
-                          }}
-                          className={`h-2.5 w-2.5 rounded-full transition-all ${
-                            idx === testimonialIndex
-                              ? "bg-blue-600 w-8"
-                              : "bg-gray-300 hover:bg-gray-400"
-                          }`}
-                          aria-label={`Go to testimonial page ${idx + 1}`}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        </section>
-
-        {/* Awards Section */}
-        {awards.length > 0 && (
-          <section className="py-20 bg-gray-50">
-            <div className="container mx-auto px-4 text-center">
-              <h2 className="text-3xl font-bold mb-12">수상 및 인증 내역</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                {awards.map((award) => (
-                  <div key={award.id} className="flex flex-col items-center">
-                    <div className="w-32 h-32 relative mb-4 grayscale hover:grayscale-0 transition-all duration-300 flex items-center justify-center">
-                      <img src={award.imageUrl} alt={award.title} className="max-h-full max-w-full object-contain" />
-                    </div>
-                    <h3 className="font-bold text-lg mb-1">{award.title}</h3>
-                    <p className="text-sm text-gray-500">{new Date(award.date).toLocaleDateString()}</p>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">비공개 입력</span>
                   </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
 
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-4xl font-bold mb-4">전문적인 민간조사 서비스를 시작할 준비가 되셨나요?</h2>
-            <p className="text-lg text-blue-100 mb-8">LIRA를 통해 AI 상담과 전문가 매칭으로 복잡한 사건을 해결하고 있는 수많은 고객들과 함께하세요.</p>
-            <Link href="/register" className="bg-white text-blue-600 font-bold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
-              지금 바로 시작하세요
-            </Link>
-          </div>
-        </section>
-      </main>
+                  <div className="space-y-6">
+                    <div>
+                      <div className="mb-3 text-sm font-bold text-slate-900">1. 어떤 사건인가요?</div>
+                      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                        {caseTypes.map((item) => (
+                          <SelectablePill key={item} active={selectedCase === item} onClick={() => setSelectedCase(item)}>
+                            {item}
+                          </SelectablePill>
+                        ))}
+                      </div>
+                    </div>
 
-      {/* Testimonial Modal */}
-      <AnimatePresence>
-        {selectedTestimonial && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSelectedTestimonial(null)}
-          >
-            <motion.div
-              className="bg-white max-w-xl w-full mx-4 rounded-lg shadow-xl p-6 relative"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setSelectedTestimonial(null)}
-                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-              >
-                닫기
-              </button>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {selectedTestimonial.content}
-              </p>
-              <div className="mt-6 flex items-center">
-                <div className="font-bold">{selectedTestimonial.name}</div>
-                {selectedTestimonial.role && <div className="ml-2 text-gray-500">| {selectedTestimonial.role}</div>}
-              </div>
+                    <div>
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="text-sm font-bold text-slate-900">2. 현재 가지고 있는 자료가 있나요?</div>
+                        <div className="text-xs font-medium text-slate-500">중복 선택 가능</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                        {evidenceTypes.map((item) => (
+                          <SelectablePill key={item} active={selectedEvidence.includes(item)} onClick={() => toggleEvidence(item)}>
+                            {item}
+                          </SelectablePill>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="mb-3 text-sm font-bold text-slate-900">3. 확인하고 싶은 내용을 간단히 적어주세요</div>
+                      <textarea
+                        value={memo}
+                        onChange={(e) => setMemo(e.target.value)}
+                        className="min-h-[118px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                        placeholder="예시를 참고해 현재 상황을 간단히 적어주세요."
+                      />
+                      <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600 md:grid-cols-2">
+                        <button
+                          type="button"
+                          onClick={() => setMemo("배우자의 외도가 의심됩니다. 최근 외박이 잦고 일정 설명이 맞지 않으며, 카카오톡 대화 일부와 사진 몇 장을 가지고 있습니다. 직접 추궁하기 전에 어떤 자료가 더 필요한지 확인하고 싶습니다.")}
+                          className="rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-blue-300 hover:bg-blue-50"
+                        >
+                          <span className="block font-bold text-slate-950">예시 1. 외도·상간 관련</span>
+                          배우자의 외도가 의심됩니다. 최근 외박이 잦고 일정 설명이 맞지 않으며, 카카오톡 대화 일부와 사진 몇 장을 가지고 있습니다.
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMemo("거래처 또는 동업자와의 계약 내용이 실제와 다른 것 같습니다. 계약서, 송금내역, 카카오톡 대화가 일부 있고, 고소나 소송 전에 어떤 사실관계를 먼저 확인해야 하는지 알고 싶습니다.")}
+                          className="rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-blue-300 hover:bg-blue-50"
+                        >
+                          <span className="block font-bold text-slate-950">예시 2. 사실조사·자료정리 관련</span>
+                          계약 내용과 실제 진행 상황이 다른 것 같습니다. 계약서, 송금내역, 대화내역을 가지고 있고, 어떤 사실관계를 먼저 확인해야 하는지 알고 싶습니다.
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={startReview}
+                      className="w-full rounded-2xl bg-blue-700 px-5 py-4 text-base font-bold text-white shadow-lg shadow-blue-700/20 transition hover:bg-blue-800"
+                    >
+                      비공개로 먼저 확인하기
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {status === "loading" && (
+                <div className="flex min-h-[560px] flex-col justify-center rounded-3xl bg-slate-950 p-8 text-white">
+                  <div className="mx-auto mb-8 h-14 w-14 rounded-full border-4 border-blue-400 border-t-transparent animate-spin" />
+                  <h2 className="text-center text-2xl font-bold">비슷한 사건 데이터를 바탕으로 확인하고 있습니다</h2>
+                  <p className="mx-auto mt-4 max-w-xl text-center text-sm leading-6 text-slate-300">
+                    입력하신 내용을 비슷한 사건 유형과 조사 기준에 맞춰 검토하고 있습니다.
+                  </p>
+                  <div className="mx-auto mt-8 w-full max-w-md space-y-3">
+                    {reviewSteps.map((step, idx) => (
+                      <div key={step} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                        {idx + 1}. {step}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {status === "result" && (
+                <div>
+                  <div className="mb-5 rounded-3xl bg-blue-50 p-5">
+                    <div className="text-sm font-bold text-blue-700">사전진단 1차 검토가 완료되었습니다</div>
+                    <p className="mt-2 text-sm leading-6 text-slate-700">
+                      입력하신 내용을 Li-One의 누적 사건 데이터와 조사 기준에 맞춰 검토하고, 추가로 확인할 부분을 정리했습니다.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3">
+                    <div className="rounded-2xl bg-slate-50 p-4">
+                      <div className="text-xs font-semibold text-slate-500">접수 유형</div>
+                      <div className="mt-1 font-bold text-slate-900">{selectedCase}</div>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-4">
+                      <div className="text-xs font-semibold text-slate-500">보유 자료</div>
+                      <div className="mt-1 font-bold text-slate-900">{evidenceLabel}</div>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-4">
+                      <div className="text-xs font-semibold text-slate-500">누적 사건 데이터 기준 검토</div>
+                      <div className="mt-1 font-bold text-slate-900">추가 자료와 조사 가능 범위 확인이 필요한 사안입니다</div>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-4">
+                      <div className="text-xs font-semibold text-slate-500">다음 확인 사항</div>
+                      <div className="mt-1 font-bold text-slate-900">담당자 상담을 통해 조사 가능 범위와 조사원 연결 가능 여부를 확인할 수 있습니다</div>
+                    </div>
+                  </div>
+
+                  <p className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm leading-7 text-slate-700">
+                    사전진단 결과는 정식 조사 결과가 아닙니다. 입력하신 내용만으로 조사 가능 여부를 단정할 수는 없으며, 필요한 경우 담당자가 조사 가능 범위, 추가 자료, 조사원 연결 여부를 안내합니다.
+                  </p>
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <button onClick={resetReview} className="rounded-2xl border border-slate-200 bg-white px-5 py-4 font-bold text-slate-700 transition hover:bg-slate-50">
+                      다시 확인하기
+                    </button>
+                    <button className="rounded-2xl bg-blue-700 px-5 py-4 font-bold text-white shadow-lg shadow-blue-700/20 transition hover:bg-blue-800">
+                      담당자 상담 요청하기
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Investigator Modal */}
-      <InvestigatorDetailModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        investigator={selectedInvestigator}
-        formatSpecialties={formatSpecialties}
-        translateRegion={translateRegion}
-      />
+            <aside className="space-y-5">
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="text-sm font-bold text-blue-700">사전진단 결과 미리보기</div>
+                <div className="mt-5 space-y-3">
+                  {[
+                    ["사건 유형", selectedCase],
+                    ["보유 자료", evidenceLabel],
+                    ["조사 가능성", "누적 사건 기준으로 1차 분류"],
+                    ["필요 자료", "추가 확인 자료 안내"],
+                    ["조사원 연결", "의뢰인 요청 시 검토"],
+                    ["주의할 점", "위법조사 요청 제한"],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex items-start justify-between gap-4 rounded-2xl bg-slate-50 px-4 py-3">
+                      <div className="text-xs font-bold text-slate-500">{label}</div>
+                      <div className="max-w-[180px] text-right text-sm font-semibold text-slate-900">{value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-bold text-slate-950">신원확인 완료 조사원</div>
+                    <div className="mt-1 text-xs text-slate-500">일부 예시만 표시됩니다.</div>
+                  </div>
+                  <div className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">30+ 등록</div>
+                </div>
+                <div className="mt-4 grid gap-3">
+                  {investigatorList.slice(0, 2).map((item) => (
+                    <div key={item.name} className="rounded-2xl bg-slate-50 p-4">
+                      <div className="font-bold text-slate-950">{item.name}</div>
+                      <div className="mt-1 text-xs leading-5 text-slate-600">{item.field} · {item.career}</div>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-4 text-xs leading-5 text-slate-500">
+                  사전진단 결과를 확인한 뒤, 의뢰인이 상담 또는 조사원 연결을 요청하면 사건 유형, 지역, 조사 난이도, 필요 자료를 검토해 조사원 연결 가능 여부를 안내합니다.
+                </p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section id="partners" className="bg-white px-5 py-12 md:px-8 md:py-16">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <div className="text-sm font-bold text-blue-700">조사원 네트워크</div>
+              <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950 md:text-4xl">조사원 연결은 사전진단 이후, 의뢰인 요청 시 검토합니다</h2>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
+                Li-One은 조사원 목록을 무작정 노출하지 않습니다. 먼저 사전진단을 통해 사건 내용을 정리하고, 이후 의뢰인이 상담 또는 조사원 연결을 요청할 경우 사업자등록증·신분증·비밀유지 및 위법조사 금지 서약 확인을 완료한 조사원 중에서 사건 유형, 지역, 조사 난이도, 필요 자료를 검토해 조사원 연결 가능 여부를 안내합니다.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white">신원확인 완료 조사원 30+</div>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            {investigatorList.map((item) => (
+              <InvestigatorCard key={item.name} item={item} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="trust" className="px-5 py-12 md:px-8 md:py-16">
+        <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+          <div>
+            <div className="text-sm font-bold text-blue-700">신뢰·보안 기준</div>
+            <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950 md:text-4xl">민감한 문제일수록, 먼저 안전하게 확인해야 합니다</h2>
+            <p className="mt-4 text-sm leading-7 text-slate-600">
+              Li-One은 사건 내용을 필요한 범위에서만 관리하고, 위법 소지가 있는 요청은 진행하지 않습니다. 실제 조사가 필요한 경우에는 조사 범위, 비용, 기간을 먼저 안내하고 계약 후 정식 진행을 안내합니다.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              ["비공개 검토", "입력한 사건 내용은 조사 가능성 확인과 상담 검토 목적 범위에서 관리됩니다."],
+              ["실명 입력 없이 시작", "초기 단계에서는 실명이나 연락처 없이 사건 유형과 상황만 입력할 수 있습니다."],
+              ["조사원 자동전달 없음", "입력 내용은 조사원에게 자동 전달되지 않습니다."],
+              ["위법조사 요청 제한", "불법 위치추적, 해킹, 도청, 개인정보 불법조회 등 위법 소지가 있는 요청은 진행하지 않습니다."],
+            ].map(([title, desc]) => (
+              <div key={title} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h3 className="font-bold text-slate-950">{title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" className="bg-white px-5 py-12 md:px-8 md:py-16">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-8 text-center">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 md:text-4xl">입력 전 가장 많이 걱정하는 질문</h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600">누구에게도 말하기 어려운 내용을 입력하기 전, 가장 많이 묻는 질문을 정리했습니다.</p>
+          </div>
+          <div className="space-y-3">
+            {faqItems.map((item, index) => (
+              <div key={item.q} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(openFaq === index ? -1 : index)}
+                  className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
+                >
+                  <span className="font-bold text-slate-950">{item.q}</span>
+                  <span className="text-lg font-bold text-blue-700">{openFaq === index ? "−" : "+"}</span>
+                </button>
+                {openFaq === index && <div className="border-t border-slate-100 px-6 py-5 text-sm leading-7 text-slate-600">{item.a}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="py-12 bg-white">
+        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 md:flex-row md:items-center px-5 md:px-8">
+          <div>
+            <div className="text-xl font-bold text-slate-950">Li-One</div>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-600">
+              Li-One은 누적 사건 데이터와 신원확인 완료 조사원 네트워크를 바탕으로, 민간조사 의뢰 전 사건의 조사 가능 범위와 필요한 자료를 먼저 확인하고, 의뢰인이 요청한 경우 조사원 연결 가능 여부를 안내하는 민간조사 사전진단 플랫폼입니다.
+            </p>
+          </div>
+          <a href="/simulation" className="rounded-2xl bg-blue-700 px-6 py-4 text-center font-bold text-white shadow-lg shadow-blue-700/20 transition hover:bg-blue-800">
+            조사 가능성 사전진단 시작하기
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

@@ -21,6 +21,7 @@ import {
   FiPaperclip,
   FiFile,
   FiEye,
+  FiLock,
 } from "react-icons/fi";
 
 import { useUserStore } from "@/lib/userStore";
@@ -261,6 +262,25 @@ const sortSessionsByRecency = (sessions: PersistedSession[]) =>
     return bTime - aTime;
   });
 
+const LoginRequiredCard = ({ title, description }: { title: string; description: string }) => (
+  <div className="flex h-full min-h-[320px] w-full flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center animate-in fade-in duration-500">
+    <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-xl ring-8 ring-indigo-50">
+      <FiLock className="h-6 w-6" />
+    </div>
+    <h3 className="mb-2 text-lg font-bold text-slate-900">{title}</h3>
+    <p className="mb-8 max-w-[240px] text-[13px] leading-relaxed text-slate-500">
+      {description}
+    </p>
+    <button
+      onClick={() => (window.location.href = "/login")}
+      className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-7 py-2.5 text-[13px] font-bold text-white shadow-lg transition-all hover:scale-[1.02] hover:bg-indigo-700 active:scale-[0.98]"
+    >
+      로그인하고 확인하기
+    </button>
+    <p className="mt-4 text-[10px] text-slate-400">회원가입은 10초면 충분합니다.</p>
+  </div>
+);
+
 export const ChatSimulation = () => {
   const router = useRouter();
   const { user, logout } = useUserStore();
@@ -296,38 +316,6 @@ export const ChatSimulation = () => {
       },
     ]);
   };
-
-  useEffect(() => {
-    // Always reset conversation on component mount (page visit)
-    setMessages([
-      {
-        id: cuid(),
-        role: "assistant",
-        content: assistantGreeting,
-        createdAt: Date.now(),
-      },
-    ]);
-    
-    // Explicitly nullify all analysis results to ensure fresh start
-    // This fixes the issue where previous session data (recommendations, bribery, etc.)
-    // persists after navigating away and returning.
-    setIntakeSummary(null);
-    setConversationSummary(null);
-    setRecommendations([]);      
-    setEvidenceSummaries([]);
-    setRealtimeInsights(null);   
-    setReportDraft(null);
-    setNegotiationPlan(null);
-    setComplianceReport(null);
-    setConversationId(null);
-    
-    // Also clear session storage artifacts if any exist for this page context
-    try {
-      window.sessionStorage.removeItem("simulation-handoff");
-    } catch {
-      // ignore
-    }
-  }, [setMessages]); // Run once on mount
 
   const [isAssistantThinking, setIsAssistantThinking] = useState(false);
   const [intakeSummary, setIntakeSummary] = useState<IntakeSummary | null>(null);
@@ -396,12 +384,6 @@ export const ChatSimulation = () => {
   }, [intakeSummary]);
 
   useEffect(() => {
-    if (!user) {
-      router.replace("/login?redirect=/simulation");
-    }
-  }, [router, user]);
-
-  useEffect(() => {
     chatContainerRef.current?.scrollTo({
       top: chatContainerRef.current.scrollHeight,
       behavior: "smooth",
@@ -454,7 +436,7 @@ export const ChatSimulation = () => {
       },
     ]);
     setPersistedSessions([]);
-  }, [user?.id]);
+  }, [user?.id, setMessages]);
 
   const loadPersistedSessions = useCallback(
     async (options?: { signal?: AbortSignal; silent?: boolean }) => {
@@ -506,22 +488,6 @@ export const ChatSimulation = () => {
 
         const sortedSessions = sortSessionsByRecency(mappedSessions);
         setPersistedSessions(sortedSessions);
-
-        // Auto-load removed as per requirement: Always start fresh on page load/visit
-        /*
-        if (!bootstrapHadStoredMessagesRef.current && sortedSessions.length > 0) {
-          const latestSession = sortedSessions[0];
-          if (latestSession.messages.length > 0) {
-            setMessages(latestSession.messages);
-            conversationIdRef.current = latestSession.externalId ?? null;
-            setConversationId(latestSession.externalId ?? null);
-            if (latestSession.intakeSummary) {
-              setIntakeSummary(latestSession.intakeSummary);
-            }
-            bootstrapHadStoredMessagesRef.current = true;
-          }
-        }
-        */
       } catch (error) {
         if (options?.signal?.aborted) return;
         console.error("[SIMULATION_HISTORY_FETCH_ERROR]", error);
@@ -646,7 +612,6 @@ export const ChatSimulation = () => {
 
     storageKeyRef.current = historyKey;
 
-    // Force clear any previous session data to ensure fresh start
     window.localStorage.removeItem(historyKey);
     window.localStorage.removeItem(conversationKey);
 
@@ -659,11 +624,6 @@ export const ChatSimulation = () => {
       storageKeyRef.current = null;
     };
   }, [user?.id]);
-
-  useEffect(() => {
-    // Persistence disabled based on user requirement: "Page reset on visit"
-    // We do not save to localStorage anymore.
-  }, [messages, conversationId, user?.id]);
 
   const persistConversation = useCallback(
     async (question: string, answer: string) => {
@@ -816,11 +776,6 @@ export const ChatSimulation = () => {
       const content = rawInput.trim();
       if ((!content && !selectedFile) || isAssistantThinking) return;
 
-      if (!user) {
-        router.push("/login?redirect=/simulation");
-        return;
-      }
-
       let messageContent = content;
       const attachments = selectedFile ? [{ name: selectedFile.name, type: selectedFile.type }] : undefined;
 
@@ -864,7 +819,6 @@ export const ChatSimulation = () => {
           let errorMessage = `Intake request failed with status ${response.status}`;
           try {
             const errorData = await response.json();
-            // errorData.error 또는 errorData.message 중 하나라도 있으면 사용
             if (errorData?.message) {
               errorMessage = errorData.message;
             } else if (errorData?.error) {
@@ -916,13 +870,12 @@ export const ChatSimulation = () => {
         }
 
         setSummaryError(displayError);
-        // Do NOT append the error as a chat message to prevent context poisoning loop
       } finally {
         setIsSummaryLoading(false);
         setIsAssistantThinking(false);
       }
     },
-    [isAssistantThinking, messages, persistConversation, router, user, selectedFile]
+    [isAssistantThinking, messages, persistConversation, user, selectedFile, setMessages]
   );
 
   const handleQuickPromptClick = useCallback(
@@ -947,7 +900,6 @@ export const ChatSimulation = () => {
     conversationIdRef.current = null;
     setConversationId(null);
     
-    // Clear all analysis states
     setIntakeSummary(null);
     setConversationSummary(null);
     setRecommendations([]);
@@ -996,21 +948,19 @@ export const ChatSimulation = () => {
 
     setIsHistoryOpen(false);
     bootstrapHadStoredMessagesRef.current = true;
-  }, [user?.id]);
+  }, [user?.id, setMessages]);
 
   const handleLoadSession = useCallback((session: PersistedSession) => {
     if (!session?.messages?.length) return;
 
     setMessages(session.messages);
     
-    // Restore summary if available, otherwise clear it to prevent stale data
     if (session.intakeSummary) {
       setIntakeSummary(session.intakeSummary);
     } else {
       setIntakeSummary(null);
     }
 
-    // Clear other derived states not yet persisted
     setConversationSummary(null);
     setRecommendations([]);
     setEvidenceSummaries([]);
@@ -1038,7 +988,7 @@ export const ChatSimulation = () => {
     setComplianceReport(null);
     setComplianceError(null);
     setIsComplianceLoading(false);
-  }, []);
+  }, [setMessages]);
 
   const handleMatchNow = useCallback(
     (recommendation: InvestigatorRecommendation) => {
@@ -1279,14 +1229,16 @@ export const ChatSimulation = () => {
   ) : null;
 
   const customerRecommendationsSlot = !canViewInvestigatorIntel ? (
-    <InvestigatorRecommendationsCard
-      recommendations={recommendations}
-      isLoading={isRecommendationsLoading}
-      scenarioTitle={intakeSummary?.caseTitle}
-      matchButtonLabel={matchButtonLabel}
-      isMatchDisabled={isMatchDisabled}
-      onMatchNow={handleMatchNow}
-    />
+    <div className="relative flex flex-col min-h-[320px]">
+      <InvestigatorRecommendationsCard
+        recommendations={recommendations}
+        isLoading={isRecommendationsLoading}
+        scenarioTitle={intakeSummary?.caseTitle}
+        matchButtonLabel={matchButtonLabel}
+        isMatchDisabled={isMatchDisabled}
+        onMatchNow={handleMatchNow}
+      />
+    </div>
   ) : null;
 
   const analyzeEvidence = useCallback(
@@ -1584,7 +1536,7 @@ export const ChatSimulation = () => {
     void runRealtimeAnalysis({ force: true });
   }, [runRealtimeAnalysis]);
 
-  const handoffData = useMemo(
+  const handoffDataForSession = useMemo(
     () => ({
       transcript: transcriptForHandoff,
       summary: intakeSummary,
@@ -1609,12 +1561,12 @@ export const ChatSimulation = () => {
     try {
       window.sessionStorage.setItem(
         "simulation-handoff",
-        JSON.stringify(handoffData)
+        JSON.stringify(handoffDataForSession)
       );
     } catch (error) {
       console.warn("[SIMULATION_HANDOFF_PERSIST_ERROR]", error);
     }
-  }, [handoffData]);
+  }, [handoffDataForSession]);
 
   const handleSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
@@ -1632,7 +1584,68 @@ export const ChatSimulation = () => {
     router.push("/login");
   }, [logout, router]);
 
+  // Handoff Ref to prevent multiple executions
+  const handoffProcessedRef = useRef(false);
 
+  // Initial Data & Handoff EFFECT
+  useEffect(() => {
+    if (handoffProcessedRef.current) return;
+    handoffProcessedRef.current = true;
+
+    const handoffRaw = typeof window !== "undefined" ? window.sessionStorage.getItem("main-diagnosis-handoff") : null;
+    
+    if (handoffRaw) {
+      try {
+        const handoffData = JSON.parse(handoffRaw);
+        window.sessionStorage.removeItem("main-diagnosis-handoff");
+
+        const initialUserMessage = `[사건 유형] ${handoffData.caseType}\n[보유 자료] ${handoffData.evidence.join(", ")}\n[상황 설명] ${handoffData.memo}`;
+        
+        setMessages([
+          {
+            id: cuid(),
+            role: "assistant",
+            content: assistantGreeting,
+            createdAt: Date.now() - 500,
+          }
+        ]);
+
+        // Trigger message sending
+        setTimeout(() => {
+          handleSendMessage(initialUserMessage);
+        }, 100);
+
+      } catch (e) {
+        console.error("Failed to parse diagnosis handoff", e);
+      }
+    } else {
+      setMessages([
+        {
+          id: cuid(),
+          role: "assistant",
+          content: assistantGreeting,
+          createdAt: Date.now(),
+        },
+      ]);
+    }
+    
+    // Reset all analysis states for a clean start
+    setIntakeSummary(null);
+    setConversationSummary(null);
+    setRecommendations([]);      
+    setEvidenceSummaries([]);
+    setRealtimeInsights(null);   
+    setReportDraft(null);
+    setNegotiationPlan(null);
+    setComplianceReport(null);
+    setConversationId(null);
+    
+    try {
+      window.sessionStorage.removeItem("simulation-handoff");
+    } catch {
+      // ignore
+    }
+  }, [setMessages, handleSendMessage]);
 
   useEffect(() => {
     return () => {
@@ -2201,13 +2214,20 @@ export const ChatSimulation = () => {
                     사건 요약
                     <FiChevronDown className="h-4 w-4 text-slate-500 transition group-open:rotate-180" />
                   </summary>
-                  <div className="custom-scrollbar max-h-72 space-y-4 overflow-y-auto border-t border-slate-100 px-4 py-4 text-[13px]">
-                    <CaseSummarySidebar
-                      summary={intakeSummary}
-                      conversationSummary={conversationSummary}
-                      isLoading={isSummaryLoading}
-                      isAssistantThinking={isAssistantThinking}
-                    />
+                  <div className="relative custom-scrollbar max-h-72 space-y-4 overflow-y-auto border-t border-slate-100 px-4 py-4 text-[13px]">
+                    {!user ? (
+                      <LoginRequiredCard 
+                        title="사건 요약 확인" 
+                        description="상담 대화를 통해 정리된 AI 사건 요약 보고서를 보시려면 로그인이 필요합니다." 
+                      />
+                    ) : (
+                      <CaseSummarySidebar
+                        summary={intakeSummary}
+                        conversationSummary={conversationSummary}
+                        isLoading={isSummaryLoading}
+                        isAssistantThinking={isAssistantThinking}
+                      />
+                    )}
                   </div>
                 </details>
                 <details className="group rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
@@ -2215,16 +2235,23 @@ export const ChatSimulation = () => {
                     실시간 AI 브리핑
                     <FiChevronDown className="h-4 w-4 text-slate-500 transition group-open:rotate-180" />
                   </summary>
-                  <div className="custom-scrollbar max-h-72 space-y-4 overflow-y-auto border-t border-slate-100 px-4 py-4 text-[13px]">
-                    <AIInsightsPanel
-                      insights={realtimeInsights}
-                      isLoading={isRealtimeLoading}
-                      error={realtimeError}
-                      onRetry={handleRetryRealtimeAnalysis}
-                      showInvestigatorInsights={canViewInvestigatorIntel}
-                      investigatorSlot={investigatorInsightsSlot}
-                      customerRecommendationsSlot={customerRecommendationsSlot}
-                    />
+                  <div className="relative custom-scrollbar max-h-72 space-y-4 overflow-y-auto border-t border-slate-100 px-4 py-4 text-[13px]">
+                    {!user ? (
+                      <LoginRequiredCard 
+                        title="AI 분석 & 탐정 추천" 
+                        description="실시간 위험도 분석과 맞춤형 탐정 추천 리스트를 확인하시려면 로그인이 필요합니다." 
+                      />
+                    ) : (
+                      <AIInsightsPanel
+                        insights={realtimeInsights}
+                        isLoading={isRealtimeLoading}
+                        error={realtimeError}
+                        onRetry={handleRetryRealtimeAnalysis}
+                        showInvestigatorInsights={canViewInvestigatorIntel}
+                        investigatorSlot={investigatorInsightsSlot}
+                        customerRecommendationsSlot={customerRecommendationsSlot}
+                      />
+                    )}
                   </div>
                 </details>
                 <details className="group rounded-2xl border border-slate-200 bg-white/95 shadow-sm">
@@ -2299,19 +2326,28 @@ export const ChatSimulation = () => {
                   대화에서 수집된 사건 정보를 정리한 내용입니다.
                 </p>
               </div>
-              <div className="custom-scrollbar flex-1 min-h-0 space-y-4 overflow-y-auto p-5">
-                {summaryError ? (
-                  <div className="flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-xs text-rose-600">
-                    <FiAlertCircle className="mt-0.5 h-4 w-4" />
-                    <span>{summaryError}</span>
-                  </div>
-                ) : null}
-                <CaseSummarySidebar
-                  summary={intakeSummary}
-                  conversationSummary={conversationSummary}
-                  isLoading={isSummaryLoading}
-                  isAssistantThinking={isAssistantThinking}
-                />
+              <div className="relative custom-scrollbar flex-1 min-h-0 space-y-4 overflow-y-auto p-5">
+                {!user ? (
+                  <LoginRequiredCard 
+                    title="사건 요약 확인" 
+                    description="실시간 대화 분석을 통해 정리된 사건의 핵심 정보를 확인하시려면 로그인이 필요합니다." 
+                  />
+                ) : (
+                  <>
+                    {summaryError ? (
+                      <div className="flex items-start gap-2 rounded-2xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-xs text-rose-600">
+                        <FiAlertCircle className="mt-0.5 h-4 w-4" />
+                        <span>{summaryError}</span>
+                      </div>
+                    ) : null}
+                    <CaseSummarySidebar
+                      summary={intakeSummary}
+                      conversationSummary={conversationSummary}
+                      isLoading={isSummaryLoading}
+                      isAssistantThinking={isAssistantThinking}
+                    />
+                  </>
+                )}
               </div>
           </section>
 
@@ -2322,54 +2358,63 @@ export const ChatSimulation = () => {
                   대화 맥락을 분석해 위험도, 타임라인, 우선 조치를 제공합니다.
                 </p>
               </div>
-              <div className="custom-scrollbar flex-1 min-h-0 space-y-5 overflow-y-auto p-5">
-                <AIInsightsPanel
-                  insights={realtimeInsights}
-                  isLoading={isRealtimeLoading}
-                  error={realtimeError}
-                  onRetry={handleRetryRealtimeAnalysis}
-                  showInvestigatorInsights={canViewInvestigatorIntel}
-                  investigatorSlot={investigatorInsightsSlot}
-                  customerRecommendationsSlot={customerRecommendationsSlot}
-                />
-                
-                {canViewInvestigatorIntel && (
+              <div className="relative custom-scrollbar flex-1 min-h-0 space-y-5 overflow-y-auto p-5">
+                {!user ? (
+                  <LoginRequiredCard 
+                    title="AI 분석 & 탐정 추천" 
+                    description="사건 성공 가능성 분석과 신뢰할 수 있는 탐정 매칭 리스트를 확인하시려면 로그인이 필요합니다." 
+                  />
+                ) : (
                   <>
-                    <div>
-                      <h3 className="mb-3 text-sm font-semibold text-slate-700">규제·윤리 감시</h3>
-                      <ComplianceMonitorPanel
-                        report={complianceReport}
-                        isLoading={isComplianceLoading}
-                        error={complianceError}
-                        onRefresh={handleRefreshCompliance}
-                      />
-                    </div>
-                    <EvidenceVaultPanel
-                      artifacts={evidenceArtifacts}
-                      summaries={evidenceSummaries}
-                      isLoading={isEvidenceLoading}
-                      error={evidenceError}
-                      onRefresh={handleRefreshEvidence}
-                    />
-                    <ReportDraftPanel
-                      report={reportDraft}
-                      isLoading={isReportLoading}
-                      error={reportError}
-                      onGenerate={() => {
-                        void handleGenerateReport();
-                      }}
+                    <AIInsightsPanel
+                      insights={realtimeInsights}
+                      isLoading={isRealtimeLoading}
+                      error={realtimeError}
+                      onRetry={handleRetryRealtimeAnalysis}
                       showInvestigatorInsights={canViewInvestigatorIntel}
+                      investigatorSlot={investigatorInsightsSlot}
+                      customerRecommendationsSlot={customerRecommendationsSlot}
                     />
-                    <div>
-                      <h3 className="mb-3 text-sm font-semibold text-slate-700">협상 스크립트 코치</h3>
-                      <NegotiationCoachPanel
-                        plan={negotiationPlan}
-                        isLoading={isNegotiationLoading}
-                        error={negotiationError}
-                        onRegenerate={handleRegenerateNegotiationPlan}
-                        showInvestigatorInsights={canViewInvestigatorIntel}
-                      />
-                    </div>
+                    
+                    {canViewInvestigatorIntel && (
+                      <>
+                        <div className="pt-4 border-t border-slate-100">
+                          <h3 className="mb-3 text-sm font-semibold text-slate-700">규제·윤리 감시</h3>
+                          <ComplianceMonitorPanel
+                            report={complianceReport}
+                            isLoading={isComplianceLoading}
+                            error={complianceError}
+                            onRefresh={handleRefreshCompliance}
+                          />
+                        </div>
+                        <EvidenceVaultPanel
+                          artifacts={evidenceArtifacts}
+                          summaries={evidenceSummaries}
+                          isLoading={isEvidenceLoading}
+                          error={evidenceError}
+                          onRefresh={handleRefreshEvidence}
+                        />
+                        <ReportDraftPanel
+                          report={reportDraft}
+                          isLoading={isReportLoading}
+                          error={reportError}
+                          onGenerate={() => {
+                            void handleGenerateReport();
+                          }}
+                          showInvestigatorInsights={canViewInvestigatorIntel}
+                        />
+                        <div>
+                          <h3 className="mb-3 text-sm font-semibold text-slate-700">협상 스크립트 코치</h3>
+                          <NegotiationCoachPanel
+                            plan={negotiationPlan}
+                            isLoading={isNegotiationLoading}
+                            error={negotiationError}
+                            onRegenerate={handleRegenerateNegotiationPlan}
+                            showInvestigatorInsights={canViewInvestigatorIntel}
+                          />
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -2381,4 +2426,3 @@ export const ChatSimulation = () => {
 };
 
 export default ChatSimulation;
-
