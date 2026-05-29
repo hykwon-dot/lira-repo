@@ -1752,13 +1752,23 @@ export const ChatSimulation = () => {
                     {user?.email ?? "비로그인 상태"}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="rounded-full border border-white/30 bg-white/20 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-white transition hover:bg-white/30 md:px-4"
-                >
-                  로그아웃
-                </button>
+                {user ? (
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="rounded-full border border-white/30 bg-white/20 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-white transition hover:bg-white/30 md:px-4"
+                  >
+                    로그아웃
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => router.push("/login")}
+                    className="rounded-full border border-white/30 bg-white/20 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-white transition hover:bg-white/30 md:px-4"
+                  >
+                    로그인
+                  </button>
+                )}
               </div>
               <p className="text-[11px] text-indigo-100/70 md:text-xs">
                 대화는 브리핑 카드로 정리되어 탐정에게 전달됩니다. 세션 종료 전까지 필요한 질문을 이어가세요.
@@ -2054,7 +2064,7 @@ export const ChatSimulation = () => {
                       className={cn(
                         "flex max-w-[88%] items-start gap-3",
                         message.role === "user"
-                          ? "flex-row-reverse text-right"
+                          ? "flex-row-reverse"
                           : "flex-row"
                       )}
                     >
@@ -2075,7 +2085,7 @@ export const ChatSimulation = () => {
                             : "bg-white/95 ring-1 ring-slate-200 text-slate-800"
                         )}
                       >
-                        <p className="whitespace-pre-wrap break-words text-balance">{message.content}</p>
+                        <p className="whitespace-pre-wrap break-words">{message.content}</p>
                         {message.attachments?.map((att, idx) => (
                           <div key={idx} className="mt-2 flex items-center gap-2 rounded-lg bg-white/20 p-2 text-xs">
                             <FiFile className="h-4 w-4" />
