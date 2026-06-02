@@ -9,9 +9,9 @@ import { motion, AnimatePresence } from "framer-motion";
 // --- Data Constants ---
 
 const caseTypes = [
-  "외도·상간",
-  "채무자·소재 확인",
-  "사기 피해",
+  "배우자 부정행위",
+  "활동 정보 확인",
+  "위치 관련 정보 확인",
   "기업 내부조사",
   "기술·자료 유출",
   "가족·양육권",
@@ -36,9 +36,9 @@ const reviewSteps = [
 ];
 
 const investigatorList = [
-  { name: "K 조사원", field: "외도·상간 / 소재 확인", career: "경력 12년", area: "수도권" },
-  { name: "P 조사원", field: "기업 내부조사 / 자료 유출", career: "경력 15년", area: "서울·경기" },
-  { name: "L 조사원", field: "채무자 소재 / 사실 확인", career: "경력 10년", area: "전국 협력" },
+  { name: "K 조사원", field: "배우자 부정행위", career: "경력 12년", area: "수도권" },
+  { name: "P 조사원", field: "기업 보안/횡령", career: "경력 15년", area: "서울·경기" },
+  { name: "L 조사원", field: "활동 / 사실 확인", career: "경력 10년", area: "전국 협력" },
   { name: "J 조사원", field: "사기 피해 / 증거 정리", career: "경력 9년", area: "수도권" },
 ];
 
@@ -261,7 +261,12 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={startReview}
-                      className="w-full rounded-2xl bg-blue-700 px-5 py-4 text-base font-bold text-white shadow-lg shadow-blue-700/20 transition hover:bg-blue-800"
+                      disabled={!memo.trim()}
+                      className={`w-full rounded-2xl bg-blue-700 px-5 py-4 text-base font-bold text-white shadow-lg shadow-blue-700/20 transition hover:bg-blue-800 ${
+                                  memo.trim()
+                                    ? "bg-blue-700 shadow-lg shadow-blue-700/20 hover:bg-blue-800"
+                                    : "cursor-not-allowed bg-slate-300"
+                                }`}
                     >
                       비공개로 먼저 확인하기
                     </button>

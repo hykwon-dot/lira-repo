@@ -20,19 +20,19 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
           <div>
-            <div className="mb-4">
+            {/* <div className="mb-4"> */}
               <Image
                 src="/images/footer-logo.png"
                 alt="LIRA Logo"
                 width={120}
                 height={40}
-                className="h-auto w-auto"
+                // className="h-auto w-auto"
               />
-            </div>
-            <p className="text-sm whitespace-pre-line">
+            {/* </div> */}
+            {/* <p className="text-sm whitespace-pre-line">
               이용자들의 검증이 완료된 전문적인{"\n"}
               민간조사 서비스를 제공합니다.
-            </p>
+            </p> */}
           </div>
           <div className="md:col-span-2">
             <h3 className="text-lg font-bold text-white mb-4">회사 정보</h3>
