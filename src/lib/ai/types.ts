@@ -155,6 +155,7 @@ export interface AiRealtimeInsights {
 }
 
 export interface RealtimeAnalysisPayload {
+  userId?: string | number | null;
   messages: Array<{ role: "user" | "assistant"; content: string }>;
   intakeSummary?: IntakeSummary | null;
   keywords?: string[];

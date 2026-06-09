@@ -2,8 +2,10 @@ import { promises as fs } from "fs";
 import path from "path";
 import type { AiProactiveAlert, AiRiskSignal, RiskSeverity } from "./types";
 
-const STORE_PATH = path.join(process.cwd(), "tmp", "risk-trends.json");
-const STORE_DIR = path.dirname(STORE_PATH);
+function getStorePath(userId?: string | number | null): string {
+  const fileName = userId ? `risk-trends-${userId}.json` : "risk-trends-guest.json";
+  return path.join(process.cwd(), "tmp", fileName);
+}
 
 export interface RiskTrendSnapshot {
   id: string;
@@ -14,13 +16,14 @@ export interface RiskTrendSnapshot {
   lastDetectedAt: string | null;
 }
 
-async function ensureStore(): Promise<void> {
-  await fs.mkdir(STORE_DIR, { recursive: true });
+async function ensureStore(storePath: string): Promise<void> {
+  await fs.mkdir(path.dirname(storePath), { recursive: true });
 }
 
-async function loadStore(): Promise<RiskTrendSnapshot[]> {
+async function loadStore(userId?: string | number | null): Promise<RiskTrendSnapshot[]> {
+  const storePath = getStorePath(userId);
   try {
-    const raw = await fs.readFile(STORE_PATH, "utf8");
+    const raw = await fs.readFile(storePath, "utf8");
     const parsed = JSON.parse(raw) as RiskTrendSnapshot[];
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
@@ -31,9 +34,10 @@ async function loadStore(): Promise<RiskTrendSnapshot[]> {
   }
 }
 
-async function saveStore(trends: RiskTrendSnapshot[]): Promise<void> {
-  await ensureStore();
-  await fs.writeFile(STORE_PATH, JSON.stringify(trends, null, 2), "utf8");
+async function saveStore(trends: RiskTrendSnapshot[], userId?: string | number | null): Promise<void> {
+  const storePath = getStorePath(userId);
+  await ensureStore(storePath);
+  await fs.writeFile(storePath, JSON.stringify(trends, null, 2), "utf8");
 }
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -44,12 +48,15 @@ function pruneDetections(timestamps: number[]): number[] {
   return timestamps.filter((value) => now - value <= SEVEN_DAYS_MS);
 }
 
-export async function recordRiskSignals(signals: AiRiskSignal[]): Promise<RiskTrendSnapshot[]> {
+export async function recordRiskSignals(
+  signals: AiRiskSignal[],
+  userId?: string | number | null
+): Promise<RiskTrendSnapshot[]> {
   if (!signals.length) {
-    return loadStore();
+    return loadStore(userId);
   }
 
-  const existing = await loadStore();
+  const existing = await loadStore(userId);
   const trendMap = new Map<string, RiskTrendSnapshot>();
   existing.forEach((entry) => {
     trendMap.set(entry.id, {
@@ -75,7 +82,7 @@ export async function recordRiskSignals(signals: AiRiskSignal[]): Promise<RiskTr
   });
 
   const updated = Array.from(trendMap.values()).sort((a, b) => b.totalCount - a.totalCount);
-  await saveStore(updated);
+  await saveStore(updated, userId);
   return updated;
 }
 

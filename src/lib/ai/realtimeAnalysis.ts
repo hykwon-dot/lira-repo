@@ -527,10 +527,10 @@ export function normalizePayload(payload: RealtimeAnalysisPayload): RealtimeAnal
 }
 
 export async function runRealtimeAnalysis(payload: RealtimeAnalysisPayload): Promise<AiRealtimeInsights> {
-  const { messages, intakeSummary, keywords, conversationSummary } = normalizePayload(payload);
+  const { userId, messages, intakeSummary, keywords, conversationSummary } = normalizePayload(payload);
 
   const { signals, riskScore } = buildRiskSignals(messages);
-  const trendSnapshots = await recordRiskSignals(signals);
+  const trendSnapshots = await recordRiskSignals(signals, userId);
   const timeline = adjustTimeline(BASE_TIMELINE, intakeSummary, messages);
   const recommendations = await buildRecommendations(keywords, messages);
   const nextActions = buildNextActions(signals, intakeSummary);

@@ -86,21 +86,13 @@ export const SimulationProvider = ({
   initialPhaseId: string;
 }) => {
   const token = useUserStore((state) => state.token);
-  const {
-    setRunId: storeSetRunId,
-    setHistory,
-    addHistoryEntry,
-    setCompletedTasks,
-    markTaskCompletion,
-    reset,
-  } = useSimulationStore((state) => ({
-    setRunId: state.setRunId,
-    setHistory: state.setHistory,
-    addHistoryEntry: state.addHistoryEntry,
-    setCompletedTasks: state.setCompletedTasks,
-    markTaskCompletion: state.markTaskCompletion,
-    reset: state.reset,
-  }));
+  
+  const storeSetRunId = useSimulationStore((state) => state.setRunId);
+  const setHistory = useSimulationStore((state) => state.setHistory);
+  const addHistoryEntry = useSimulationStore((state) => state.addHistoryEntry);
+  const setCompletedTasks = useSimulationStore((state) => state.setCompletedTasks);
+  const markTaskCompletion = useSimulationStore((state) => state.markTaskCompletion);
+  const reset = useSimulationStore((state) => state.reset);
 
   const [scenario, setScenario] = useState<ScenarioWithPhases | null>(null);
   const [currentPhase, setCurrentPhase] = useState<PhaseWithTasks | null>(null);
