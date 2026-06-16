@@ -31,38 +31,41 @@ export default function ScenarioPlaybook({ scenario }: ScenarioPlaybookProps) {
   const overview = (scenario.overview as any) || {};
   const caseTypeLabel = CASE_TYPE_OPTIONS.find(opt => opt.value === overview.caseType)?.label || overview.caseType || scenario.category || 'CASE REPORT';
 
+  // 모든 단계(Phases)의 소요 기간을 합산하여 표시
+  const totalDuration = scenario.phases.reduce((acc, p) => acc + (p.durationDays || 0), 0);
+
   return (
-    <div className="bg-gray-50 min-h-screen font-sans p-4 md:p-8">
-      {/* 상단 헤더 */}
-      <header className="mb-8 md:mb-12">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-wrap items-center text-xs md:text-sm text-gray-500 mb-4 overflow-x-hidden">
-            <FiHome className="mr-1 md:mr-2 shrink-0" />
-            <Link href="/" className="whitespace-nowrap">Home</Link>
-            <FiChevronRight className="mx-1 md:mx-2 shrink-0" />
-            <Link href="/scenarios" className="whitespace-nowrap">시나리오 라이브러리</Link>
-            <FiChevronRight className="mx-1 md:mx-2 shrink-0 text-gray-400" />
-            <span className="font-semibold text-gray-700 truncate">{scenario.title}</span>
-          </div>
-          
-          <div className="relative bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-slate-100 overflow-hidden">
-             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                <div className="lg:col-span-2">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-4 border border-blue-100">
-                      {caseTypeLabel}
-                    </span>
-                    <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 mb-4 leading-tight">
-                        {scenario.title}
-                    </h1>
-                    <p className="text-base md:text-lg text-slate-600 mb-8 leading-relaxed">
-                        {scenario.description}
-                    </p>
-                    
-                    <div className="flex flex-wrap gap-x-12 gap-y-6 pt-6 border-t border-slate-100">
-                        <div>
-                            <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">소요 기간</span>
-                            <span className="text-xl font-bold text-slate-800">{scenario.typicalDurationDays || overview.totalDurationDays || '-'}일</span>
-                        </div>
+  <div className="bg-gray-50 min-h-screen font-sans p-4 md:p-8">
+    {/* 상단 헤더 */}
+    <header className="mb-8 md:mb-12">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-wrap items-center text-xs md:text-sm text-gray-500 mb-4 overflow-x-hidden">
+          <FiHome className="mr-1 md:mr-2 shrink-0" />
+          <Link href="/" className="whitespace-nowrap">Home</Link>
+          <FiChevronRight className="mx-1 md:mx-2 shrink-0" />
+          <Link href="/scenarios" className="whitespace-nowrap">시나리오 라이브러리</Link>
+          <FiChevronRight className="mx-1 md:mx-2 shrink-0 text-gray-400" />
+          <span className="font-semibold text-gray-700 truncate">{scenario.title}</span>
+        </div>
+
+        <div className="relative bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-slate-100 overflow-hidden">
+           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+              <div className="lg:col-span-2">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-4 border border-blue-100">
+                    {caseTypeLabel}
+                  </span>
+                  <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 mb-4 leading-tight">
+                      {scenario.title}
+                  </h1>
+                  <p className="text-base md:text-lg text-slate-600 mb-8 leading-relaxed">
+                      {scenario.description}
+                  </p>
+
+                  <div className="flex flex-wrap gap-x-12 gap-y-6 pt-6 border-t border-slate-100">
+                      <div>
+                          <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">소요 기간</span>
+                          <span className="text-xl font-bold text-slate-800">{totalDuration || '-'}일</span>
+                      </div>
                         <div>
                             <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">난이도</span>
                             <span className="text-xl font-bold text-slate-800">{scenario.difficulty}</span>
