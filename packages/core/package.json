@@ -1,0 +1,20 @@
+{
+  "name": "@lira/core",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./jwt": "./jwt.ts",
+    "./hash": "./hash.ts"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "@node-rs/bcrypt": "^1.10.7"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "typescript": "^5"
+  }
+}

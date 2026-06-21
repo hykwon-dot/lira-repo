@@ -1,31 +1,63 @@
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - npm ci
-        - npx prisma generate
-    build:
-      commands:
-        - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
-        - echo "DATABASE_URL=$DATABASE_URL" >> .env
-        - echo "LIRA_AWS_REGION=$LIRA_AWS_REGION" >> .env
-        - echo "LIRA_AWS_ACCESS_KEY_ID=$LIRA_AWS_ACCESS_KEY_ID" >> .env
-        - echo "LIRA_AWS_SECRET_ACCESS_KEY=$LIRA_AWS_SECRET_ACCESS_KEY" >> .env
-        - echo "LIRA_AWS_S3_BUCKET_NAME=$LIRA_AWS_S3_BUCKET_NAME" >> .env
-        - echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
-        - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
-        - echo "KAKAO_CLIENT_ID=$KAKAO_CLIENT_ID" >> .env
-        - echo "NAVER_CLIENT_ID=$NAVER_CLIENT_ID" >> .env
-        - echo "NAVER_CLIENT_SECRET=$NAVER_CLIENT_SECRET" >> .env
-        - npm run build
-        - npx prisma db push --accept-data-loss
-        # - npm run db:seed  <-- Removed to prevent data reset on deployment
-  artifacts:
-    baseDirectory: .next
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-      - .next/cache/**/*
+applications:
+  - appRoot: apps/admin-web
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            # npm workspaces의 경우 root에서 패키지를 설치해야 합니다.
+            - cd ../.. && npm ci
+            - npx prisma generate --schema=../../packages/database/schema.prisma
+            - npx prisma db push --schema=../../packages/database/schema.prisma --accept-data-loss
+        build:
+          commands:
+            - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
+            - echo "DATABASE_URL=$DATABASE_URL" >> .env
+            - echo "LIRA_AWS_REGION=$LIRA_AWS_REGION" >> .env
+            - echo "LIRA_AWS_ACCESS_KEY_ID=$LIRA_AWS_ACCESS_KEY_ID" >> .env
+            - echo "LIRA_AWS_SECRET_ACCESS_KEY=$LIRA_AWS_SECRET_ACCESS_KEY" >> .env
+            - echo "LIRA_AWS_S3_BUCKET_NAME=$LIRA_AWS_S3_BUCKET_NAME" >> .env
+            - echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
+            - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
+            - echo "KAKAO_CLIENT_ID=$KAKAO_CLIENT_ID" >> .env
+            - echo "NAVER_CLIENT_ID=$NAVER_CLIENT_ID" >> .env
+            - echo "NAVER_CLIENT_SECRET=$NAVER_CLIENT_SECRET" >> .env
+            - npm run build
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - ../../node_modules/**/*
+          - .next/cache/**/*
+
+  - appRoot: apps/user-web
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - cd ../.. && npm ci
+            - npx prisma generate --schema=../../packages/database/schema.prisma
+        build:
+          commands:
+            - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
+            - echo "DATABASE_URL=$DATABASE_URL" >> .env
+            - echo "LIRA_AWS_REGION=$LIRA_AWS_REGION" >> .env
+            - echo "LIRA_AWS_ACCESS_KEY_ID=$LIRA_AWS_ACCESS_KEY_ID" >> .env
+            - echo "LIRA_AWS_SECRET_ACCESS_KEY=$LIRA_AWS_SECRET_ACCESS_KEY" >> .env
+            - echo "LIRA_AWS_S3_BUCKET_NAME=$LIRA_AWS_S3_BUCKET_NAME" >> .env
+            - echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
+            - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
+            - echo "KAKAO_CLIENT_ID=$KAKAO_CLIENT_ID" >> .env
+            - echo "NAVER_CLIENT_ID=$NAVER_CLIENT_ID" >> .env
+            - echo "NAVER_CLIENT_SECRET=$NAVER_CLIENT_SECRET" >> .env
+            - npm run build
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - ../../node_modules/**/*
+          - .next/cache/**/*
