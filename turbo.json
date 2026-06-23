@@ -3,6 +3,21 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "DATABASE_URL",
+        "JWT_SECRET",
+        "OPENAI_API_KEY",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "KAKAO_CLIENT_ID",
+        "NAVER_CLIENT_ID",
+        "NAVER_CLIENT_SECRET",
+        "NEXT_PUBLIC_APP_URL",
+        "LIRA_AWS_REGION",
+        "LIRA_AWS_ACCESS_KEY_ID",
+        "LIRA_AWS_SECRET_ACCESS_KEY",
+        "LIRA_AWS_S3_BUCKET_NAME"
+      ],
       "outputs": [".next/**", "dist/**"]
     },
     "lint": {},
