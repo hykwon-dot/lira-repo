@@ -23,6 +23,7 @@ async function createPrismaClient(): Promise<PrismaClient> {
   }
 
   const client = global.prisma || new PrismaClient({
+    datasourceUrl: databaseUrl,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 

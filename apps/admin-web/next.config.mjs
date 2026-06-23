@@ -2,6 +2,10 @@
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
+  env: {
+    DATABASE_URL: process.env.DATABASE_URL,
+    JWT_SECRET: process.env.JWT_SECRET,
+  },
   transpilePackages: ["@lira/database"],
   experimental: {
     serverComponentsExternalPackages: ['@node-rs/bcrypt'],
