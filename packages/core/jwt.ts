@@ -1,21 +1,27 @@
-import jwt, { SignOptions } from 'jsonwebtoken';
+import { SignJWT, jwtVerify } from 'jose';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'lira_production_jwt_secret_2024_secure_key_replace_in_production';
-const DEFAULT_EXP: SignOptions['expiresIn'] = '7d';
+const encodedSecret = new TextEncoder().encode(JWT_SECRET);
+const DEFAULT_EXP = '7d';
 
 export interface JwtPayload {
   userId: number;
   role: string;
 }
 
-export function signToken(payload: JwtPayload, expiresIn: SignOptions['expiresIn'] = DEFAULT_EXP) {
-  const options: SignOptions = { expiresIn };
-  return jwt.sign(payload, JWT_SECRET, options);
+export async function signToken(payload: JwtPayload, expiresIn: string | number = DEFAULT_EXP) {
+  const jwt = new SignJWT({ ...payload })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(expiresIn);
+    
+  return await jwt.sign(encodedSecret);
 }
 
-export function verifyToken(token: string): JwtPayload | null {
+export async function verifyToken(token: string): Promise<JwtPayload | null> {
   try {
-    return jwt.verify(token, JWT_SECRET) as JwtPayload;
+    const { payload } = await jwtVerify(token, encodedSecret);
+    return payload as unknown as JwtPayload;
   } catch {
     return null;
   }

@@ -859,6 +859,33 @@ export const ChatSimulation = () => {
         setMessages((prev) => [...prev, assistantMessage]);
 
         void persistConversation(messageContent, assistantMessageText);
+
+        // Guest Analytics Tracking for Chat
+        if (!user?.id) {
+          let guestId = window.localStorage.getItem("guest_id");
+          if (!guestId) {
+            guestId = crypto.randomUUID();
+            window.localStorage.setItem("guest_id", guestId);
+          }
+
+          let sessionId = window.sessionStorage.getItem("guest_session_id");
+          if (!sessionId) {
+            sessionId = crypto.randomUUID();
+            window.sessionStorage.setItem("guest_session_id", sessionId);
+          }
+
+          fetch("/api/analytics/guest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              guestId,
+              sessionId,
+              action: "CHAT_MESSAGE",
+              caseType: summaryRef.current?.caseType || null,
+              payload: { userText: messageContent, aiText: assistantMessageText }
+            })
+          }).catch(console.error);
+        }
       } catch (error) {
         console.error("[SIMULATION_INTAKE_ERROR]", error);
         const errorMessage = error instanceof Error ? error.message : "대화 요약을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.";

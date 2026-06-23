@@ -55,10 +55,10 @@ const faqItems = [
     q: "입력한 사건 정보와 보유 자료는 어떻게 관리되나요?",
     a: "입력한 내용은 사전진단과 상담 검토 목적 범위에서 관리됩니다. 정식 진행 전에는 필요한 범위 이상의 개인정보를 요구하지 않으며, 자료 보관과 삭제 기준은 개인정보처리방침에 따릅니다.",
   },
-  {
-    q: "위치추적이나 메신저 복구 같은 요청도 가능한가요?",
-    a: "불법 위치추적, 해킹, 도청, 개인정보 불법조회 등 위법 소지가 있는 요청은 진행하지 않습니다. Li-One은 합법적으로 확인 가능한 범위와 필요한 자료를 먼저 안내합니다.",
-  },
+  // {
+  //   q: "위치추적이나 메신저 복구 같은 요청도 가능한가요?",
+  //   a: "불법 위치추적, 해킹, 도청, 개인정보 불법조회 등 위법 소지가 있는 요청은 진행하지 않습니다. Li-One은 합법적으로 확인 가능한 범위와 필요한 자료를 먼저 안내합니다.",
+  // },
 ];
 
 // --- Sub-components ---
@@ -145,9 +145,33 @@ export default function Home() {
       memo: memo,
       timestamp: Date.now(),
     };
-    
+
     try {
       window.sessionStorage.setItem("main-diagnosis-handoff", JSON.stringify(handoffData));
+
+      // Guest Analytics Tracking
+      let guestId = window.localStorage.getItem("guest_id");
+      if (!guestId) {
+        guestId = crypto.randomUUID();
+        window.localStorage.setItem("guest_id", guestId);
+      }
+
+      // 대화 세션 단위 ID 생성 (ChatSimulation에서도 사용)
+      const sessionId = crypto.randomUUID();
+      window.sessionStorage.setItem("guest_session_id", sessionId);
+
+      fetch("/api/analytics/guest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guestId,
+          sessionId,
+          action: "START_DIAGNOSIS",
+          caseType: selectedCase,
+          payload: handoffData
+        })
+      }).catch(console.error);
+
     } catch (e) {
       console.error("Failed to save diagnosis handoff", e);
     }
@@ -262,11 +286,10 @@ export default function Home() {
                       type="button"
                       onClick={startReview}
                       disabled={!memo.trim()}
-                      className={`w-full rounded-2xl bg-blue-700 px-5 py-4 text-base font-bold text-white shadow-lg shadow-blue-700/20 transition hover:bg-blue-800 ${
-                                  memo.trim()
-                                    ? "bg-blue-700 shadow-lg shadow-blue-700/20 hover:bg-blue-800"
-                                    : "cursor-not-allowed bg-slate-300"
-                                }`}
+                      className={`w-full rounded-2xl bg-blue-700 px-5 py-4 text-base font-bold text-white shadow-lg shadow-blue-700/20 transition hover:bg-blue-800 ${memo.trim()
+                          ? "bg-blue-700 shadow-lg shadow-blue-700/20 hover:bg-blue-800"
+                          : "cursor-not-allowed bg-slate-300"
+                        }`}
                     >
                       비공개로 먼저 확인하기
                     </button>

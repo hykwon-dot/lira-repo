@@ -1,0 +1,28 @@
+[
+  {
+    "id": "evidence-loss",
+    "title": "증거 훼손 가능성",
+    "severity": "medium",
+    "totalCount": 6,
+    "recentDetections": [
+      1782182449462,
+      1782182464547,
+      1782182497094,
+      1782182554945,
+      1782185072371,
+      1782185090999
+    ],
+    "lastDetectedAt": "2026-06-23T03:24:50.999Z"
+  },
+  {
+    "id": "digital-trace",
+    "title": "디지털 포렌식 필요",
+    "severity": "low",
+    "totalCount": 2,
+    "recentDetections": [
+      1782185072371,
+      1782185090999
+    ],
+    "lastDetectedAt": "2026-06-23T03:24:50.999Z"
+  }
+]

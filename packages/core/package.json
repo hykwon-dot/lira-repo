@@ -10,8 +10,9 @@
     "./hash": "./hash.ts"
   },
   "dependencies": {
-    "jsonwebtoken": "^9.0.2",
-    "@node-rs/bcrypt": "^1.10.7"
+    "@node-rs/bcrypt": "^1.10.7",
+    "jose": "^6.2.3",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",

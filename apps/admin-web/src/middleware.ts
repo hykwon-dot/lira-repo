@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@lira/core/jwt";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 1. 로그인 페이지와 정적 파일은 통과
@@ -23,7 +23,7 @@ export function middleware(request: NextRequest) {
 
   try {
     // 3. 토큰 유효성 및 관리자 권한 검증
-    const decoded = verifyToken(token);
+    const decoded = await verifyToken(token);
     if (!decoded || !["ADMIN", "SUPER_ADMIN"].includes(decoded.role)) {
       throw new Error("Unauthorized");
     }

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. 토큰 생성
-    const token = signToken({ userId: user.id, role: user.role });
+    const token = await signToken({ userId: user.id, role: user.role });
 
     // 5. 쿠키에 토큰 저장 및 응답
     const response = NextResponse.json({ success: true });
