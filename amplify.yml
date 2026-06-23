@@ -9,17 +9,18 @@ applications:
             - cd ../.. && rm -rf node_modules && npm ci && npx prisma generate --schema=packages/database/schema.prisma && npx prisma db push --schema=packages/database/schema.prisma --accept-data-loss
         build:
           commands:
-            - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
-            - echo "DATABASE_URL=$DATABASE_URL" >> .env
-            - echo "LIRA_AWS_REGION=$LIRA_AWS_REGION" >> .env
-            - echo "LIRA_AWS_ACCESS_KEY_ID=$LIRA_AWS_ACCESS_KEY_ID" >> .env
-            - echo "LIRA_AWS_SECRET_ACCESS_KEY=$LIRA_AWS_SECRET_ACCESS_KEY" >> .env
-            - echo "LIRA_AWS_S3_BUCKET_NAME=$LIRA_AWS_S3_BUCKET_NAME" >> .env
-            - echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
-            - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
-            - echo "KAKAO_CLIENT_ID=$KAKAO_CLIENT_ID" >> .env
-            - echo "NAVER_CLIENT_ID=$NAVER_CLIENT_ID" >> .env
-            - echo "NAVER_CLIENT_SECRET=$NAVER_CLIENT_SECRET" >> .env
+            - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env.production
+            - echo "DATABASE_URL=$DATABASE_URL" >> .env.production
+            - echo "JWT_SECRET=$JWT_SECRET" >> .env.production
+            - echo "LIRA_AWS_REGION=$LIRA_AWS_REGION" >> .env.production
+            - echo "LIRA_AWS_ACCESS_KEY_ID=$LIRA_AWS_ACCESS_KEY_ID" >> .env.production
+            - echo "LIRA_AWS_SECRET_ACCESS_KEY=$LIRA_AWS_SECRET_ACCESS_KEY" >> .env.production
+            - echo "LIRA_AWS_S3_BUCKET_NAME=$LIRA_AWS_S3_BUCKET_NAME" >> .env.production
+            - echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env.production
+            - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env.production
+            - echo "KAKAO_CLIENT_ID=$KAKAO_CLIENT_ID" >> .env.production
+            - echo "NAVER_CLIENT_ID=$NAVER_CLIENT_ID" >> .env.production
+            - echo "NAVER_CLIENT_SECRET=$NAVER_CLIENT_SECRET" >> .env.production
             - npx turbo build --filter=admin-web
       artifacts:
         baseDirectory: .next
@@ -38,17 +39,18 @@ applications:
             - cd ../.. && rm -rf node_modules && npm ci && npx prisma generate --schema=packages/database/schema.prisma && npx prisma db push --schema=packages/database/schema.prisma --accept-data-loss
         build:
           commands:
-            - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
-            - echo "DATABASE_URL=$DATABASE_URL" >> .env
-            - echo "LIRA_AWS_REGION=$LIRA_AWS_REGION" >> .env
-            - echo "LIRA_AWS_ACCESS_KEY_ID=$LIRA_AWS_ACCESS_KEY_ID" >> .env
-            - echo "LIRA_AWS_SECRET_ACCESS_KEY=$LIRA_AWS_SECRET_ACCESS_KEY" >> .env
-            - echo "LIRA_AWS_S3_BUCKET_NAME=$LIRA_AWS_S3_BUCKET_NAME" >> .env
-            - echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env
-            - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env
-            - echo "KAKAO_CLIENT_ID=$KAKAO_CLIENT_ID" >> .env
-            - echo "NAVER_CLIENT_ID=$NAVER_CLIENT_ID" >> .env
-            - echo "NAVER_CLIENT_SECRET=$NAVER_CLIENT_SECRET" >> .env
+            - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env.production
+            - echo "DATABASE_URL=$DATABASE_URL" >> .env.production
+            - echo "JWT_SECRET=$JWT_SECRET" >> .env.production
+            - echo "LIRA_AWS_REGION=$LIRA_AWS_REGION" >> .env.production
+            - echo "LIRA_AWS_ACCESS_KEY_ID=$LIRA_AWS_ACCESS_KEY_ID" >> .env.production
+            - echo "LIRA_AWS_SECRET_ACCESS_KEY=$LIRA_AWS_SECRET_ACCESS_KEY" >> .env.production
+            - echo "LIRA_AWS_S3_BUCKET_NAME=$LIRA_AWS_S3_BUCKET_NAME" >> .env.production
+            - echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env.production
+            - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env.production
+            - echo "KAKAO_CLIENT_ID=$KAKAO_CLIENT_ID" >> .env.production
+            - echo "NAVER_CLIENT_ID=$NAVER_CLIENT_ID" >> .env.production
+            - echo "NAVER_CLIENT_SECRET=$NAVER_CLIENT_SECRET" >> .env.production
             - npx turbo build --filter=user-web
       artifacts:
         baseDirectory: .next
