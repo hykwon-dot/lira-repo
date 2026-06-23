@@ -35,7 +35,7 @@ applications:
         preBuild:
           commands:
             # node_modules 캐시를 쓰지 않고 항상 clean install (lightningcss 네이티브 바이너리 플랫폼 불일치 방지)
-            - cd ../.. && rm -rf node_modules && npm ci && npx prisma generate --schema=packages/database/schema.prisma
+            - cd ../.. && rm -rf node_modules && npm ci && npx prisma generate --schema=packages/database/schema.prisma && npx prisma db push --schema=packages/database/schema.prisma --accept-data-loss
         build:
           commands:
             - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
