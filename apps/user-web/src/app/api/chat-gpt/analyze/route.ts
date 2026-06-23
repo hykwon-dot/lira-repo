@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { z } from 'zod';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+export const dynamic = 'force-dynamic';
+
+function getOpenAI() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 // Zod schemas for validation
 const TaskSchema = z.object({
@@ -106,7 +110,7 @@ ${conversationContext}
 
 대화 내용이 구체적인 비즈니스 주제를 다루지 않는 경우, 일반적인 비즈니스 시나리오를 제안해주세요.`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4",
       messages: [
         {
