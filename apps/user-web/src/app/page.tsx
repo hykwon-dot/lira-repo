@@ -287,8 +287,8 @@ export default function Home() {
                       onClick={startReview}
                       disabled={!memo.trim()}
                       className={`w-full rounded-2xl bg-blue-700 px-5 py-4 text-base font-bold text-white shadow-lg shadow-blue-700/20 transition hover:bg-blue-800 ${memo.trim()
-                          ? "bg-blue-700 shadow-lg shadow-blue-700/20 hover:bg-blue-800"
-                          : "cursor-not-allowed bg-slate-300"
+                        ? "bg-blue-700 shadow-lg shadow-blue-700/20 hover:bg-blue-800"
+                        : "cursor-not-allowed bg-slate-300"
                         }`}
                     >
                       비공개로 먼저 확인하기
@@ -437,7 +437,7 @@ export default function Home() {
               ["비공개 검토", "입력한 사건 내용은 조사 가능성 확인과 상담 검토 목적 범위에서 관리됩니다."],
               ["실명 입력 없이 시작", "초기 단계에서는 실명이나 연락처 없이 사건 유형과 상황만 입력할 수 있습니다."],
               ["조사원 자동전달 없음", "입력 내용은 조사원에게 자동 전달되지 않습니다."],
-              ["위법조사 요청 제한", "불법 위치추적, 해킹, 도청, 개인정보 불법조회 등 위법 소지가 있는 요청은 진행하지 않습니다."],
+              ["위법조사 요청 제한", "개인정보 등 위법 소지가 있는 요청은 진행하지 않습니다."],
             ].map(([title, desc]) => (
               <div key={title} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h3 className="font-bold text-slate-950">{title}</h3>
