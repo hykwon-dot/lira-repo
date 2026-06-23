@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrismaClient } from '@/lib/prisma';
 import { signToken } from '@/lib/jwt';
-import { hash as hashPassword } from '@node-rs/bcrypt';
+import bcrypt from 'bcryptjs';
 import type { Prisma } from '@prisma/client';
 import { Buffer } from 'buffer';
+
+const hashPassword = async (plain: string, salt: number) => bcrypt.hash(plain, salt);
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Increase timeout for large file uploads

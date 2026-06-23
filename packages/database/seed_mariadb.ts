@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { hash } from '@node-rs/bcrypt';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -7,7 +7,7 @@ async function main() {
   console.log('[MariaDB Seed] 시작');
 
   const rawPass = process.env.SEED_PASSWORD || 'admin123';
-  const passwordHash = await hash(rawPass, 10);
+  const passwordHash = await bcrypt.hash(rawPass, 10);
 
   // Admin 계정
   const admin = await prisma.user.upsert({
