@@ -11,7 +11,8 @@ export type TwinBudgetLevel = "tight" | "standard" | "premium";
 export const SCENARIO_LABELS: Record<TwinScenarioCategory, string> = {
 	affair: "불륜/배우자 소송 대비",
 	corporate: "기업 보안·산업스파이 의혹",
-	missing: "실종/가출인 수색",
+	// missing: "실종/가출인 수색",
+	missing: "위치 정보 확인",
 	insurance: "보험 사기/연금 부정 수급",
 };
 

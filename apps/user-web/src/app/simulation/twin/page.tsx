@@ -214,7 +214,7 @@ const buildScenarioVariablesFromContext = (
 
   switch (category) {
     case "affair": {
-      if (containsAnyKeyword(text, ["야간", "새벽", "예측 불가", "불규칙", "갑작", "주말" ])) {
+      if (containsAnyKeyword(text, ["야간", "새벽", "예측 불가", "불규칙", "갑작", "주말"])) {
         setValue("routinePredictability", "low");
       } else if (containsAnyKeyword(text, ["규칙", "매일", "출퇴근", "고정", "정기"])) {
         setValue("routinePredictability", "high");
@@ -462,7 +462,7 @@ const buildScenarioVariablesFromContext = (
         setValue("digitalTransactionFlag", true);
       }
 
-  if (containsAnyKeyword(text, ["민감", "눈치", "경계", "의심", "감시 의식", "감시를 의식"])) {
+      if (containsAnyKeyword(text, ["민감", "눈치", "경계", "의심", "감시 의식", "감시를 의식"])) {
         setValue("surveillanceTolerance", "low");
       } else if (containsAnyKeyword(text, ["둔감", "무신경", "관심 없음"])) {
         setValue("surveillanceTolerance", "high");
@@ -977,18 +977,16 @@ export default function TwinSimulationPage() {
               <button
                 type="button"
                 onClick={() => handleScenarioVariableChange(definition.id, true)}
-                className={`flex-1 rounded-xl border px-3 py-2 text-sm transition ${
-                  booleanValue ? "border-indigo-300 bg-indigo-500/20 text-white" : "border-white/10 bg-white/5 text-indigo-100/70"
-                }`}
+                className={`flex-1 rounded-xl border px-3 py-2 text-sm transition ${booleanValue ? "border-indigo-300 bg-indigo-500/20 text-white" : "border-white/10 bg-white/5 text-indigo-100/70"
+                  }`}
               >
                 예
               </button>
               <button
                 type="button"
                 onClick={() => handleScenarioVariableChange(definition.id, false)}
-                className={`flex-1 rounded-xl border px-3 py-2 text-sm transition ${
-                  !booleanValue ? "border-indigo-300 bg-indigo-500/20 text-white" : "border-white/10 bg-white/5 text-indigo-100/70"
-                }`}
+                className={`flex-1 rounded-xl border px-3 py-2 text-sm transition ${!booleanValue ? "border-indigo-300 bg-indigo-500/20 text-white" : "border-white/10 bg-white/5 text-indigo-100/70"
+                  }`}
               >
                 아니오
               </button>
@@ -1091,7 +1089,7 @@ export default function TwinSimulationPage() {
       if (!response.ok) {
         const message =
           parsed && typeof parsed === "object" && parsed !== null && "error" in parsed &&
-          typeof (parsed as { error: unknown }).error === "string"
+            typeof (parsed as { error: unknown }).error === "string"
             ? (parsed as { error: string }).error
             : `디지털 트윈 분석 요청이 거절되었습니다. (status ${response.status})`;
         throw new Error(message);
@@ -1186,7 +1184,7 @@ export default function TwinSimulationPage() {
               <div>
                 <h2 className="text-lg font-semibold text-indigo-100">현장 변수 입력</h2>
                 <p className="mt-1 text-xs text-indigo-200/70">
-                  추적 팀 구성, 환경 변수, 예산 제약 등 최대한 상세하게 입력할수록 시뮬레이션 정밀도가 높아집니다.
+                  환경 변수, 예산 제약 등 최대한 상세하게 입력할수록 시뮬레이션 정밀도가 높아집니다.
                 </p>
               </div>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold text-indigo-100">
@@ -1407,11 +1405,10 @@ export default function TwinSimulationPage() {
                     {result.confidenceLabel} 신뢰도
                   </span>
                   <span
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                      isFallbackResult
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${isFallbackResult
                         ? "border-amber-300/60 bg-amber-400/10 text-amber-100"
                         : "border-sky-300/60 bg-sky-400/10 text-sky-100"
-                    }`}
+                      }`}
                   >
                     {isFallbackResult ? "휴리스틱 예측" : "AI 생성"}
                   </span>
