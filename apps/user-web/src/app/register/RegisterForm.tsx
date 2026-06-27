@@ -45,22 +45,22 @@ const compressImage = async (file: File): Promise<File> => {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-           resolve(file); 
-           return;
+          resolve(file);
+          return;
         }
         ctx.drawImage(img, 0, 0, width, height);
 
         // Convert to blob (JPEG, quality 0.98 - virtually lossless)
         canvas.toBlob((blob) => {
           if (!blob) {
-             resolve(file);
-             return;
+            resolve(file);
+            return;
           }
           const newFile = new File([blob], file.name, {
             type: 'image/jpeg',
             lastModified: Date.now(),
           });
-          console.log(`[ImageCompression] ${file.name}: ${(file.size/1024).toFixed(1)}KB -> ${(newFile.size/1024).toFixed(1)}KB`);
+          console.log(`[ImageCompression] ${file.name}: ${(file.size / 1024).toFixed(1)}KB -> ${(newFile.size / 1024).toFixed(1)}KB`);
           resolve(newFile);
         }, 'image/jpeg', 0.98);
       };
@@ -83,20 +83,20 @@ const fileToBase64 = (file: File): Promise<string> => {
 
 // --- Hex Converter for WAF Bypass ---
 const fileToHex = (file: File): Promise<string> => {
-   return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsArrayBuffer(file);
-      reader.onload = () => {
-         const buffer = reader.result as ArrayBuffer;
-         const bytes = new Uint8Array(buffer);
-         let hex = '';
-         for (let i = 0; i < bytes.length; i++) {
-             hex += bytes[i].toString(16).padStart(2, '0');
-         }
-         resolve(hex);
-      };
-      reader.onerror = reject;
-   });
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(file);
+    reader.onload = () => {
+      const buffer = reader.result as ArrayBuffer;
+      const bytes = new Uint8Array(buffer);
+      let hex = '';
+      for (let i = 0; i < bytes.length; i++) {
+        hex += bytes[i].toString(16).padStart(2, '0');
+      }
+      resolve(hex);
+    };
+    reader.onerror = reject;
+  });
 };
 
 type PublicRole = 'USER' | 'INVESTIGATOR';
@@ -297,244 +297,244 @@ export default function RegisterForm() {
         // [File Size Check]
         const MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB
         if (businessLicenseFile && businessLicenseFile.type === 'application/pdf' && businessLicenseFile.size > MAX_PDF_SIZE) {
-            setError('사업자등록증 PDF 파일이 너무 큽니다. (20MB 이하로 줄이거나 이미지로 업로드해주세요)');
-            setIsSubmitting(false);
-            return;
+          setError('사업자등록증 PDF 파일이 너무 큽니다. (20MB 이하로 줄이거나 이미지로 업로드해주세요)');
+          setIsSubmitting(false);
+          return;
         }
         if (pledgeFile && pledgeFile.type === 'application/pdf' && pledgeFile.size > MAX_PDF_SIZE) {
-            setError('윤리서약서 PDF 파일이 너무 큽니다. (20MB 이하로 줄이거나 이미지로 업로드해주세요)');
-            setIsSubmitting(false);
-            return;
+          setError('윤리서약서 PDF 파일이 너무 큽니다. (20MB 이하로 줄이거나 이미지로 업로드해주세요)');
+          setIsSubmitting(false);
+          return;
         }
         if (termsFile && termsFile.type === 'application/pdf' && termsFile.size > MAX_PDF_SIZE) {
-            setError('이용약관 서약서 PDF 파일이 너무 큽니다. (20MB 이하로 줄이거나 이미지로 업로드해주세요)');
-            setIsSubmitting(false);
-            return;
+          setError('이용약관 서약서 PDF 파일이 너무 큽니다. (20MB 이하로 줄이거나 이미지로 업로드해주세요)');
+          setIsSubmitting(false);
+          return;
         }
         if (idCardFile && idCardFile.type === 'application/pdf' && idCardFile.size > MAX_PDF_SIZE) {
-            setError('신분증 사본 PDF 파일이 너무 큽니다. (20MB 이하로 줄이거나 이미지로 업로드해주세요)');
-            setIsSubmitting(false);
-            return;
+          setError('신분증 사본 PDF 파일이 너무 큽니다. (20MB 이하로 줄이거나 이미지로 업로드해주세요)');
+          setIsSubmitting(false);
+          return;
         }
         const MAX_RAW_SIZE = 50 * 1024 * 1024; // 50MB
         if ((businessLicenseFile?.size || 0) > MAX_RAW_SIZE || (pledgeFile?.size || 0) > MAX_RAW_SIZE || (termsFile?.size || 0) > MAX_RAW_SIZE || (idCardFile?.size || 0) > MAX_RAW_SIZE) {
-             setError('파일 크기가 너무 큽니다. (50MB 이하 파일만 선택해주세요)');
-             setIsSubmitting(false);
-             return;
+          setError('파일 크기가 너무 큽니다. (50MB 이하 파일만 선택해주세요)');
+          setIsSubmitting(false);
+          return;
         }
 
-      setError('');
+        setError('');
 
-      // [Step 1] Prepare ONLY Text Data for Initial Registration
-      // We decouple file upload to avoid WAF 403 on the public /api/register endpoint
-      const registrationPayload: Record<string, any> = {
-        role: 'INVESTIGATOR',
-        email,
-        password,
-        name,
-        licenseNumber: licenseNumber || '',
-        officeAddress: officeAddress || '',
-        specialties, 
-        serviceAreas,
-        serviceArea: serviceAreas.join(', '),
-        experienceYears: expNumber,
-        introduction: intro || '',
-        portfolioUrl: portfolioUrl || '',
-        contactPhone: phone || '',
-        agencyPhone: agencyPhone || '',
-        acceptsTerms,
-        acceptsPrivacy
-      };
+        // [Step 1] Prepare ONLY Text Data for Initial Registration
+        // We decouple file upload to avoid WAF 403 on the public /api/register endpoint
+        const registrationPayload: Record<string, any> = {
+          role: 'INVESTIGATOR',
+          email,
+          password,
+          name,
+          licenseNumber: licenseNumber || '',
+          officeAddress: officeAddress || '',
+          specialties,
+          serviceAreas,
+          serviceArea: serviceAreas.join(', '),
+          experienceYears: expNumber,
+          introduction: intro || '',
+          portfolioUrl: portfolioUrl || '',
+          contactPhone: phone || '',
+          agencyPhone: agencyPhone || '',
+          acceptsTerms,
+          acceptsPrivacy
+        };
 
-      // [Pre-process Files] Prepare them as HEX to avoid WAF false positives on Base64
-      const filePayload: Record<string, string> = {};
-      
-      if (businessLicenseFile) {
-        setSubmitStatus('파일 변환 중 (부호화 1/2)...');
-        try {
+        // [Pre-process Files] Prepare them as HEX to avoid WAF false positives on Base64
+        const filePayload: Record<string, string> = {};
+
+        if (businessLicenseFile) {
+          setSubmitStatus('파일 변환 중 (부호화 1/2)...');
+          try {
             const compressed = await compressImage(businessLicenseFile);
             // Use Hex encoding instead of Base64 to bypass 'SQLi/XSS' WAF filters
             filePayload.businessLicenseHex = await fileToHex(compressed);
             filePayload.businessLicenseType = compressed.type; // Send mime type too
-        } catch (e) {
+          } catch (e) {
             console.warn('License conversion failed', e);
+          }
         }
-      }
-      if (pledgeFile) {
-        setSubmitStatus('파일 변환 중 (부호화 2/3)...');
-        try {
+        if (pledgeFile) {
+          setSubmitStatus('파일 변환 중 (부호화 2/3)...');
+          try {
             const compressed = await compressImage(pledgeFile);
             filePayload.pledgeFileHex = await fileToHex(compressed);
             filePayload.pledgeFileType = compressed.type;
-        } catch (e) {
+          } catch (e) {
             console.warn('Pledge conversion failed', e);
+          }
         }
-      }
-      if (termsFile) {
-        setSubmitStatus('파일 변환 중 (부호화 3/3)...');
-        try {
+        if (termsFile) {
+          setSubmitStatus('파일 변환 중 (부호화 3/3)...');
+          try {
             const compressed = await compressImage(termsFile);
             filePayload.termsFileHex = await fileToHex(compressed);
             filePayload.termsFileType = compressed.type;
-        } catch (e) {
+          } catch (e) {
             console.warn('Terms conversion failed', e);
+          }
         }
-      }
-      if (idCardFile) {
-        setSubmitStatus('파일 변환 중 (부호화 4/4)...');
-        try {
+        if (idCardFile) {
+          setSubmitStatus('파일 변환 중 (부호화 4/4)...');
+          try {
             const compressed = await compressImage(idCardFile);
             filePayload.idCardFileHex = await fileToHex(compressed);
             filePayload.idCardFileType = compressed.type;
-        } catch (e) {
+          } catch (e) {
             console.warn('ID Card conversion failed', e);
+          }
         }
-      }
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 180000);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000);
 
-      try {
-        console.log(`[Version: v20260114-Split] 1. Registering User (Text Only)...`);
-        setSubmitStatus('가입 정보 확인 중...');
-        
-        // Connectivity Check
         try {
-           const healthCheck = await fetch('/api/health/deployment', { method: 'GET', signal: AbortSignal.timeout(5000) });
-           if (!healthCheck.ok) console.warn('Health check warning:', healthCheck.status);
-        } catch {
-           setError('서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.');
-           clearTimeout(timeoutId);
-           return;
-        }
+          console.log(`[Version: v20260114-Split] 1. Registering User (Text Only)...`);
+          setSubmitStatus('가입 정보 확인 중...');
 
-        // [Step 1 Execute]
-        setSubmitStatus('기본 정보 저장 중...');
-        const res = await fetch('/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(registrationPayload),
-          signal: controller.signal
-        });
+          // Connectivity Check
+          try {
+            const healthCheck = await fetch('/api/health/deployment', { method: 'GET', signal: AbortSignal.timeout(5000) });
+            if (!healthCheck.ok) console.warn('Health check warning:', healthCheck.status);
+          } catch {
+            setError('서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.');
+            clearTimeout(timeoutId);
+            return;
+          }
 
-        // Handle Step 1 Response
-        let data;
-        try {
-             data = await res.json();
-        } catch {
-             const text = await res.text();
-             console.error('Register Non-JSON:', text);
-             if (res.status === 403) throw new Error('WAF_BLOCK');
-             throw new Error(`Server Error: ${res.status}`);
-        }
+          // [Step 1 Execute]
+          setSubmitStatus('기본 정보 저장 중...');
+          const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(registrationPayload),
+            signal: controller.signal
+          });
 
-        if (!res.ok) {
-          setError(data.error || '가입 요청이 거부되었습니다.');
-          setIsSubmitting(false);
-          return;
-        }
-        
-        // Success! User created.
-        const token = data.token;
-        if (token) setUser(data, token);
+          // Handle Step 1 Response
+          let data;
+          try {
+            data = await res.json();
+          } catch {
+            const text = await res.text();
+            console.error('Register Non-JSON:', text);
+            if (res.status === 403) throw new Error('WAF_BLOCK');
+            throw new Error(`Server Error: ${res.status}`);
+          }
 
-        // [Step 2] Upload Files (If any) using the new Token
-        const hasFiles = Object.keys(filePayload).length > 0;
-        let uploadFailed = false;
+          if (!res.ok) {
+            setError(data.error || '가입 요청이 거부되었습니다.');
+            setIsSubmitting(false);
+            return;
+          }
 
-        if (hasFiles && token) {
+          // Success! User created.
+          const token = data.token;
+          if (token) setUser(data, token);
+
+          // [Step 2] Upload Files (If any) using the new Token
+          const hasFiles = Object.keys(filePayload).length > 0;
+          let uploadFailed = false;
+
+          if (hasFiles && token) {
             setSubmitStatus('제출 서류 업로드 중...');
             console.log('2. Uploading Files via Profile API...');
-            
+
             try {
-                // Use POST instead of PATCH to avoid potential WAF/Firewall blocking on PATCH method
-                const uploadRes = await fetch('/api/me/profile', {
+              // Use POST instead of PATCH to avoid potential WAF/Firewall blocking on PATCH method
+              const uploadRes = await fetch('/api/me/profile', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(filePayload)
+              });
+
+              if (!uploadRes.ok) {
+                console.error('File Upload Failed:', uploadRes.status);
+
+                // Fallback: Try individually if combined fails (reduce payload size)
+                if (filePayload.businessLicenseHex && filePayload.pledgeFileHex) {
+                  console.log('Retrying individually...');
+                  await fetch('/api/me/profile', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(filePayload)
-                });
-                
-                if (!uploadRes.ok) {
-                    console.error('File Upload Failed:', uploadRes.status);
-                    
-                    // Fallback: Try individually if combined fails (reduce payload size)
-                    if (filePayload.businessLicenseHex && filePayload.pledgeFileHex) {
-                        console.log('Retrying individually...');
-                         await fetch('/api/me/profile', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                            body: JSON.stringify({ 
-                                businessLicenseHex: filePayload.businessLicenseHex,
-                                businessLicenseType: filePayload.businessLicenseType 
-                            })
-                        });
-                         await fetch('/api/me/profile', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                            body: JSON.stringify({ 
-                                pledgeFileHex: filePayload.pledgeFileHex,
-                                pledgeFileType: filePayload.pledgeFileType
-                             })
-                        });
-                        if (filePayload.termsFileHex) {
-                          await fetch('/api/me/profile', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                              body: JSON.stringify({ 
-                                  termsFileHex: filePayload.termsFileHex,
-                                  termsFileType: filePayload.termsFileType
-                                })
-                          });
-                        }
-                        if (filePayload.idCardFileHex) {
-                          await fetch('/api/me/profile', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                              body: JSON.stringify({ 
-                                  idCardFileHex: filePayload.idCardFileHex,
-                                  idCardFileType: filePayload.idCardFileType
-                                })
-                          });
-                        }
-                    } else {
-                        uploadFailed = true;
-                    }
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                      businessLicenseHex: filePayload.businessLicenseHex,
+                      businessLicenseType: filePayload.businessLicenseType
+                    })
+                  });
+                  await fetch('/api/me/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                      pledgeFileHex: filePayload.pledgeFileHex,
+                      pledgeFileType: filePayload.pledgeFileType
+                    })
+                  });
+                  if (filePayload.termsFileHex) {
+                    await fetch('/api/me/profile', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                      body: JSON.stringify({
+                        termsFileHex: filePayload.termsFileHex,
+                        termsFileType: filePayload.termsFileType
+                      })
+                    });
+                  }
+                  if (filePayload.idCardFileHex) {
+                    await fetch('/api/me/profile', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                      body: JSON.stringify({
+                        idCardFileHex: filePayload.idCardFileHex,
+                        idCardFileType: filePayload.idCardFileType
+                      })
+                    });
+                  }
                 } else {
-                    console.log('File Upload Success');
+                  uploadFailed = true;
                 }
+              } else {
+                console.log('File Upload Success');
+              }
             } catch (upErr) {
-                console.error('File Upload Network Error:', upErr);
-                uploadFailed = true;
+              console.error('File Upload Network Error:', upErr);
+              uploadFailed = true;
             }
-        }
+          }
 
-        if (uploadFailed) {
+          if (uploadFailed) {
             alert('회원가입은 성공했으나, 서류 업로드에 실패했습니다. 로그인 후 마이페이지에서 사업자등록증과 서약서를 다시 등록해주세요.');
-        } else {
+          } else {
             setSuccess('등록 신청이 완료되었습니다. 관리자 승인 후 안내 메일을 드릴게요.');
-        }
-        
-        setTimeout(() => {
-          router.push('/login?pending=investigator');
-        }, 1500);
+          }
 
-      } catch (err: unknown) {
-        const msg = String(err);
-        if (msg.includes('WAF_BLOCK') || msg.includes('403')) {
-             setError('보안 정책에 의해 가입 요청이 차단되었습니다. (WAF 403) - VPN을 끄거나 다른 네트워크에서 시도해주세요.');
-        } else if (msg.includes('AbortError')) {
-           setError('서버 응답 시간 초과. (Timeout)');
-        } else {
-           setError(`오류 발생: ${err instanceof Error ? err.message : '알 수 없음'}`);
+          setTimeout(() => {
+            router.push('/login?pending=investigator');
+          }, 1500);
+
+        } catch (err: unknown) {
+          const msg = String(err);
+          if (msg.includes('WAF_BLOCK') || msg.includes('403')) {
+            setError('보안 정책에 의해 가입 요청이 차단되었습니다. (WAF 403) - VPN을 끄거나 다른 네트워크에서 시도해주세요.');
+          } else if (msg.includes('AbortError')) {
+            setError('서버 응답 시간 초과. (Timeout)');
+          } else {
+            setError(`오류 발생: ${err instanceof Error ? err.message : '알 수 없음'}`);
+          }
+        } finally {
+          clearTimeout(timeoutId);
         }
-      } finally {
-        clearTimeout(timeoutId);
       }
-    }
-  } catch (err) {
+    } catch (err) {
       console.error('Registration error:', err);
       if (err instanceof TypeError && err.message.includes('fetch')) {
         setError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
@@ -579,11 +579,10 @@ export default function RegisterForm() {
                 key={card.value}
                 type="button"
                 onClick={() => handleRoleChange(card.value)}
-                className={`rounded-2xl border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none ${
-                  active
-                    ? `border-sky-400 shadow-sm ring-2 ring-sky-300` 
+                className={`rounded-2xl border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none ${active
+                    ? `border-sky-400 shadow-sm ring-2 ring-sky-300`
                     : 'border-slate-200 shadow-sm'
-                } bg-gradient-to-br ${card.accent}`}
+                  } bg-gradient-to-br ${card.accent}`}
               >
                 <span className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
                   {card.value === 'USER' ? 'Client' : 'Investigator'}
@@ -734,9 +733,8 @@ export default function RegisterForm() {
                     return (
                       <label
                         key={option.value}
-                        className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-sm shadow-sm transition ${
-                          checked ? 'border-sky-400 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-600'
-                        }`}
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-sm shadow-sm transition ${checked ? 'border-sky-400 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-600'
+                          }`}
                       >
                         <input
                           type="checkbox"
@@ -838,11 +836,10 @@ export default function RegisterForm() {
                           return (
                             <label
                               key={option.value}
-                              className={`flex cursor-pointer flex-col gap-2 rounded-xl border px-4 py-3 text-sm shadow-sm transition ${
-                                checked
+                              className={`flex cursor-pointer flex-col gap-2 rounded-xl border px-4 py-3 text-sm shadow-sm transition ${checked
                                   ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
                                   : 'border-slate-200 bg-white text-slate-600'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-start gap-3">
                                 <input
@@ -898,9 +895,8 @@ export default function RegisterForm() {
                     return (
                       <label
                         key={option.value}
-                        className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-sm shadow-sm transition ${
-                          checked ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'
-                        }`}
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-sm shadow-sm transition ${checked ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'
+                          }`}
                       >
                         <input
                           type="checkbox"
@@ -1006,7 +1002,7 @@ export default function RegisterForm() {
                       download="리원 서비스 이용약관_탐정 회원가입 (LIONE service agreement).pdf"
                       className="inline-flex items-center gap-2 text-blue-600 hover:underline"
                     >
-                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
                       LIONE 탐정 서비스 이용 약관 다운로드 (PDF)
@@ -1109,14 +1105,14 @@ export default function RegisterForm() {
           >
             {isSubmitting ? (
               <div className="flex items-center gap-2">
-                 <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                 </svg>
-                 <span>{submitStatus || '처리 중...'}</span>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>{submitStatus || '처리 중...'}</span>
               </div>
             ) : (
-              '심사 신청 보내기'
+              '가입하기'
             )}
           </button>
           {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</div>}
